@@ -1,12 +1,17 @@
-(
-echo node_modules/
-echo dist/
-echo build/
-echo .env
-echo .env.*
-echo !.env.example
-echo .DS_Store
-echo Thumbs.db
-echo .vscode/
-echo .idea/
-) > .gitignore
+# env
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
+
+# deps
+node_modules/
+**/node_modules/
+
+# build
+dist/
+**/dist/
+build/
+**/build/
