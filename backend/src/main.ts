@@ -1,46 +1,60 @@
-import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { ConfigService } from '@nestjs/config';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ValidationPipe } from '@nestjs/common';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // ให้ FE ยิงได้
-  app.enableCors({
-    origin: ['http://localhost:5173'],
-    credentials: true,
-  });
-
-  // ทุก route จะขึ้นต้นด้วย /api
+  // 1. ตั้งค่า Global Prefix (ทุก API จะนำหน้าด้วย /api)
   app.setGlobalPrefix('api');
 
-  // Validation กลาง
+  // 2. เปิดใช้ ValidationPipe (ตรวจสอบข้อมูล DTO อัตโนมัติ)
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
-      forbidNonWhitelisted: true,
       transform: true,
+      forbidNonWhitelisted: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
     }),
   );
 
-  // Swagger
-  const swaggerConfig = new DocumentBuilder()
+  // 3. Global Exception Filter
+  app.useGlobalFilters(new AllExceptionsFilter());
+
+  // 4. เปิด CORS (สำคัญมาก! เพื่อให้ Frontend React เรียกใช้ API ได้)
+  app.enableCors();
+
+  // 5. ตั้งค่า Swagger
+  const config = new DocumentBuilder()
     .setTitle('Smart Moto Service Center API')
     .setDescription('API contract for Smart Moto Service Center')
-    .setVersion('0.1.0')
-    .addBearerAuth()
+    .setVersion('1.0.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'JWT-auth',
+    )
     .build();
 
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('docs', app, document); // /docs
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+  });
 
-  const config = app.get(ConfigService);
-  const port = config.get<number>('PORT') ?? 4000;
-
-  await app.listen(port);
-  console.log(`🚀 API: http://localhost:${port}/api`);
-  console.log(`📘 Swagger: http://localhost:${port}/docs`);
+  await app.listen(process.env.PORT ?? 4000);
+  console.log(`API: http://localhost:${process.env.PORT ?? 4000}/api`);
+  console.log(`Swagger: http://localhost:${process.env.PORT ?? 4000}/docs`);
 }
 bootstrap();
