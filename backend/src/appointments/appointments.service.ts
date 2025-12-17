@@ -3,53 +3,127 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { AppointmentConvertToJobDto } from './dto/convert-to-job.dto';
-import { JobType, JobStatus, AppointmentStatus } from '@prisma/client';
+import { JobType, JobStatus, AppointmentStatus, Prisma } from '@prisma/client';
 
 @Injectable()
 export class AppointmentsService {
   constructor(private prisma: PrismaService) {}
 
   async create(createAppointmentDto: CreateAppointmentDto, userId: number) {
+    // Check if motorcycle exists
+    const motorcycle = await this.prisma.motorcycle.findUnique({
+      where: { id: createAppointmentDto.motorcycleId },
+    });
+
+    if (!motorcycle) {
+      throw new NotFoundException(`Motorcycle with ID ${createAppointmentDto.motorcycleId} not found`);
+    }
+
+    // Check if user exists
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
     const scheduledDateTime = new Date(
       `${createAppointmentDto.scheduledDate}T${createAppointmentDto.scheduledTime}:00`,
     );
 
-    // Generate appointment number
+    // Generate unique appointment number
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const count = await this.prisma.appointment.count({
-      where: {
-        createdAt: {
-          gte: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()),
-        },
-      },
-    });
-    const runNo = (count + 1).toString().padStart(4, '0');
-    const appointmentNo = `APT-${dateStr}-${runNo}`;
+    let appointmentNo = '';
+    let runNo = 1;
+    let maxAttempts = 100; // Prevent infinite loop
 
-    return this.prisma.appointment.create({
-      data: {
-        appointmentNo,
-        motorcycleId: createAppointmentDto.motorcycleId,
-        scheduledDate: scheduledDateTime,
-        scheduledTime: createAppointmentDto.scheduledTime,
-        scheduledById: userId,
-        status: AppointmentStatus.SCHEDULED,
-        notes: createAppointmentDto.notes,
-      },
-      include: {
-        motorcycle: {
-          include: {
-            owner: true,
+    // Try to find a unique appointment number
+    while (maxAttempts > 0) {
+      const paddedRunNo = runNo.toString().padStart(4, '0');
+      appointmentNo = `APT-${dateStr}-${paddedRunNo}`;
+
+      // Check if this appointment number already exists
+      const existing = await this.prisma.appointment.findUnique({
+        where: { appointmentNo },
+      });
+
+      if (!existing) {
+        break; // Found unique number
+      }
+
+      runNo++;
+      maxAttempts--;
+    }
+
+    if (maxAttempts === 0 || !appointmentNo) {
+      throw new BadRequestException('Unable to generate unique appointment number');
+    }
+
+    try {
+      return await this.prisma.appointment.create({
+        data: {
+          appointmentNo,
+          motorcycleId: createAppointmentDto.motorcycleId,
+          scheduledDate: scheduledDateTime,
+          scheduledTime: createAppointmentDto.scheduledTime,
+          scheduledById: userId,
+          status: AppointmentStatus.SCHEDULED,
+          notes: createAppointmentDto.notes,
+        },
+        include: {
+          motorcycle: {
+            include: {
+              owner: true,
+            },
+          },
+          scheduledBy: {
+            select: {
+              id: true,
+              name: true,
+            },
           },
         },
-        scheduledBy: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-    });
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          // Retry with next number if still conflict (race condition)
+          runNo++;
+          const paddedRunNo = runNo.toString().padStart(4, '0');
+          appointmentNo = `APT-${dateStr}-${paddedRunNo}`;
+          
+          return await this.prisma.appointment.create({
+            data: {
+              appointmentNo,
+              motorcycleId: createAppointmentDto.motorcycleId,
+              scheduledDate: scheduledDateTime,
+              scheduledTime: createAppointmentDto.scheduledTime,
+              scheduledById: userId,
+              status: AppointmentStatus.SCHEDULED,
+              notes: createAppointmentDto.notes,
+            },
+            include: {
+              motorcycle: {
+                include: {
+                  owner: true,
+                },
+              },
+              scheduledBy: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          });
+        }
+        if (error.code === 'P2003') {
+          throw new BadRequestException('Invalid motorcycle or user ID');
+        }
+      }
+      throw new BadRequestException(`Failed to create appointment: ${error.message || 'Unknown error'}`);
+    }
   }
 
   async findAll() {

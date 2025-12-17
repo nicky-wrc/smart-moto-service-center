@@ -88,3 +88,4 @@ git stash pop
 
 **หมายเหตุ:** ไฟล์ที่ยังไม่ได้ save จะไม่ถูกเก็บไว้ใน Git หรือ file system ต้องกู้คืนจาก Cursor conversation history เท่านั้น
 
+

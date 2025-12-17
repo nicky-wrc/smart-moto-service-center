@@ -1861,3 +1861,4 @@
 - Payment process จะอัพเดต Job status และ Customer points อัตโนมัติ
 - Quotation ต้องเป็น status `APPROVED` ถึงจะ convert เป็น Job ได้
 
+

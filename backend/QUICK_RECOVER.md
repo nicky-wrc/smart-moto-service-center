@@ -28,3 +28,4 @@ git commit -m "backup: before recovery"
 ไฟล์ที่ยังไม่ได้ save จะไม่ถูกเก็บไว้ใน Git
 ต้องกู้คืนจาก Cursor conversation หรือสร้างใหม่
 
+

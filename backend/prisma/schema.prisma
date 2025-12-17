@@ -16,12 +16,13 @@ model User {
   isActive        Boolean           @default(true)
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
-  Appointment     Appointment[]
+  appointments    Appointment[]
   receptionJobs   Job[]             @relation("ReceptionJobs")
   technicianJobs  Job[]             @relation("TechnicianJobs")
-  LaborTime       LaborTime[]
-  PartRequisition PartRequisition[]
-  Quotation       Quotation[]
+  laborTimes      LaborTime[]
+  partRequisitions PartRequisition[]
+  quotations      Quotation[]
+  stockMovements  StockMovement[]
 }
 
 model Customer {
@@ -36,9 +37,9 @@ model Customer {
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   motorcycles     Motorcycle[]
-  Payment         Payment[]
-  Quotation       Quotation[]
-  ServiceReminder ServiceReminder[]
+  payments        Payment[]
+  quotations      Quotation[]
+  serviceReminders ServiceReminder[]
 }
 
 model Motorcycle {
@@ -54,12 +55,12 @@ model Motorcycle {
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   mileage         Int?              @default(0)
-  Appointment     Appointment[]
+  appointments    Appointment[]
   jobs            Job[]
   owner           Customer          @relation(fields: [ownerId], references: [id])
-  Quotation       Quotation[]
-  ServiceReminder ServiceReminder[]
-  Warranty        Warranty[]
+  quotations      Quotation[]
+  serviceReminders ServiceReminder[]
+  warranties      Warranty[]
 }
 
 model Job {
@@ -81,17 +82,17 @@ model Job {
   quotationId      Int?               @unique
   startedAt        DateTime?
   warrantyId       Int?               @unique
-  Appointment      Appointment?       @relation(fields: [appointmentId], references: [id])
+  appointment      Appointment?       @relation(fields: [appointmentId], references: [id])
   motorcycle       Motorcycle         @relation(fields: [motorcycleId], references: [id])
-  Quotation        Quotation?         @relation(fields: [quotationId], references: [id])
+  quotation        Quotation?         @relation(fields: [quotationId], references: [id])
   reception        User?              @relation("ReceptionJobs", fields: [receptionId], references: [id])
   technician       User?              @relation("TechnicianJobs", fields: [technicianId], references: [id])
-  Warranty         Warranty?          @relation(fields: [warrantyId], references: [id])
-  JobChecklistItem JobChecklistItem[]
-  LaborTime        LaborTime[]
-  Outsource        Outsource[]
-  PartRequisition  PartRequisition[]
-  Payment          Payment?
+  warranty         Warranty?          @relation(fields: [warrantyId], references: [id])
+  checklistItems   JobChecklistItem[]
+  laborTimes       LaborTime[]
+  outsources       Outsource[]
+  partRequisitions PartRequisition[]
+  payment          Payment?
 }
 
 model Appointment {
@@ -105,10 +106,10 @@ model Appointment {
   scheduledById Int
   jobId         Int?              @unique
   createdAt     DateTime          @default(now())
-  updatedAt     DateTime
-  Motorcycle    Motorcycle        @relation(fields: [motorcycleId], references: [id])
-  User          User              @relation(fields: [scheduledById], references: [id])
-  Job           Job?
+  updatedAt     DateTime          @updatedAt
+  motorcycle    Motorcycle        @relation(fields: [motorcycleId], references: [id])
+  scheduledBy   User              @relation(fields: [scheduledById], references: [id])
+  job           Job?
 }
 
 model JobChecklistItem {
@@ -118,26 +119,27 @@ model JobChecklistItem {
   condition String
   notes     String?
   createdAt DateTime @default(now())
-  Job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
 }
 
 model LaborTime {
-  id              Int       @id @default(autoincrement())
+  id              Int            @id @default(autoincrement())
   jobId           Int
   technicianId    Int
   taskDescription String
   standardMinutes Int?
   actualMinutes   Int
-  hourlyRate      Decimal   @db.Decimal(10, 2)
-  laborCost       Decimal   @db.Decimal(10, 2)
+  hourlyRate      Decimal        @db.Decimal(10, 2)
+  laborCost       Decimal        @db.Decimal(10, 2)
   startedAt       DateTime?
   pausedAt        DateTime?
   resumedAt       DateTime?
   finishedAt      DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime
-  Job             Job       @relation(fields: [jobId], references: [id])
-  User            User      @relation(fields: [technicianId], references: [id])
+  status          LaborTimeStatus @default(IN_PROGRESS)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  job             Job            @relation(fields: [jobId], references: [id])
+  technician      User           @relation(fields: [technicianId], references: [id])
 }
 
 model LostSale {
@@ -149,7 +151,7 @@ model LostSale {
   customerInfo String?
   notes        String?
   createdAt    DateTime @default(now())
-  Part         Part     @relation(fields: [partId], references: [id])
+  part         Part     @relation(fields: [partId], references: [id])
 }
 
 model Outsource {
@@ -163,8 +165,8 @@ model Outsource {
   completedAt     DateTime?
   notes           String?
   createdAt       DateTime  @default(now())
-  updatedAt       DateTime
-  Job             Job       @relation(fields: [jobId], references: [id])
+  updatedAt       DateTime  @updatedAt
+  job             Job       @relation(fields: [jobId], references: [id])
 }
 
 model Part {
@@ -181,12 +183,12 @@ model Part {
   reorderQuantity     Int                   @default(0)
   isActive            Boolean               @default(true)
   createdAt           DateTime              @default(now())
-  updatedAt           DateTime
-  LostSale            LostSale[]
-  PartPackageItem     PartPackageItem[]
-  PartRequisitionItem PartRequisitionItem[]
-  QuotationItem       QuotationItem[]
-  StockMovement       StockMovement[]
+  updatedAt           DateTime              @updatedAt
+  lostSales           LostSale[]
+  partPackageItems    PartPackageItem[]
+  partRequisitionItems PartRequisitionItem[]
+  quotationItems      QuotationItem[]
+  stockMovements      StockMovement[]
 }
 
 model PartPackage {
@@ -197,10 +199,10 @@ model PartPackage {
   sellingPrice        Decimal               @db.Decimal(10, 2)
   isActive            Boolean               @default(true)
   createdAt           DateTime              @default(now())
-  updatedAt           DateTime
-  PartPackageItem     PartPackageItem[]
-  PartRequisitionItem PartRequisitionItem[]
-  QuotationItem       QuotationItem[]
+  updatedAt           DateTime              @updatedAt
+  items               PartPackageItem[]
+  requisitionItems    PartRequisitionItem[]
+  quotationItems      QuotationItem[]
 }
 
 model PartPackageItem {
@@ -209,8 +211,8 @@ model PartPackageItem {
   partId      Int
   quantity    Int         @default(1)
   createdAt   DateTime    @default(now())
-  PartPackage PartPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
-  Part        Part        @relation(fields: [partId], references: [id])
+  package     PartPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  part        Part        @relation(fields: [partId], references: [id])
 }
 
 model PartRequisition {
@@ -223,10 +225,10 @@ model PartRequisition {
   approvedAt          DateTime?
   issuedAt            DateTime?
   createdAt           DateTime              @default(now())
-  updatedAt           DateTime
-  Job                 Job?                  @relation(fields: [jobId], references: [id])
-  User                User                  @relation(fields: [requestedById], references: [id])
-  PartRequisitionItem PartRequisitionItem[]
+  updatedAt           DateTime              @updatedAt
+  job                 Job?                  @relation(fields: [jobId], references: [id])
+  requestedBy         User                  @relation(fields: [requestedById], references: [id])
+  items               PartRequisitionItem[]
 }
 
 model PartRequisitionItem {
@@ -239,9 +241,9 @@ model PartRequisitionItem {
   issuedQuantity    Int             @default(0)
   notes             String?
   createdAt         DateTime        @default(now())
-  PartPackage       PartPackage?    @relation(fields: [packageId], references: [id])
-  Part              Part?           @relation(fields: [partId], references: [id])
-  PartRequisition   PartRequisition @relation(fields: [requisitionId], references: [id], onDelete: Cascade)
+  package           PartPackage?    @relation(fields: [packageId], references: [id])
+  part              Part?           @relation(fields: [partId], references: [id])
+  requisition       PartRequisition @relation(fields: [requisitionId], references: [id], onDelete: Cascade)
 }
 
 model Payment {
@@ -260,9 +262,9 @@ model Payment {
   paidAt        DateTime?
   notes         String?
   createdAt     DateTime      @default(now())
-  updatedAt     DateTime
-  Customer      Customer      @relation(fields: [customerId], references: [id])
-  Job           Job           @relation(fields: [jobId], references: [id])
+  updatedAt     DateTime      @updatedAt
+  customer      Customer      @relation(fields: [customerId], references: [id])
+  job           Job           @relation(fields: [jobId], references: [id])
 }
 
 model Quotation {
@@ -277,12 +279,12 @@ model Quotation {
   createdById   Int
   jobId         Int?            @unique
   createdAt     DateTime        @default(now())
-  updatedAt     DateTime
-  Job           Job?
-  User          User            @relation(fields: [createdById], references: [id])
-  Customer      Customer        @relation(fields: [customerId], references: [id])
-  Motorcycle    Motorcycle      @relation(fields: [motorcycleId], references: [id])
-  QuotationItem QuotationItem[]
+  updatedAt     DateTime        @updatedAt
+  job           Job?
+  createdBy     User            @relation(fields: [createdById], references: [id])
+  customer      Customer        @relation(fields: [customerId], references: [id])
+  motorcycle    Motorcycle      @relation(fields: [motorcycleId], references: [id])
+  items         QuotationItem[]
 }
 
 model QuotationItem {
@@ -296,9 +298,9 @@ model QuotationItem {
   partId      Int?
   packageId   Int?
   createdAt   DateTime     @default(now())
-  PartPackage PartPackage? @relation(fields: [packageId], references: [id])
-  Part        Part?        @relation(fields: [partId], references: [id])
-  Quotation   Quotation    @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  package     PartPackage? @relation(fields: [packageId], references: [id])
+  part        Part?        @relation(fields: [partId], references: [id])
+  quotation   Quotation    @relation(fields: [quotationId], references: [id], onDelete: Cascade)
 }
 
 model ServiceReminder {
@@ -316,9 +318,9 @@ model ServiceReminder {
   notified           Boolean    @default(false)
   notifiedAt         DateTime?
   createdAt          DateTime   @default(now())
-  updatedAt          DateTime
-  Customer           Customer   @relation(fields: [customerId], references: [id])
-  Motorcycle         Motorcycle @relation(fields: [motorcycleId], references: [id])
+  updatedAt          DateTime   @updatedAt
+  customer           Customer   @relation(fields: [customerId], references: [id])
+  motorcycle         Motorcycle @relation(fields: [motorcycleId], references: [id])
 }
 
 model StockMovement {
@@ -331,7 +333,8 @@ model StockMovement {
   notes        String?
   createdAt    DateTime          @default(now())
   createdById  Int?
-  Part         Part              @relation(fields: [partId], references: [id])
+  part         Part              @relation(fields: [partId], references: [id])
+  createdBy    User?             @relation(fields: [createdById], references: [id])
 }
 
 model Warranty {
@@ -346,9 +349,9 @@ model Warranty {
   status         WarrantyStatus @default(VALID)
   description    String?
   createdAt      DateTime       @default(now())
-  updatedAt      DateTime
-  Job            Job?
-  Motorcycle     Motorcycle     @relation(fields: [motorcycleId], references: [id])
+  updatedAt      DateTime       @updatedAt
+  job            Job?
+  motorcycle     Motorcycle     @relation(fields: [motorcycleId], references: [id])
 }
 
 enum Role {
@@ -420,6 +423,12 @@ enum StockMovementType {
   OUT
   ADJUSTMENT
   RETURN
+}
+
+enum LaborTimeStatus {
+  IN_PROGRESS
+  PAUSED
+  FINISHED
 }
 
 enum WarrantyStatus {
