@@ -91,15 +91,18 @@ export class OutsourcesService {
     return outsource;
   }
 
-  async update(id: number, data: {
-    vendorName?: string;
-    workDescription?: string;
-    cost?: number;
-    sellingPrice?: number;
-    estimatedDays?: number;
-    completedAt?: Date;
-    notes?: string;
-  }) {
+  async update(
+    id: number,
+    data: {
+      vendorName?: string;
+      workDescription?: string;
+      cost?: number;
+      sellingPrice?: number;
+      estimatedDays?: number;
+      completedAt?: Date;
+      notes?: string;
+    },
+  ) {
     const outsource = await this.prisma.outsource.findUnique({
       where: { id },
     });
@@ -152,7 +155,10 @@ export class OutsourcesService {
       where: { jobId },
     });
 
-    const totalCost = outsources.reduce((sum, o) => sum + Number(o.sellingPrice), 0);
+    const totalCost = outsources.reduce(
+      (sum, o) => sum + Number(o.sellingPrice),
+      0,
+    );
 
     return {
       jobId,
@@ -168,5 +174,3 @@ export class OutsourcesService {
     };
   }
 }
-
-

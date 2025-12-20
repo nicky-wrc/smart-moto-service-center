@@ -30,14 +30,14 @@ export class AuthService {
   // ฟังก์ชันสร้าง Token
   async login(loginDto: any) {
     const user = await this.validateUser(loginDto.username, loginDto.password);
-    
+
     if (!user) {
       throw new UnauthorizedException('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
     }
 
     // ข้อมูลที่จะฝังอยู่ใน Token (Payload)
     const payload = { username: user.username, sub: user.id, role: user.role };
-    
+
     return {
       access_token: this.jwtService.sign(payload),
       user: user, // ส่งข้อมูล User กลับไปให้ Frontend ใช้ด้วย

@@ -42,7 +42,9 @@ export class WarrantiesService {
           motorcycleId,
           OR: [
             { endDate: { lt: now } },
-            ...(currentMileage ? [{ mileageLimit: { lt: currentMileage } }] : []),
+            ...(currentMileage
+              ? [{ mileageLimit: { lt: currentMileage } }]
+              : []),
           ],
           status: WarrantyStatus.VALID,
         },
@@ -142,5 +144,3 @@ export class WarrantiesService {
     });
   }
 }
-
-

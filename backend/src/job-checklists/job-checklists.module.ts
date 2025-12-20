@@ -10,5 +10,3 @@ import { PrismaModule } from '../prisma/prisma.module';
   exports: [JobChecklistsService],
 })
 export class JobChecklistsModule {}
-
-

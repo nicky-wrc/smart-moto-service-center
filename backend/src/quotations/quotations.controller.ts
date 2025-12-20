@@ -1,6 +1,20 @@
-import { Controller, Get, Post, Body, Patch, Param, UseGuards, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  UseGuards,
+  Query,
+} from '@nestjs/common';
 import { QuotationsService } from './quotations.service';
-import { ApiBearerAuth, ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -61,7 +75,9 @@ export class QuotationsController {
 
   @Patch(':id/send')
   @Roles('SERVICE_ADVISOR', 'CASHIER', 'ADMIN', 'MANAGER')
-  @ApiOperation({ summary: 'ส่ง Quotation ให้ลูกค้า (เปลี่ยน status เป็น SENT)' })
+  @ApiOperation({
+    summary: 'ส่ง Quotation ให้ลูกค้า (เปลี่ยน status เป็น SENT)',
+  })
   sendQuotation(@Param('id') id: string) {
     return this.quotationsService.sendQuotation(+id);
   }
@@ -83,7 +99,11 @@ export class QuotationsController {
   @Post(':id/convert-to-job')
   @Roles('SERVICE_ADVISOR', 'ADMIN', 'MANAGER')
   @ApiOperation({ summary: 'แปลง Quotation ที่ approve แล้วเป็น Job' })
-  convertToJob(@Param('id') id: string, @Body() body: QuotationConvertToJobDto, @CurrentUser() user: UserPayload) {
+  convertToJob(
+    @Param('id') id: string,
+    @Body() body: QuotationConvertToJobDto,
+    @CurrentUser() user: UserPayload,
+  ) {
     return this.quotationsService.convertToJob(+id, body.symptom, user.userId);
   }
 
@@ -97,4 +117,3 @@ export class QuotationsController {
     });
   }
 }
-

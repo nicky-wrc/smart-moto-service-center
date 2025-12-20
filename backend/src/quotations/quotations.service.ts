@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { QuotationStatus, JobStatus, JobType } from '@prisma/client';
 
@@ -25,7 +29,11 @@ export class QuotationsService {
     const count = await this.prisma.quotation.count({
       where: {
         createdAt: {
-          gte: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()),
+          gte: new Date(
+            new Date().getFullYear(),
+            new Date().getMonth(),
+            new Date().getDate(),
+          ),
         },
       },
     });
@@ -259,7 +267,9 @@ export class QuotationsService {
     }
 
     if (quotation.job) {
-      throw new BadRequestException('Quotation has already been converted to job');
+      throw new BadRequestException(
+        'Quotation has already been converted to job',
+      );
     }
 
     if (quotation.status !== QuotationStatus.APPROVED) {
@@ -270,7 +280,11 @@ export class QuotationsService {
     const count = await this.prisma.job.count({
       where: {
         createdAt: {
-          gte: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()),
+          gte: new Date(
+            new Date().getFullYear(),
+            new Date().getMonth(),
+            new Date().getDate(),
+          ),
         },
       },
     });
@@ -304,18 +318,21 @@ export class QuotationsService {
     return job;
   }
 
-  async update(id: number, data: {
-    items?: Array<{
-      itemType: string;
-      itemName: string;
-      quantity: number;
-      unitPrice: number;
-      partId?: number;
-      packageId?: number;
-    }>;
-    validUntil?: Date;
-    notes?: string;
-  }) {
+  async update(
+    id: number,
+    data: {
+      items?: Array<{
+        itemType: string;
+        itemName: string;
+        quantity: number;
+        unitPrice: number;
+        partId?: number;
+        packageId?: number;
+      }>;
+      validUntil?: Date;
+      notes?: string;
+    },
+  ) {
     const quotation = await this.prisma.quotation.findUnique({
       where: { id },
     });
@@ -366,4 +383,3 @@ export class QuotationsService {
     });
   }
 }
-

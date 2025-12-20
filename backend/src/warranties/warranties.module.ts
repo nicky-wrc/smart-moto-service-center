@@ -10,5 +10,3 @@ import { PrismaModule } from '../prisma/prisma.module';
   exports: [WarrantiesService],
 })
 export class WarrantiesModule {}
-
-

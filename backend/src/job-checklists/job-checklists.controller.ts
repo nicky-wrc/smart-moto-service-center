@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
 import { JobChecklistsService } from './job-checklists.service';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -17,7 +26,8 @@ export class JobChecklistsController {
   @ApiOperation({ summary: 'เพิ่ม Checklist Items (หลายรายการ)' })
   createChecklistItems(
     @Param('jobId') jobId: string,
-    @Body() items: Array<{ itemName: string; condition: string; notes?: string }>,
+    @Body()
+    items: Array<{ itemName: string; condition: string; notes?: string }>,
   ) {
     return this.jobChecklistsService.createChecklistItems(+jobId, items);
   }
@@ -46,7 +56,10 @@ export class JobChecklistsController {
   @Patch(':id')
   @Roles('TECHNICIAN', 'FOREMAN', 'SERVICE_ADVISOR', 'ADMIN', 'MANAGER')
   @ApiOperation({ summary: 'อัปเดต Checklist Item' })
-  update(@Param('id') id: string, @Body() data: { itemName?: string; condition?: string; notes?: string }) {
+  update(
+    @Param('id') id: string,
+    @Body() data: { itemName?: string; condition?: string; notes?: string },
+  ) {
     return this.jobChecklistsService.update(+id, data);
   }
 
@@ -64,5 +77,3 @@ export class JobChecklistsController {
     return this.jobChecklistsService.removeByJob(+jobId);
   }
 }
-
-

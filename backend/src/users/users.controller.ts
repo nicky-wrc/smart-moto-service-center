@@ -1,11 +1,25 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
-import { ApiBearerAuth, ApiTags, ApiOperation, ApiSecurity } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiSecurity,
+} from '@nestjs/swagger';
 
 @ApiTags('Users')
 @Controller('users')
@@ -14,7 +28,9 @@ export class UsersController {
 
   // สร้าง User (ยังเปิด Public ไว้ เพื่อให้สมัคร Admin คนแรกได้สะดวก)
   @Post()
-  @ApiOperation({ summary: 'สร้าง User ใหม่ (Public - สำหรับสร้าง admin คนแรก)' })
+  @ApiOperation({
+    summary: 'สร้าง User ใหม่ (Public - สำหรับสร้าง admin คนแรก)',
+  })
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }

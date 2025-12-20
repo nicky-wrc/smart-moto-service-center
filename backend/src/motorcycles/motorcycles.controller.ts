@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
 import { MotorcyclesService } from './motorcycles.service';
 import { CreateMotorcycleDto } from './dto/create-motorcycle.dto';
 import { UpdateMotorcycleDto } from './dto/update-motorcycle.dto';
@@ -36,7 +45,10 @@ export class MotorcyclesController {
   @Patch(':id')
   @Roles('SERVICE_ADVISOR', 'ADMIN', 'MANAGER')
   @ApiOperation({ summary: 'อัปเดต Motorcycle' })
-  update(@Param('id') id: string, @Body() updateMotorcycleDto: UpdateMotorcycleDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateMotorcycleDto: UpdateMotorcycleDto,
+  ) {
     return this.motorcyclesService.update(+id, updateMotorcycleDto);
   }
 

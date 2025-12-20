@@ -99,17 +99,20 @@ export class PartsService {
     return part;
   }
 
-  async update(id: number, data: {
-    name?: string;
-    description?: string;
-    brand?: string;
-    category?: string;
-    unit?: string;
-    unitPrice?: number;
-    reorderPoint?: number;
-    reorderQuantity?: number;
-    isActive?: boolean;
-  }) {
+  async update(
+    id: number,
+    data: {
+      name?: string;
+      description?: string;
+      brand?: string;
+      category?: string;
+      unit?: string;
+      unitPrice?: number;
+      reorderPoint?: number;
+      reorderQuantity?: number;
+      isActive?: boolean;
+    },
+  ) {
     const part = await this.prisma.part.findUnique({
       where: { id },
     });
@@ -139,7 +142,12 @@ export class PartsService {
     });
   }
 
-  async adjustStock(id: number, quantity: number, notes?: string, userId?: number) {
+  async adjustStock(
+    id: number,
+    quantity: number,
+    notes?: string,
+    userId?: number,
+  ) {
     const part = await this.prisma.part.findUnique({
       where: { id },
     });
@@ -186,4 +194,3 @@ export class PartsService {
     return parts;
   }
 }
-

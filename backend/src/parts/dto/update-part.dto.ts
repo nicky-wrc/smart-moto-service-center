@@ -1,5 +1,12 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNumber, IsOptional, Min, IsInt, IsBoolean } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  Min,
+  IsInt,
+  IsBoolean,
+} from 'class-validator';
 
 export class UpdatePartDto {
   @ApiPropertyOptional({ example: 'ผ้าเบรกหน้า', description: 'ชื่ออะไหล่' })
@@ -7,7 +14,10 @@ export class UpdatePartDto {
   @IsString()
   name?: string;
 
-  @ApiPropertyOptional({ example: 'ผ้าเบรกหน้า Honda PCX 160', description: 'รายละเอียด' })
+  @ApiPropertyOptional({
+    example: 'ผ้าเบรกหน้า Honda PCX 160',
+    description: 'รายละเอียด',
+  })
   @IsOptional()
   @IsString()
   description?: string;
@@ -33,13 +43,19 @@ export class UpdatePartDto {
   @Min(0)
   unitPrice?: number;
 
-  @ApiPropertyOptional({ example: 5, description: 'จุดสั่งซื้อใหม่ (Reorder Point)' })
+  @ApiPropertyOptional({
+    example: 5,
+    description: 'จุดสั่งซื้อใหม่ (Reorder Point)',
+  })
   @IsOptional()
   @IsInt()
   @Min(0)
   reorderPoint?: number;
 
-  @ApiPropertyOptional({ example: 20, description: 'จำนวนที่สั่งซื้อเมื่อถึง Reorder Point' })
+  @ApiPropertyOptional({
+    example: 20,
+    description: 'จำนวนที่สั่งซื้อเมื่อถึง Reorder Point',
+  })
   @IsOptional()
   @IsInt()
   @Min(0)
@@ -50,5 +66,3 @@ export class UpdatePartDto {
   @IsBoolean()
   isActive?: boolean;
 }
-
-

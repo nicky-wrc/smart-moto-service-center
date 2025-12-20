@@ -1,8 +1,19 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsInt, IsNumber, IsOptional, Min } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  Min,
+} from 'class-validator';
 
 export class QuotationItemDto {
-  @ApiProperty({ example: 'PART', enum: ['PART', 'PACKAGE', 'LABOR'], description: 'ประเภทรายการ (PART, PACKAGE, LABOR)' })
+  @ApiProperty({
+    example: 'PART',
+    enum: ['PART', 'PACKAGE', 'LABOR'],
+    description: 'ประเภทรายการ (PART, PACKAGE, LABOR)',
+  })
   @IsString()
   @IsNotEmpty()
   itemType: string;
@@ -24,15 +35,19 @@ export class QuotationItemDto {
   @Min(0)
   unitPrice: number;
 
-  @ApiPropertyOptional({ example: 1, description: 'ID ของ Part (ถ้า itemType เป็น PART)' })
+  @ApiPropertyOptional({
+    example: 1,
+    description: 'ID ของ Part (ถ้า itemType เป็น PART)',
+  })
   @IsOptional()
   @IsInt()
   partId?: number;
 
-  @ApiPropertyOptional({ example: 1, description: 'ID ของ Package (ถ้า itemType เป็น PACKAGE)' })
+  @ApiPropertyOptional({
+    example: 1,
+    description: 'ID ของ Package (ถ้า itemType เป็น PACKAGE)',
+  })
   @IsOptional()
   @IsInt()
   packageId?: number;
 }
-
-

@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
 import { LaborTimesService } from './labor-times.service';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -18,7 +26,10 @@ export class LaborTimesController {
   @Post('start')
   @Roles('TECHNICIAN', 'FOREMAN', 'ADMIN', 'MANAGER')
   @ApiOperation({ summary: 'เริ่มจับเวลาแรงงาน' })
-  startLaborTime(@Body() body: StartLaborTimeDto, @CurrentUser() user: UserPayload) {
+  startLaborTime(
+    @Body() body: StartLaborTimeDto,
+    @CurrentUser() user: UserPayload,
+  ) {
     return this.laborTimesService.startLaborTime(
       body.jobId,
       user.userId,
@@ -67,5 +78,3 @@ export class LaborTimesController {
     return this.laborTimesService.findOne(+id);
   }
 }
-
-

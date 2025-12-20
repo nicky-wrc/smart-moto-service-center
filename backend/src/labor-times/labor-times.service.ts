@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JobStatus } from '@prisma/client';
 
@@ -22,7 +26,9 @@ export class LaborTimesService {
     }
 
     if (job.status !== JobStatus.IN_PROGRESS) {
-      throw new BadRequestException(`Cannot start labor time for job with status ${job.status}`);
+      throw new BadRequestException(
+        `Cannot start labor time for job with status ${job.status}`,
+      );
     }
 
     return this.prisma.laborTime.create({
@@ -69,7 +75,9 @@ export class LaborTimesService {
     const now = new Date();
     const startTime = laborTime.startedAt;
     const resumeTime = laborTime.resumedAt || startTime;
-    const elapsedMinutes = Math.floor((now.getTime() - resumeTime.getTime()) / (1000 * 60));
+    const elapsedMinutes = Math.floor(
+      (now.getTime() - resumeTime.getTime()) / (1000 * 60),
+    );
     const totalMinutes = laborTime.actualMinutes + elapsedMinutes;
 
     const laborCost = (totalMinutes / 60) * Number(laborTime.hourlyRate);
@@ -141,7 +149,9 @@ export class LaborTimesService {
       throw new BadRequestException('Labor time has not started');
     }
     const resumeTime = laborTime.resumedAt || startTime;
-    const elapsedMinutes = Math.floor((now.getTime() - resumeTime.getTime()) / (1000 * 60));
+    const elapsedMinutes = Math.floor(
+      (now.getTime() - resumeTime.getTime()) / (1000 * 60),
+    );
     const totalMinutes = laborTime.actualMinutes + elapsedMinutes;
 
     const laborCost = (totalMinutes / 60) * Number(laborTime.hourlyRate);
@@ -234,7 +244,10 @@ export class LaborTimesService {
     const now = new Date();
     let totalCost = 0;
     let totalMinutes = 0;
-    const standardMinutes = laborTimes.reduce((sum, lt) => sum + (lt.standardMinutes || 0), 0);
+    const standardMinutes = laborTimes.reduce(
+      (sum, lt) => sum + (lt.standardMinutes || 0),
+      0,
+    );
 
     for (const lt of laborTimes) {
       let minutes = lt.actualMinutes;
@@ -243,7 +256,9 @@ export class LaborTimesService {
         const startTime = lt.startedAt;
         const resumeTime = lt.resumedAt || startTime;
         const endTime = lt.pausedAt || now;
-        const elapsedMinutes = Math.floor((endTime.getTime() - resumeTime.getTime()) / (1000 * 60));
+        const elapsedMinutes = Math.floor(
+          (endTime.getTime() - resumeTime.getTime()) / (1000 * 60),
+        );
         minutes = lt.actualMinutes + elapsedMinutes;
       }
 
@@ -257,9 +272,10 @@ export class LaborTimesService {
       totalMinutes,
       standardMinutes,
       laborTimes: laborTimes.length,
-      efficiency: standardMinutes > 0 && totalMinutes > 0 ? (standardMinutes / totalMinutes) * 100 : null,
+      efficiency:
+        standardMinutes > 0 && totalMinutes > 0
+          ? (standardMinutes / totalMinutes) * 100
+          : null,
     };
   }
 }
-
-

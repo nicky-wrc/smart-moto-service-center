@@ -29,7 +29,7 @@ export class UsersService {
   findOne(id: number) {
     return this.prisma.user.findUnique({ where: { id } });
   }
-  
+
   // (Method อื่นๆ ปล่อยไว้ก่อนได้ครับ)
   update(id: number, updateUserDto: UpdateUserDto) {
     return `This action updates a #${id} user`;

@@ -5,7 +5,10 @@ import { PrismaService } from '../prisma/prisma.service';
 export class JobChecklistsService {
   constructor(private prisma: PrismaService) {}
 
-  async createChecklistItems(jobId: number, items: Array<{ itemName: string; condition: string; notes?: string }>) {
+  async createChecklistItems(
+    jobId: number,
+    items: Array<{ itemName: string; condition: string; notes?: string }>,
+  ) {
     const job = await this.prisma.job.findUnique({
       where: { id: jobId },
     });
@@ -57,7 +60,10 @@ export class JobChecklistsService {
     });
   }
 
-  async update(id: number, data: { itemName?: string; condition?: string; notes?: string }) {
+  async update(
+    id: number,
+    data: { itemName?: string; condition?: string; notes?: string },
+  ) {
     const item = await this.prisma.jobChecklistItem.findUnique({
       where: { id },
     });
@@ -100,5 +106,3 @@ export class JobChecklistsService {
     });
   }
 }
-
-

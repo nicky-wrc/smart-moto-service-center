@@ -1,5 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty, IsString, IsNumber, IsOptional, Min } from 'class-validator';
+import {
+  IsInt,
+  IsNotEmpty,
+  IsString,
+  IsNumber,
+  IsOptional,
+  Min,
+} from 'class-validator';
 
 export class CreateOutsourceDto {
   @ApiProperty({ example: 7, description: 'ID ของ Job' })
@@ -7,7 +14,10 @@ export class CreateOutsourceDto {
   @IsNotEmpty()
   jobId: number;
 
-  @ApiProperty({ example: 'ร้านซ่อมสี ABC', description: 'ชื่อร้าน/ผู้รับเหมา' })
+  @ApiProperty({
+    example: 'ร้านซ่อมสี ABC',
+    description: 'ชื่อร้าน/ผู้รับเหมา',
+  })
   @IsString()
   @IsNotEmpty()
   vendorName: string;
@@ -23,7 +33,10 @@ export class CreateOutsourceDto {
   @Min(0)
   cost: number;
 
-  @ApiPropertyOptional({ example: 6000, description: 'ราคาขาย (บาท) หากไม่ระบุจะคำนวณเป็น cost + 20%' })
+  @ApiPropertyOptional({
+    example: 6000,
+    description: 'ราคาขาย (บาท) หากไม่ระบุจะคำนวณเป็น cost + 20%',
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)
@@ -40,5 +53,3 @@ export class CreateOutsourceDto {
   @IsString()
   notes?: string;
 }
-
-

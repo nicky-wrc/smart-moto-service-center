@@ -1,5 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsNumber, IsOptional, Min, IsInt } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  Min,
+  IsInt,
+} from 'class-validator';
 
 export class CreatePartDto {
   @ApiProperty({ example: 'PART-001', description: 'รหัสอะไหล่' })
@@ -12,7 +19,10 @@ export class CreatePartDto {
   @IsNotEmpty()
   name: string;
 
-  @ApiPropertyOptional({ example: 'ผ้าเบรกหน้า Honda PCX 160', description: 'รายละเอียด' })
+  @ApiPropertyOptional({
+    example: 'ผ้าเบรกหน้า Honda PCX 160',
+    description: 'รายละเอียด',
+  })
   @IsOptional()
   @IsString()
   description?: string;
@@ -27,7 +37,11 @@ export class CreatePartDto {
   @IsString()
   category?: string;
 
-  @ApiPropertyOptional({ example: 'ชิ้น', description: 'หน่วยนับ', default: 'ชิ้น' })
+  @ApiPropertyOptional({
+    example: 'ชิ้น',
+    description: 'หน่วยนับ',
+    default: 'ชิ้น',
+  })
   @IsOptional()
   @IsString()
   unit?: string;
@@ -38,23 +52,33 @@ export class CreatePartDto {
   @Min(0)
   unitPrice: number;
 
-  @ApiPropertyOptional({ example: 10, description: 'จำนวนสต็อกเริ่มต้น', default: 0 })
+  @ApiPropertyOptional({
+    example: 10,
+    description: 'จำนวนสต็อกเริ่มต้น',
+    default: 0,
+  })
   @IsOptional()
   @IsInt()
   @Min(0)
   stockQuantity?: number;
 
-  @ApiPropertyOptional({ example: 5, description: 'จุดสั่งซื้อใหม่ (Reorder Point)', default: 0 })
+  @ApiPropertyOptional({
+    example: 5,
+    description: 'จุดสั่งซื้อใหม่ (Reorder Point)',
+    default: 0,
+  })
   @IsOptional()
   @IsInt()
   @Min(0)
   reorderPoint?: number;
 
-  @ApiPropertyOptional({ example: 20, description: 'จำนวนที่สั่งซื้อเมื่อถึง Reorder Point', default: 0 })
+  @ApiPropertyOptional({
+    example: 20,
+    description: 'จำนวนที่สั่งซื้อเมื่อถึง Reorder Point',
+    default: 0,
+  })
   @IsOptional()
   @IsInt()
   @Min(0)
   reorderQuantity?: number;
 }
-
-

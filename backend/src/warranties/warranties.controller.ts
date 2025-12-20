@@ -1,6 +1,20 @@
-import { Controller, Get, Param, Post, Body, Patch, UseGuards, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Post,
+  Body,
+  Patch,
+  UseGuards,
+  Query,
+} from '@nestjs/common';
 import { WarrantiesService } from './warranties.service';
-import { ApiBearerAuth, ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -41,14 +55,17 @@ export class WarrantiesController {
   @Post()
   @Roles('SERVICE_ADVISOR', 'ADMIN', 'MANAGER')
   @ApiOperation({ summary: 'สร้าง Warranty ใหม่' })
-  create(@Body() data: {
-    warrantyNo: string;
-    motorcycleId: number;
-    startDate: string;
-    endDate: string;
-    mileageLimit?: number;
-    description?: string;
-  }) {
+  create(
+    @Body()
+    data: {
+      warrantyNo: string;
+      motorcycleId: number;
+      startDate: string;
+      endDate: string;
+      mileageLimit?: number;
+      description?: string;
+    },
+  ) {
     return this.warrantiesService.create({
       ...data,
       startDate: new Date(data.startDate),
@@ -59,9 +76,10 @@ export class WarrantiesController {
   @Patch(':id/status')
   @Roles('ADMIN', 'MANAGER')
   @ApiOperation({ summary: 'อัปเดตสถานะ Warranty' })
-  updateStatus(@Param('id') id: string, @Body() body: { status: WarrantyStatus }) {
+  updateStatus(
+    @Param('id') id: string,
+    @Body() body: { status: WarrantyStatus },
+  ) {
     return this.warrantiesService.updateStatus(+id, body.status);
   }
 }
-
-

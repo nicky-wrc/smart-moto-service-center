@@ -13,7 +13,12 @@ import { JobsService } from './jobs.service';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
 import { AssignTechnicianDto } from './dto/assign-technician.dto';
-import { ApiBearerAuth, ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -61,7 +66,9 @@ export class JobsController {
   @ApiOperation({ summary: 'ดู Job Queue สำหรับช่าง (เรียงตาม Fast Track)' })
   @ApiQuery({ name: 'technicianId', required: false, type: Number })
   getQueue(@Query('technicianId') technicianId?: string) {
-    return this.jobsService.getJobQueue(technicianId ? +technicianId : undefined);
+    return this.jobsService.getJobQueue(
+      technicianId ? +technicianId : undefined,
+    );
   }
 
   @Get(':id')

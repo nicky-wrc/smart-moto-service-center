@@ -1,5 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty, IsString, IsNumber, IsOptional, Min } from 'class-validator';
+import {
+  IsInt,
+  IsNotEmpty,
+  IsString,
+  IsNumber,
+  IsOptional,
+  Min,
+} from 'class-validator';
 
 export class StartLaborTimeDto {
   @ApiProperty({ example: 7, description: 'ID ของ Job' })
@@ -7,7 +14,10 @@ export class StartLaborTimeDto {
   @IsNotEmpty()
   jobId: number;
 
-  @ApiProperty({ example: 'ตรวจสอบและซ่อมเครื่องยนต์', description: 'รายละเอียดงาน' })
+  @ApiProperty({
+    example: 'ตรวจสอบและซ่อมเครื่องยนต์',
+    description: 'รายละเอียดงาน',
+  })
   @IsString()
   @IsNotEmpty()
   taskDescription: string;
@@ -24,5 +34,3 @@ export class StartLaborTimeDto {
   @Min(0)
   standardMinutes?: number;
 }
-
-

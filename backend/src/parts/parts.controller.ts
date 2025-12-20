@@ -1,6 +1,21 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Query,
+} from '@nestjs/common';
 import { PartsService } from './parts.service';
-import { ApiBearerAuth, ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -77,8 +92,17 @@ export class PartsController {
   @Patch(':id/adjust-stock')
   @Roles('STOCK_KEEPER', 'ADMIN', 'MANAGER')
   @ApiOperation({ summary: 'ปรับสต็อก (เพิ่ม/ลดจำนวน)' })
-  adjustStock(@Param('id') id: string, @Body() body: AdjustStockDto, @CurrentUser() user: UserPayload) {
-    return this.partsService.adjustStock(+id, body.quantity, body.notes, user.userId);
+  adjustStock(
+    @Param('id') id: string,
+    @Body() body: AdjustStockDto,
+    @CurrentUser() user: UserPayload,
+  ) {
+    return this.partsService.adjustStock(
+      +id,
+      body.quantity,
+      body.notes,
+      user.userId,
+    );
   }
 
   @Delete(':id')
@@ -88,5 +112,3 @@ export class PartsController {
     return this.partsService.remove(+id);
   }
 }
-
-

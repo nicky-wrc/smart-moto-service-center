@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -13,7 +17,11 @@ export class JobsService {
     const count = await this.prisma.job.count({
       where: {
         createdAt: {
-          gte: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()),
+          gte: new Date(
+            new Date().getFullYear(),
+            new Date().getMonth(),
+            new Date().getDate(),
+          ),
         },
       },
     });
@@ -95,10 +103,7 @@ export class JobsService {
           },
         },
       },
-      orderBy: [
-        { jobType: 'asc' },
-        { createdAt: 'desc' },
-      ],
+      orderBy: [{ jobType: 'asc' }, { createdAt: 'desc' }],
     });
   }
 
@@ -173,8 +178,14 @@ export class JobsService {
       throw new NotFoundException(`Job with ID ${jobId} not found`);
     }
 
-    if (job.status === JobStatus.COMPLETED || job.status === JobStatus.PAID || job.status === JobStatus.CANCELLED) {
-      throw new BadRequestException(`Cannot assign technician to job with status ${job.status}`);
+    if (
+      job.status === JobStatus.COMPLETED ||
+      job.status === JobStatus.PAID ||
+      job.status === JobStatus.CANCELLED
+    ) {
+      throw new BadRequestException(
+        `Cannot assign technician to job with status ${job.status}`,
+      );
     }
 
     const technician = await this.prisma.user.findUnique({
@@ -195,7 +206,9 @@ export class JobsService {
       where: { id: jobId },
       data: {
         technicianId,
-        ...(job.status === JobStatus.PENDING ? { status: JobStatus.IN_PROGRESS, startedAt: new Date() } : {}),
+        ...(job.status === JobStatus.PENDING
+          ? { status: JobStatus.IN_PROGRESS, startedAt: new Date() }
+          : {}),
       },
       include: {
         technician: {
@@ -281,7 +294,10 @@ export class JobsService {
       });
     }
 
-    if (job.status !== JobStatus.PENDING && job.status !== JobStatus.WAITING_PARTS) {
+    if (
+      job.status !== JobStatus.PENDING &&
+      job.status !== JobStatus.WAITING_PARTS
+    ) {
       throw new BadRequestException(
         `Cannot start job with status ${job.status}. Job must be PENDING or WAITING_PARTS to start.`,
       );
@@ -325,8 +341,13 @@ export class JobsService {
       throw new NotFoundException(`Job with ID ${jobId} not found`);
     }
 
-    if (job.status !== JobStatus.IN_PROGRESS && job.status !== JobStatus.WAITING_PARTS) {
-      throw new BadRequestException(`Cannot complete job with status ${job.status}`);
+    if (
+      job.status !== JobStatus.IN_PROGRESS &&
+      job.status !== JobStatus.WAITING_PARTS
+    ) {
+      throw new BadRequestException(
+        `Cannot complete job with status ${job.status}`,
+      );
     }
 
     return this.prisma.job.update({
@@ -368,7 +389,9 @@ export class JobsService {
     }
 
     if (job.status === JobStatus.PAID || job.status === JobStatus.CANCELLED) {
-      throw new BadRequestException(`Cannot cancel job with status ${job.status}`);
+      throw new BadRequestException(
+        `Cannot cancel job with status ${job.status}`,
+      );
     }
 
     return this.prisma.job.update({
@@ -419,10 +442,7 @@ export class JobsService {
           },
         },
       },
-      orderBy: [
-        { jobType: 'asc' },
-        { createdAt: 'asc' },
-      ],
+      orderBy: [{ jobType: 'asc' }, { createdAt: 'asc' }],
     });
   }
 

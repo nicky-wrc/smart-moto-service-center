@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Query,
+} from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
@@ -20,7 +30,10 @@ export class AppointmentsController {
   @Post()
   @Roles('SERVICE_ADVISOR', 'ADMIN', 'MANAGER')
   @ApiOperation({ summary: 'สร้าง Appointment ใหม่' })
-  create(@Body() createAppointmentDto: CreateAppointmentDto, @CurrentUser() user: UserPayload) {
+  create(
+    @Body() createAppointmentDto: CreateAppointmentDto,
+    @CurrentUser() user: UserPayload,
+  ) {
     return this.appointmentsService.create(createAppointmentDto, user.userId);
   }
 
@@ -45,7 +58,10 @@ export class AppointmentsController {
   @Patch(':id')
   @Roles('SERVICE_ADVISOR', 'ADMIN', 'MANAGER')
   @ApiOperation({ summary: 'อัปเดต Appointment' })
-  update(@Param('id') id: string, @Body() updateAppointmentDto: UpdateAppointmentDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateAppointmentDto: UpdateAppointmentDto,
+  ) {
     return this.appointmentsService.update(+id, updateAppointmentDto);
   }
 
@@ -67,4 +83,3 @@ export class AppointmentsController {
     return this.appointmentsService.convertToJob(+id, convertDto, user.userId);
   }
 }
-

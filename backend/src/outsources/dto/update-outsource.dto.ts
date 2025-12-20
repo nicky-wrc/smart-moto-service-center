@@ -1,13 +1,26 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNumber, IsOptional, Min, IsDateString, IsInt } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  Min,
+  IsDateString,
+  IsInt,
+} from 'class-validator';
 
 export class UpdateOutsourceDto {
-  @ApiPropertyOptional({ example: 'ร้านซ่อมสี ABC', description: 'ชื่อร้าน/ผู้รับเหมา' })
+  @ApiPropertyOptional({
+    example: 'ร้านซ่อมสี ABC',
+    description: 'ชื่อร้าน/ผู้รับเหมา',
+  })
   @IsOptional()
   @IsString()
   vendorName?: string;
 
-  @ApiPropertyOptional({ example: 'พ่นสีใหม่ทั้งคัน', description: 'รายละเอียดงาน' })
+  @ApiPropertyOptional({
+    example: 'พ่นสีใหม่ทั้งคัน',
+    description: 'รายละเอียดงาน',
+  })
   @IsOptional()
   @IsString()
   workDescription?: string;
@@ -30,7 +43,10 @@ export class UpdateOutsourceDto {
   @Min(1)
   estimatedDays?: number;
 
-  @ApiPropertyOptional({ example: '2025-12-20T00:00:00Z', description: 'วันที่เสร็จสิ้นงาน' })
+  @ApiPropertyOptional({
+    example: '2025-12-20T00:00:00Z',
+    description: 'วันที่เสร็จสิ้นงาน',
+  })
   @IsOptional()
   @IsDateString()
   completedAt?: string;
@@ -40,5 +56,3 @@ export class UpdateOutsourceDto {
   @IsString()
   notes?: string;
 }
-
-

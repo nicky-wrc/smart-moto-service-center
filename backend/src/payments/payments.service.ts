@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaymentStatus, JobStatus, PaymentMethod } from '@prisma/client';
 
@@ -33,7 +37,9 @@ export class PaymentsService {
         const startTime = lt.startedAt;
         const resumeTime = lt.resumedAt || startTime;
         const endTime = lt.pausedAt || now;
-        const elapsedMinutes = Math.floor((endTime.getTime() - resumeTime.getTime()) / (1000 * 60));
+        const elapsedMinutes = Math.floor(
+          (endTime.getTime() - resumeTime.getTime()) / (1000 * 60),
+        );
         minutes = lt.actualMinutes + elapsedMinutes;
       }
       laborCost += (minutes / 60) * Number(lt.hourlyRate);
@@ -43,7 +49,10 @@ export class PaymentsService {
     const partsCost = 0; // TODO: Calculate from part requisitions
 
     // Calculate outsource cost
-    const outsourceCost = job.outsources.reduce((sum, o) => sum + Number(o.sellingPrice), 0);
+    const outsourceCost = job.outsources.reduce(
+      (sum, o) => sum + Number(o.sellingPrice),
+      0,
+    );
 
     // Calculate subtotal
     const subtotal = laborCost + partsCost + outsourceCost;
@@ -107,7 +116,9 @@ export class PaymentsService {
     }
 
     if (job.status !== JobStatus.COMPLETED) {
-      throw new BadRequestException(`Cannot create payment for job with status ${job.status}`);
+      throw new BadRequestException(
+        `Cannot create payment for job with status ${job.status}`,
+      );
     }
 
     const existingPayment = await this.prisma.payment.findUnique({
@@ -122,7 +133,11 @@ export class PaymentsService {
     const count = await this.prisma.payment.count({
       where: {
         createdAt: {
-          gte: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()),
+          gte: new Date(
+            new Date().getFullYear(),
+            new Date().getMonth(),
+            new Date().getDate(),
+          ),
         },
       },
     });
@@ -205,8 +220,11 @@ export class PaymentsService {
     if (!job) {
       throw new NotFoundException(`Job with ID ${payment.jobId} not found`);
     }
-    
-    const totalAmount = typeof payment.totalAmount === 'number' ? payment.totalAmount : Number(payment.totalAmount);
+
+    const totalAmount =
+      typeof payment.totalAmount === 'number'
+        ? payment.totalAmount
+        : Number(payment.totalAmount);
     const pointsEarned = Math.floor(totalAmount / 100);
     await this.prisma.customer.update({
       where: { id: job.motorcycle.ownerId },
@@ -327,4 +345,3 @@ export class PaymentsService {
     return payment;
   }
 }
-

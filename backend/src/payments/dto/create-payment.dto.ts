@@ -1,5 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty, IsNumber, IsOptional, Min, IsEnum, IsString } from 'class-validator';
+import {
+  IsInt,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  Min,
+  IsEnum,
+  IsString,
+} from 'class-validator';
 import { PaymentMethod } from '@prisma/client';
 
 export class CreatePaymentDto {
@@ -8,7 +16,11 @@ export class CreatePaymentDto {
   @IsNotEmpty()
   jobId: number;
 
-  @ApiProperty({ example: 'CASH', enum: PaymentMethod, description: 'วิธีชำระเงิน' })
+  @ApiProperty({
+    example: 'CASH',
+    enum: PaymentMethod,
+    description: 'วิธีชำระเงิน',
+  })
   @IsEnum(PaymentMethod)
   @IsNotEmpty()
   paymentMethod: PaymentMethod;
@@ -48,5 +60,3 @@ export class CreatePaymentDto {
   @IsString()
   notes?: string;
 }
-
-

@@ -7,5 +7,3 @@ export class AssignTechnicianDto {
   @IsNotEmpty()
   technicianId: number;
 }
-
-

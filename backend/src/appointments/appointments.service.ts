@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
@@ -16,7 +20,9 @@ export class AppointmentsService {
     });
 
     if (!motorcycle) {
-      throw new NotFoundException(`Motorcycle with ID ${createAppointmentDto.motorcycleId} not found`);
+      throw new NotFoundException(
+        `Motorcycle with ID ${createAppointmentDto.motorcycleId} not found`,
+      );
     }
 
     // Check if user exists
@@ -57,7 +63,9 @@ export class AppointmentsService {
     }
 
     if (maxAttempts === 0 || !appointmentNo) {
-      throw new BadRequestException('Unable to generate unique appointment number');
+      throw new BadRequestException(
+        'Unable to generate unique appointment number',
+      );
     }
 
     try {
@@ -92,7 +100,7 @@ export class AppointmentsService {
           runNo++;
           const paddedRunNo = runNo.toString().padStart(4, '0');
           appointmentNo = `APT-${dateStr}-${paddedRunNo}`;
-          
+
           return await this.prisma.appointment.create({
             data: {
               appointmentNo,
@@ -122,7 +130,9 @@ export class AppointmentsService {
           throw new BadRequestException('Invalid motorcycle or user ID');
         }
       }
-      throw new BadRequestException(`Failed to create appointment: ${error.message || 'Unknown error'}`);
+      throw new BadRequestException(
+        `Failed to create appointment: ${error.message || 'Unknown error'}`,
+      );
     }
   }
 
@@ -199,7 +209,10 @@ export class AppointmentsService {
 
     const updateData: any = { ...updateAppointmentDto };
 
-    if (updateAppointmentDto.scheduledDate && updateAppointmentDto.scheduledTime) {
+    if (
+      updateAppointmentDto.scheduledDate &&
+      updateAppointmentDto.scheduledTime
+    ) {
       updateData.scheduledDate = new Date(
         `${updateAppointmentDto.scheduledDate}T${updateAppointmentDto.scheduledTime}:00`,
       );
@@ -236,7 +249,9 @@ export class AppointmentsService {
     }
 
     if (appointment.job) {
-      throw new BadRequestException('Cannot delete appointment that has been converted to job');
+      throw new BadRequestException(
+        'Cannot delete appointment that has been converted to job',
+      );
     }
 
     return this.prisma.appointment.delete({
@@ -244,7 +259,11 @@ export class AppointmentsService {
     });
   }
 
-  async convertToJob(id: number, convertDto: AppointmentConvertToJobDto, userId: number) {
+  async convertToJob(
+    id: number,
+    convertDto: AppointmentConvertToJobDto,
+    userId: number,
+  ) {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id },
       include: { job: true },
@@ -255,7 +274,9 @@ export class AppointmentsService {
     }
 
     if (appointment.job) {
-      throw new BadRequestException('Appointment has already been converted to job');
+      throw new BadRequestException(
+        'Appointment has already been converted to job',
+      );
     }
 
     if (!convertDto.symptom) {
@@ -267,7 +288,11 @@ export class AppointmentsService {
     const count = await this.prisma.job.count({
       where: {
         createdAt: {
-          gte: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()),
+          gte: new Date(
+            new Date().getFullYear(),
+            new Date().getMonth(),
+            new Date().getDate(),
+          ),
         },
       },
     });
@@ -337,4 +362,3 @@ export class AppointmentsService {
     });
   }
 }
-
