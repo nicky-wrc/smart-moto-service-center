@@ -90,7 +90,7 @@ export class JobsController {
   assignTechnician(
     @Param('id') id: string,
     @Body() assignDto: AssignTechnicianDto,
-    @CurrentUser() user: UserPayload,
+    @CurrentUser() _user: UserPayload,
   ) {
     return this.jobsService.assignTechnician(+id, assignDto.technicianId);
   }

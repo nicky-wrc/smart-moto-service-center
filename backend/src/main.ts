@@ -57,4 +57,4 @@ async function bootstrap() {
   console.log(`API: http://localhost:${process.env.PORT ?? 4000}/api`);
   console.log(`Swagger: http://localhost:${process.env.PORT ?? 4000}/docs`);
 }
-bootstrap();
+void bootstrap();

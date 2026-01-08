@@ -3,6 +3,17 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { LoginDto } from './dto/login.dto';
+
+interface UserWithoutPassword {
+  id: number;
+  username: string;
+  name: string;
+  role: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 @Injectable()
 export class AuthService {
@@ -12,7 +23,10 @@ export class AuthService {
   ) {}
 
   // ฟังก์ชันเช็ค User/Pass
-  async validateUser(username: string, pass: string): Promise<any> {
+  async validateUser(
+    username: string,
+    pass: string,
+  ): Promise<UserWithoutPassword | null> {
     // 1. หา User จาก Database (แต่เราไม่มีฟังก์ชัน findByUsername เดี๋ยวไปเติม)
     // เราจะใช้ findAll มา filter ชั่วคราวก่อน หรือคุณไปเพิ่ม findByUsername ใน users.service ก็ได้
     // แต่เพื่อความง่าย ผมขอใช้ท่าลัดนี้ก่อน:
@@ -21,14 +35,15 @@ export class AuthService {
 
     // 2. เช็ครหัสผ่าน
     if (user && (await bcrypt.compare(pass, user.password))) {
-      const { password, ...result } = user; // ตัด password ออกไม่ส่งกลับ
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password: _password, ...result } = user; // ตัด password ออกไม่ส่งกลับ
       return result;
     }
     return null;
   }
 
   // ฟังก์ชันสร้าง Token
-  async login(loginDto: any) {
+  async login(loginDto: LoginDto) {
     const user = await this.validateUser(loginDto.username, loginDto.password);
 
     if (!user) {

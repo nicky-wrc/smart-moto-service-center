@@ -31,7 +31,7 @@ export class UsersService {
   }
 
   // (Method อื่นๆ ปล่อยไว้ก่อนได้ครับ)
-  update(id: number, updateUserDto: UpdateUserDto) {
+  update(id: number, _updateUserDto: UpdateUserDto) {
     return `This action updates a #${id} user`;
   }
 
