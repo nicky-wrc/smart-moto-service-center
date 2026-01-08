@@ -1,212 +1,416 @@
-# Smart Moto Service Center
+# 🏍️ Smart Moto Service Center
 
-ระบบบริหารจัดการศูนย์บริการรถจักรยานยนต์ครบวงจร (SA → ช่าง → คลัง → การเงิน/CRM → Admin/Dashboard)
+ระบบบริหารจัดการศูนย์บริการรถจักรยานยนต์ครบวงจร
 
-## Tech Stack
-- Frontend: React + Vite + TypeScript + Tailwind CSS
-- Backend: Node.js (NestJS)
-- Database: PostgreSQL (Docker)
-- ORM: Prisma
-- API: REST (JSON)
-- Auth: JWT + RBAC (กำลังทำ/จะทำต่อ)
+**Workflow:** Reception (SA) → Workshop (ช่าง) → Inventory (คลัง) → Billing/CRM (การเงิน) → Admin/Dashboard
 
 ---
 
-## โครงสร้างโฟลเดอร์
+## 🎯 ภาพรวมโปรเจค
+
+ระบบนี้เป็นระบบจัดการศูนย์บริการรถจักรยานยนต์ที่ครอบคลุมทุกขั้นตอน ตั้งแต่การรับรถไปจนถึงการคิดเงินและรายงาน
+
+### Features หลัก
+
+- ✅ **Reception Module** - รับรถ, ลงทะเบียนลูกค้า, นัดหมาย, Fast Track, Warranty Check
+- ✅ **Workshop Module** - Job Queue, Labor Time Tracking, Checklist, Outsource
+- ✅ **Inventory Module** - Part Master, Stock Management, Requisition, Package/Kit
+- ✅ **Billing/CRM Module** - Quotation, Payment, Invoice, Membership & Points
+- ✅ **Admin/Dashboard** - Reports, Analytics, User Management
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **React** + **Vite** + **TypeScript**
+- **Tailwind CSS** (UI styling)
+
+### Backend
+- **Node.js** + **NestJS** (Framework)
+- **PostgreSQL** (Database via Docker)
+- **Prisma** (ORM)
+- **JWT** + **RBAC** (Authentication & Authorization)
+
+### DevOps
+- **Docker** (Database)
+- **GitHub Actions** (CI/CD)
+- **Swagger/OpenAPI** (API Documentation)
+
+---
+
+## 📁 โครงสร้างโปรเจค
+
+```
 smart-moto-service-center/
-frontend/ # React + Vite
-backend/ # NestJS + Prisma
-docs/ # เอกสาร SAD / diagrams / notes
-docker-compose.yml
-README.md
-
-yaml
-คัดลอกโค้ด
-
----
-
-## Branch ที่ใช้ทำงาน
-- `main` : ไว้ปล่อย/ส่งงาน (อย่า push ตรง ถ้าไม่จำเป็น)
-- `develop` : branch รวมงานของทีม
-- แนะนำให้ทำงานบน branch ของตัวเอง แล้วค่อย PR เข้า `develop`
-  - ตัวอย่าง: `feature/reception-fasttrack`, `feature/billing-quotation`
+├── frontend/          # React + Vite + TypeScript
+├── backend/           # NestJS + Prisma
+│   ├── src/          # Source code
+│   ├── prisma/       # Database schema & migrations
+│   └── test/         # Tests
+├── docs/             # Documentation
+│   ├── QUICK_START_GUIDE.md
+│   └── TEAM_ASSIGNMENT_DETAILED.md
+├── .github/          # GitHub Actions workflows
+└── README.md         # This file
+```
 
 ---
 
-# ✅ สิ่งที่ต้องติดตั้งก่อนเริ่ม
-> ถ้าไม่มีอันใดอันหนึ่ง = เดี๋ยวได้หัวร้อนเหมือนหัวหน้าโปรเจค (aka คนทำ repo) 😂
+## 🚀 เริ่มต้นใช้งาน
 
-1) **Git**
-- เช็ค: `git --version`
+### ⚡ Quick Start
 
-2) **Node.js (แนะนำ LTS)**
-- เช็ค: `node -v` และ `npm -v`
+**👉 สำหรับเพื่อนใหม่: อ่านคู่มือเริ่มต้นแบบละเอียดที่ [`docs/QUICK_START_GUIDE.md`](docs/QUICK_START_GUIDE.md)**
 
-3) **Docker Desktop**
-- เปิดให้รันอยู่ (สำคัญมาก)
-- เช็ค: `docker -v` และ `docker compose version`
+### สรุปขั้นตอน:
 
-4) (แนะนำ) **VS Code**
+#### 1. Prerequisites
 
----
+ตรวจสอบว่ามี tools เหล่านี้:
+- ✅ **Git** - `git --version`
+- ✅ **Node.js** (LTS) - `node -v` และ `npm -v`
+- ✅ **Docker Desktop** - ต้องเปิดอยู่
+- ✅ **VS Code** (แนะนำ)
 
-# 🚀 วิธีเริ่มทำโปรเจค (สำหรับเพื่อนในทีม)
-## 1) Clone repo + checkout develop
+#### 2. Clone & Setup
+
 ```bash
+# Clone repository
 git clone https://github.com/nicky-wrc/smart-moto-service-center.git
 cd smart-moto-service-center
+
+# Switch to develop branch
 git checkout develop
 git pull
-2) ติดตั้ง dependencies
-Frontend
-bash
-คัดลอกโค้ด
-cd frontend
-npm install
-cd ..
-Backend
-bash
-คัดลอกโค้ด
+
+# Install dependencies
+cd backend && npm install && cd ..
+cd frontend && npm install && cd ..
+```
+
+#### 3. Environment Setup
+
+```bash
+# สร้างไฟล์ .env ใน backend/
 cd backend
-npm install
-cd ..
-3) ตั้งค่า Environment (.env)
-ห้าม commit .env ขึ้น repo เด็ดขาด (มี .gitignore กันไว้แล้ว)
 
-Backend
-ไปที่ backend/ แล้วสร้างไฟล์ .env จาก .env.example
-
-Windows (CMD/PowerShell):
-
-bash
-คัดลอกโค้ด
-cd backend
+# Windows
 copy .env.example .env
-macOS/Linux/Git Bash:
 
-bash
-คัดลอกโค้ด
-cd backend
+# macOS/Linux
 cp .env.example .env
-จากนั้นเปิด backend/.env แล้วตั้งค่าเป็น (สำคัญ: port 5433):
+```
 
-env
-คัดลอกโค้ด
+แก้ไข `backend/.env`:
+```env
 DATABASE_URL="postgresql://smartmoto:smartmoto_pw@127.0.0.1:5433/smartmoto?schema=public"
-JWT_SECRET="change_me"
-4) เปิด Database (PostgreSQL) ด้วย Docker
-กลับไปที่ root ของ repo (ที่มี docker-compose.yml) แล้วรัน:
+JWT_SECRET="your_secret_key_here_change_me"
+JWT_EXPIRES_IN="1d"
+PORT=4000
+NODE_ENV=development
+```
 
-bash
-คัดลอกโค้ด
+#### 4. Database Setup
+
+```bash
+# กลับไปที่ root ของ repo
 cd ..
+
+# เปิด Docker container (PostgreSQL)
 docker compose up -d
-เช็คว่าขึ้นจริง:
 
-bash
-คัดลอกโค้ด
+# ตรวจสอบว่าเปิดสำเร็จ
 docker ps
-ต้องเห็นประมาณนี้:
 
-container ชื่อ smartmoto_db
-
-port เป็น 0.0.0.0:5433->5432/tcp
-
-5) สร้างตารางใน DB ด้วย Prisma
-เข้าไปที่ backend:
-
-bash
-คัดลอกโค้ด
+# สร้าง database schema
 cd backend
+npx prisma generate
 npx prisma db push
-ถ้าผ่านจะขึ้นประมาณ:
 
-The database is already in sync with the Prisma schema. หรือ push สำเร็จ
+# (Optional) Seed ข้อมูลทดสอบ
+npm run prisma:seed
+```
 
-6) รันระบบ
-รัน Backend (NestJS)
-bash
-คัดลอกโค้ด
+#### 5. รันระบบ
+
+**Terminal 1: Backend**
+```bash
 cd backend
 npm run start:dev
-รัน Frontend (Vite)
-เปิด terminal ใหม่:
+```
+→ เปิดที่ `http://localhost:4000/api`
+→ Swagger UI: `http://localhost:4000/docs`
 
-bash
-คัดลอกโค้ด
+**Terminal 2: Frontend**
+```bash
 cd frontend
 npm run dev
-🧠 คำสั่งที่ใช้บ่อย (Cheat Sheet)
-DB
-เปิด DB: docker compose up -d
+```
+→ เปิดที่ `http://localhost:5173`
 
-ปิด DB: docker compose down
+---
 
-ล้าง DB (ลบข้อมูลหมด): docker compose down -v
+## 📚 เอกสารสำคัญ
 
-Prisma
-sync schema → DB: npx prisma db push
+### สำหรับทุกคน
+- 📖 **[Quick Start Guide](docs/QUICK_START_GUIDE.md)** - คู่มือเริ่มต้นแบบละเอียด
+- 📋 **[Team Assignment](docs/TEAM_ASSIGNMENT_DETAILED.md)** - แบ่งหน้าที่ละเอียดของแต่ละคน
+- 🤝 **[Contributing Guide](CONTRIBUTING.md)** - วิธีทำงานร่วมกัน
 
-เปิด Prisma Studio (ดูข้อมูลแบบ UI): npx prisma studio
+### สำหรับ Backend Developers
+- 🔧 **[API Testing Guide](backend/COMPLETE_API_TESTING_GUIDE.md)** - คู่มือทดสอบ API แบบละเอียด
+- 📝 **[Swagger Usage](backend/SWAGGER_USAGE.md)** - วิธีใช้ Swagger UI
+- 🔄 **[CI/CD Guide](backend/CI_CD_GUIDE.md)** - CI/CD workflow
+- 📊 **[Project Status](backend/PROJECT_STATUS_REPORT.md)** - สถานะโปรเจค
+- 🔐 **[Git Conventions](backend/GIT_CONVENTIONS.md)** - Git conventions
 
-Frontend / Backend
-FE dev: npm run dev (ใน frontend/)
+### สำหรับ Frontend Developers
+- 🎨 **[Frontend README](frontend/README.md)** - Frontend setup
 
-BE dev: npm run start:dev (ใน backend/)
+---
 
-🧯 Troubleshooting (ปัญหาฮิตติดชาร์ต)
-1) Prisma ขึ้น P1000 / auth failed
-เช็คตามลำดับนี้:
+## 🔑 Test Accounts
 
-Docker เปิดอยู่ไหม
+หลังจาก seed ข้อมูลแล้ว สามารถใช้ account ต่อไปนี้:
 
-DB ขึ้นไหม:
+| Username | Password | Role |
+|----------|----------|------|
+| admin | password123 | ADMIN |
+| sa1 | password123 | SERVICE_ADVISOR |
+| tech1 | password123 | TECHNICIAN |
+| cashier1 | password123 | CASHIER |
+| stock1 | password123 | STOCK_KEEPER |
 
-bash
-คัดลอกโค้ด
-docker ps
-backend/.env ใช้ port 5433 ไหม:
+---
 
-env
-คัดลอกโค้ด
-...@127.0.0.1:5433/...
-ลองรันใหม่:
+## 🌿 Git Workflow
 
-bash
-คัดลอกโค้ด
-cd backend
-npx prisma db push
-หมายเหตุ: เครื่องบางคนมี Postgres ในเครื่องจับ port 5432 อยู่แล้ว เราเลยใช้ 5433 เพื่อเลี่ยงชน
+### Branch Strategy
 
-2) Port ชน / เปิด DB ไม่ได้
-ถ้าเครื่องคุณมีอะไรจับ port 5432/5433 อยู่ ให้แจ้งในทีมก่อน
-(แต่ตอนนี้โปรเจคตั้งใจใช้ 5433 แล้ว)
+- `main` - Production-ready code (อย่า push ตรง)
+- `develop` - Integration branch สำหรับรวมงานของทีม
+- `feature/<name>` - Feature branches (ทำงานบนนี้)
+- `bugfix/<issue-id>-<description>` - Bug fixes
 
-3) อยากรีเซ็ต DB ใหม่หมด
-bash
-คัดลอกโค้ด
-docker compose down -v
-docker compose up -d
-cd backend
-npx prisma db push
-👥 วิธีทำงานร่วมกัน (แนะนำให้ทำตามนี้)
-สร้าง branch ของตัวเองจาก develop
-bash
-คัดลอกโค้ด
+### สร้าง Feature Branch
+
+```bash
+# อัปเดต develop ก่อน
 git checkout develop
-git pull
-git checkout -b feature/<your-feature-name>
-ทำงานเสร็จ → commit → push
-bash
-คัดลอกโค้ด
-git add -A
-git commit -m "feat: <สรุปสั้นๆ>"
-git push -u origin feature/<your-feature-name>
-แล้วค่อยไปเปิด Pull Request เข้า develop
+git pull origin develop
 
-🔒 ข้อห้าม
-ห้าม commit .env หรือ key/secret ขึ้น GitHub
+# สร้าง branch ใหม่
+git checkout -b feature/your-feature-name
 
-ห้ามเอา node_modules ขึ้น repo
+# ตัวอย่าง:
+git checkout -b feature/inventory-package
+git checkout -b feature/billing-invoice
+```
 
-อย่าแก้ develop แบบ force push (ถ้าไม่รู้ว่าทำอะไรอยู่)
+### Commit & Push
+
+```bash
+# ทำงานเสร็จแล้ว
+git add .
+git commit -m "feat(inventory): add package management API"
+git push -u origin feature/your-feature-name
+```
+
+### สร้าง Pull Request
+
+1. ไปที่ GitHub repository
+2. คลิก "New Pull Request"
+3. เลือก base: `develop`, compare: `feature/your-feature-name`
+4. กรอก PR description ตาม template
+5. รอ review และ approval
+6. Merge หลังจากได้รับการ approve
+
+**อ่านเพิ่มเติม:** [`backend/GIT_CONVENTIONS.md`](backend/GIT_CONVENTIONS.md)
+
+---
+
+## 🧠 คำสั่งที่ใช้บ่อย
+
+### Database
+```bash
+# เปิด DB
+docker compose up -d
+
+# ปิด DB
+docker compose down
+
+# ล้าง DB (ลบข้อมูลหมด)
+docker compose down -v
+```
+
+### Prisma
+```bash
+# Sync schema → DB
+npx prisma db push
+
+# Generate Prisma Client
+npx prisma generate
+
+# เปิด Prisma Studio (ดูข้อมูลแบบ UI)
+npx prisma studio
+```
+
+### Development
+```bash
+# Backend
+cd backend
+npm run start:dev
+
+# Frontend
+cd frontend
+npm run dev
+
+# Tests
+npm run test
+
+# Linter
+npm run lint
+```
+
+---
+
+## 🧯 Troubleshooting
+
+### 1. Database ไม่สามารถเชื่อมต่อได้
+
+**สาเหตุ:** Docker ไม่ได้เปิด หรือ port ไม่ตรง
+
+**แก้ไข:**
+```bash
+# ตรวจสอบ Docker
+docker ps
+
+# ถ้าไม่เห็น container
+docker compose up -d
+
+# ตรวจสอบ .env ว่าใช้ port 5433
+cat backend/.env | grep DATABASE_URL
+```
+
+### 2. Port ชน
+
+**Backend (4000):**
+- เปลี่ยน `PORT` ใน `backend/.env`
+
+**Frontend (5173):**
+- Vite จะ auto-increment port
+
+**Database (5433):**
+- ถ้าจำเป็น เปลี่ยน port ใน `docker-compose.yml` และ `backend/.env`
+
+### 3. Prisma Errors
+
+```bash
+# ลบ node_modules และ reinstall
+cd backend
+rm -rf node_modules
+npm install
+
+# Generate Prisma Client ใหม่
+npx prisma generate
+
+# Push schema ใหม่
+npx prisma db push
+```
+
+### 4. Dependencies Conflicts
+
+```bash
+# ลบ node_modules ทั้งหมด
+rm -rf backend/node_modules frontend/node_modules
+
+# ลบ package-lock.json
+rm -f backend/package-lock.json frontend/package-lock.json
+
+# ติดตั้งใหม่
+cd backend && npm install && cd ..
+cd frontend && npm install && cd ..
+```
+
+**อ่านเพิ่มเติม:** [`docs/QUICK_START_GUIDE.md`](docs/QUICK_START_GUIDE.md) - Troubleshooting section
+
+---
+
+## 📊 API Endpoints
+
+### Base URL
+- **API:** `http://localhost:4000/api`
+- **Swagger UI:** `http://localhost:4000/docs`
+- **Health Check:** `http://localhost:4000/api`
+
+### เอกสาร API
+- 📖 **[API Testing Guide](backend/COMPLETE_API_TESTING_GUIDE.md)** - คู่มือทดสอบ API แบบละเอียด
+- 📝 **[Swagger UI](http://localhost:4000/docs)** - Interactive API documentation
+
+---
+
+## 👥 ทีมพัฒนา
+
+| คน | หน้าที่ | เอกสาร |
+|-----|--------|--------|
+| 1 | Backend Lead / System Integrator | [`backend/PROJECT_STATUS_REPORT.md`](backend/PROJECT_STATUS_REPORT.md) |
+| 2 | Backend – Inventory & Stock | [`docs/TEAM_ASSIGNMENT_DETAILED.md`](docs/TEAM_ASSIGNMENT_DETAILED.md) |
+| 3 | Backend – Billing/CRM & Reports | [`docs/TEAM_ASSIGNMENT_DETAILED.md`](docs/TEAM_ASSIGNMENT_DETAILED.md) |
+| 4 | Frontend Lead – Reception + Technician | [`docs/TEAM_ASSIGNMENT_DETAILED.md`](docs/TEAM_ASSIGNMENT_DETAILED.md) |
+| 5 | Frontend – Inventory + Billing/Admin | [`docs/TEAM_ASSIGNMENT_DETAILED.md`](docs/TEAM_ASSIGNMENT_DETAILED.md) |
+
+**👉 ดูหน้าที่ละเอียด:** [`docs/TEAM_ASSIGNMENT_DETAILED.md`](docs/TEAM_ASSIGNMENT_DETAILED.md)
+
+---
+
+## ✅ Status
+
+### Backend
+- ✅ **99% Complete** - Core workflows พร้อมใช้งาน
+- ✅ CI/CD ทำงานแล้ว
+- ✅ API Documentation ครบถ้วน
+
+### Frontend
+- 🚧 **In Progress** - กำลังพัฒนา
+
+**ดูสถานะละเอียด:** [`backend/PROJECT_STATUS_REPORT.md`](backend/PROJECT_STATUS_REPORT.md)
+
+---
+
+## 🔒 ข้อห้ามสำคัญ
+
+- ❌ **ห้าม commit `.env`** หรือ key/secret ขึ้น GitHub
+- ❌ **ห้ามเอา `node_modules`** ขึ้น repo
+- ❌ **อย่าแก้ `develop`** แบบ force push (ถ้าไม่รู้ว่าทำอะไรอยู่)
+- ❌ **อย่า push ตรงไป `main`** (ต้องผ่าน PR)
+
+---
+
+## 📞 ติดต่อ & Support
+
+- 📝 สร้าง Issue บน GitHub สำหรับ bugs หรือ questions
+- 📖 อ่านเอกสารใน `docs/` folder
+- 🔍 ดู Swagger UI ที่ `http://localhost:4000/docs`
+
+---
+
+## 📄 License
+
+This project is for educational purposes.
+
+---
+
+## 🎯 Next Steps
+
+1. ✅ อ่าน [`docs/QUICK_START_GUIDE.md`](docs/QUICK_START_GUIDE.md)
+2. ✅ ดูหน้าที่ของตัวเองใน [`docs/TEAM_ASSIGNMENT_DETAILED.md`](docs/TEAM_ASSIGNMENT_DETAILED.md)
+3. ✅ Setup environment ตาม Quick Start Guide
+4. ✅ สร้าง branch ของตัวเอง
+5. ✅ เริ่มทำงาน!
+
+---
+
+**🎉 Happy Coding!**
+
+**หมายเหตุ:** ถ้ามีปัญหาอะไร ให้อ่าน [`docs/QUICK_START_GUIDE.md`](docs/QUICK_START_GUIDE.md) และ [`CONTRIBUTING.md`](CONTRIBUTING.md) ก่อน
