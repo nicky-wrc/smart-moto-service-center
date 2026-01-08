@@ -140,3 +140,4 @@ steps:
 
 **Note:** สำหรับตอนนี้ CI จะรัน linter และ tests แต่ tests อาจ fail ถ้าไม่มี database setup (ใช้ `continue-on-error: true` ชั่วคราว)
 
+

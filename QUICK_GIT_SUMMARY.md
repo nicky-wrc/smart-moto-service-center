@@ -59,3 +59,4 @@ git push origin Nicky_dev
 
 **หมายเหตุ:** การ normalize line endings จะเปลี่ยน CRLF → LF ตาม `.gitattributes` เพื่อความ consistency ใน repository
 
+

@@ -69,3 +69,4 @@ git commit -m "feat: your message"
 3. **Commit ไฟล์ใหม่:** ไฟล์ใหม่ที่สร้างควร commit
 4. **จัดการ modified files:** ถ้าไม่ต้องการ commit ให้ restore หรือ commit ตามต้องการ
 
+

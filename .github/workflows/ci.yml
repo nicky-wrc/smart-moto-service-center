@@ -37,6 +37,6 @@ jobs:
 
       - name: Run tests
         working-directory: ./backend
-        run: npm run test || echo "Tests failed but continuing..."
-        continue-on-error: true
+        run: npm run test
+        continue-on-error: false
 
