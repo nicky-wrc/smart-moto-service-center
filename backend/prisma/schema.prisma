@@ -1,14 +1,438 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              Int               @id @default(autoincrement())
+  username        String            @unique
+  password        String
+  name            String
+  role            Role              @default(TECHNICIAN)
+  isActive        Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  appointments    Appointment[]
+  receptionJobs   Job[]             @relation("ReceptionJobs")
+  technicianJobs  Job[]             @relation("TechnicianJobs")
+  laborTimes      LaborTime[]
+  partRequisitions PartRequisition[]
+  quotations      Quotation[]
+  stockMovements  StockMovement[]
+}
+
+model Customer {
+  id              Int               @id @default(autoincrement())
+  phoneNumber     String            @unique
+  title           String?
+  firstName       String
+  lastName        String
+  address         String?
+  taxId           String?
+  points          Int               @default(0)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  motorcycles     Motorcycle[]
+  payments        Payment[]
+  quotations      Quotation[]
+  serviceReminders ServiceReminder[]
+}
+
+model Motorcycle {
+  id              Int               @id @default(autoincrement())
+  vin             String            @unique
+  licensePlate    String
+  brand           String
+  model           String
+  color           String
+  year            Int?
+  engineNo        String?
+  ownerId         Int
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  mileage         Int?              @default(0)
+  appointments    Appointment[]
+  jobs            Job[]
+  owner           Customer          @relation(fields: [ownerId], references: [id])
+  quotations      Quotation[]
+  serviceReminders ServiceReminder[]
+  warranties      Warranty[]
+}
+
+model Job {
+  id               Int                @id @default(autoincrement())
+  jobNo            String             @unique
+  symptom          String
+  fuelLevel        Int?
+  valuables        String?
+  status           JobStatus          @default(PENDING)
+  jobType          JobType            @default(NORMAL)
+  motorcycleId     Int
+  receptionId      Int?
+  technicianId     Int?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  appointmentId    Int?               @unique
+  completedAt      DateTime?
+  diagnosisNotes   String?
+  quotationId      Int?               @unique
+  startedAt        DateTime?
+  warrantyId       Int?               @unique
+  appointment      Appointment?       @relation(fields: [appointmentId], references: [id])
+  motorcycle       Motorcycle         @relation(fields: [motorcycleId], references: [id])
+  quotation        Quotation?         @relation(fields: [quotationId], references: [id])
+  reception        User?              @relation("ReceptionJobs", fields: [receptionId], references: [id])
+  technician       User?              @relation("TechnicianJobs", fields: [technicianId], references: [id])
+  warranty         Warranty?          @relation(fields: [warrantyId], references: [id])
+  checklistItems   JobChecklistItem[]
+  laborTimes       LaborTime[]
+  outsources       Outsource[]
+  partRequisitions PartRequisition[]
+  payment          Payment?
+}
+
+model Appointment {
+  id            Int               @id @default(autoincrement())
+  appointmentNo String            @unique
+  motorcycleId  Int
+  scheduledDate DateTime
+  scheduledTime String
+  status        AppointmentStatus @default(SCHEDULED)
+  notes         String?
+  scheduledById Int
+  jobId         Int?              @unique
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  motorcycle    Motorcycle        @relation(fields: [motorcycleId], references: [id])
+  scheduledBy   User              @relation(fields: [scheduledById], references: [id])
+  job           Job?
+}
+
+model JobChecklistItem {
+  id        Int      @id @default(autoincrement())
+  jobId     Int
+  itemName  String
+  condition String
+  notes     String?
+  createdAt DateTime @default(now())
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+}
+
+model LaborTime {
+  id              Int            @id @default(autoincrement())
+  jobId           Int
+  technicianId    Int
+  taskDescription String
+  standardMinutes Int?
+  actualMinutes   Int
+  hourlyRate      Decimal        @db.Decimal(10, 2)
+  laborCost       Decimal        @db.Decimal(10, 2)
+  startedAt       DateTime?
+  pausedAt        DateTime?
+  resumedAt       DateTime?
+  finishedAt      DateTime?
+  status          LaborTimeStatus @default(IN_PROGRESS)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  job             Job            @relation(fields: [jobId], references: [id])
+  technician      User           @relation(fields: [technicianId], references: [id])
+}
+
+model LostSale {
+  id           Int      @id @default(autoincrement())
+  partId       Int
+  quantity     Int
+  unitPrice    Decimal  @db.Decimal(10, 2)
+  totalValue   Decimal  @db.Decimal(10, 2)
+  customerInfo String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  part         Part     @relation(fields: [partId], references: [id])
+}
+
+model Outsource {
+  id              Int       @id @default(autoincrement())
+  jobId           Int
+  vendorName      String
+  workDescription String
+  cost            Decimal   @db.Decimal(10, 2)
+  sellingPrice    Decimal   @db.Decimal(10, 2)
+  estimatedDays   Int?
+  completedAt     DateTime?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  job             Job       @relation(fields: [jobId], references: [id])
+}
+
+model Part {
+  id                  Int                   @id @default(autoincrement())
+  partNo              String                @unique
+  name                String
+  description         String?
+  brand               String?
+  category            String?
+  unit                String                @default("ชิ้น")
+  unitPrice           Decimal               @db.Decimal(10, 2)
+  stockQuantity       Int                   @default(0)
+  reorderPoint        Int                   @default(0)
+  reorderQuantity     Int                   @default(0)
+  isActive            Boolean               @default(true)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  lostSales           LostSale[]
+  partPackageItems    PartPackageItem[]
+  partRequisitionItems PartRequisitionItem[]
+  quotationItems      QuotationItem[]
+  stockMovements      StockMovement[]
+}
+
+model PartPackage {
+  id                  Int                   @id @default(autoincrement())
+  packageNo           String                @unique
+  name                String
+  description         String?
+  sellingPrice        Decimal               @db.Decimal(10, 2)
+  isActive            Boolean               @default(true)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  items               PartPackageItem[]
+  requisitionItems    PartRequisitionItem[]
+  quotationItems      QuotationItem[]
+}
+
+model PartPackageItem {
+  id          Int         @id @default(autoincrement())
+  packageId   Int
+  partId      Int
+  quantity    Int         @default(1)
+  createdAt   DateTime    @default(now())
+  package     PartPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  part        Part        @relation(fields: [partId], references: [id])
+}
+
+model PartRequisition {
+  id                  Int                   @id @default(autoincrement())
+  reqNo               String                @unique
+  jobId               Int?
+  requestedById       Int
+  status              PartRequisitionStatus @default(PENDING)
+  notes               String?
+  approvedAt          DateTime?
+  issuedAt            DateTime?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  job                 Job?                  @relation(fields: [jobId], references: [id])
+  requestedBy         User                  @relation(fields: [requestedById], references: [id])
+  items               PartRequisitionItem[]
+}
+
+model PartRequisitionItem {
+  id                Int             @id @default(autoincrement())
+  requisitionId     Int
+  partId            Int?
+  packageId         Int?
+  quantity          Int
+  requestedQuantity Int
+  issuedQuantity    Int             @default(0)
+  notes             String?
+  createdAt         DateTime        @default(now())
+  package           PartPackage?    @relation(fields: [packageId], references: [id])
+  part              Part?           @relation(fields: [partId], references: [id])
+  requisition       PartRequisition @relation(fields: [requisitionId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id            Int           @id @default(autoincrement())
+  paymentNo     String        @unique
+  jobId         Int           @unique
+  customerId    Int
+  subtotal      Decimal       @db.Decimal(10, 2)
+  discount      Decimal       @default(0) @db.Decimal(10, 2)
+  pointsUsed    Int           @default(0)
+  pointsEarned  Int           @default(0)
+  vat           Decimal       @default(0) @db.Decimal(10, 2)
+  totalAmount   Decimal       @db.Decimal(10, 2)
+  paymentMethod PaymentMethod
+  paymentStatus PaymentStatus @default(PENDING)
+  paidAt        DateTime?
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  customer      Customer      @relation(fields: [customerId], references: [id])
+  job           Job           @relation(fields: [jobId], references: [id])
+}
+
+model Quotation {
+  id            Int             @id @default(autoincrement())
+  quotationNo   String          @unique
+  customerId    Int
+  motorcycleId  Int
+  status        QuotationStatus @default(DRAFT)
+  totalAmount   Decimal         @default(0) @db.Decimal(10, 2)
+  validUntil    DateTime?
+  notes         String?
+  createdById   Int
+  jobId         Int?            @unique
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  job           Job?
+  createdBy     User            @relation(fields: [createdById], references: [id])
+  customer      Customer        @relation(fields: [customerId], references: [id])
+  motorcycle    Motorcycle      @relation(fields: [motorcycleId], references: [id])
+  items         QuotationItem[]
+}
+
+model QuotationItem {
+  id          Int          @id @default(autoincrement())
+  quotationId Int
+  itemType    String
+  itemName    String
+  quantity    Int          @default(1)
+  unitPrice   Decimal      @db.Decimal(10, 2)
+  totalPrice  Decimal      @db.Decimal(10, 2)
+  partId      Int?
+  packageId   Int?
+  createdAt   DateTime     @default(now())
+  package     PartPackage? @relation(fields: [packageId], references: [id])
+  part        Part?        @relation(fields: [partId], references: [id])
+  quotation   Quotation    @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+}
+
+model ServiceReminder {
+  id                 Int        @id @default(autoincrement())
+  customerId         Int
+  motorcycleId       Int
+  reminderType       String
+  dueMileage         Int?
+  dueDate            DateTime?
+  intervalMiles      Int?
+  intervalDays       Int?
+  lastServiceMileage Int?
+  lastServiceDate    DateTime?
+  isActive           Boolean    @default(true)
+  notified           Boolean    @default(false)
+  notifiedAt         DateTime?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  customer           Customer   @relation(fields: [customerId], references: [id])
+  motorcycle         Motorcycle @relation(fields: [motorcycleId], references: [id])
+}
+
+model StockMovement {
+  id           Int               @id @default(autoincrement())
+  partId       Int
+  movementType StockMovementType
+  quantity     Int
+  unitPrice    Decimal?          @db.Decimal(10, 2)
+  reference    String?
+  notes        String?
+  createdAt    DateTime          @default(now())
+  createdById  Int?
+  part         Part              @relation(fields: [partId], references: [id])
+  createdBy    User?             @relation(fields: [createdById], references: [id])
+}
+
+model Warranty {
+  id             Int            @id @default(autoincrement())
+  warrantyNo     String         @unique
+  motorcycleId   Int
+  jobId          Int?           @unique
+  startDate      DateTime
+  endDate        DateTime
+  mileageLimit   Int?
+  currentMileage Int            @default(0)
+  status         WarrantyStatus @default(VALID)
+  description    String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  job            Job?
+  motorcycle     Motorcycle     @relation(fields: [motorcycleId], references: [id])
+}
+
+enum Role {
+  CUSTOMER
+  SERVICE_ADVISOR
+  TECHNICIAN
+  FOREMAN
+  STOCK_KEEPER
+  CASHIER
+  MANAGER
+  ADMIN
+}
+
+enum JobStatus {
+  PENDING
+  IN_PROGRESS
+  WAITING_PARTS
+  COMPLETED
+  PAID
+  CANCELLED
+}
+
+enum JobType {
+  NORMAL
+  FAST_TRACK
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum PartRequisitionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  ISSUED
+}
+
+enum PaymentMethod {
+  CASH
+  CREDIT_CARD
+  DEBIT_CARD
+  TRANSFER
+  POINTS
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  PARTIAL
+  REFUNDED
+}
+
+enum QuotationStatus {
+  DRAFT
+  SENT
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum StockMovementType {
+  IN
+  OUT
+  ADJUSTMENT
+  RETURN
+}
+
+enum LaborTimeStatus {
+  IN_PROGRESS
+  PAUSED
+  FINISHED
+}
+
+enum WarrantyStatus {
+  VALID
+  EXPIRED
+  VOID
 }
