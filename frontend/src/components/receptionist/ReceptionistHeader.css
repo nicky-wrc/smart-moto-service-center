@@ -1,0 +1,71 @@
+/* Header */
+.receptionist-header {
+  background: #1e3a8a;
+  border-bottom: none;
+  padding: 30px 0;
+  box-shadow: 0 4px 20px rgba(30, 58, 138, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.logo-text-container {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.logo-section h1 {
+  margin: 0;
+  font-size: 1.8em;
+  color: white;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.logo-section .subtitle {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.95em;
+  font-weight: 400;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.header-progress {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 10px;
+}
+
+@media (max-width: 768px) {
+  .receptionist-header {
+    padding: 20px 0;
+  }
+
+  .logo-section h1 {
+    font-size: 1.4em;
+  }
+
+  .logo-section .subtitle {
+    font-size: 0.85em;
+  }
+}

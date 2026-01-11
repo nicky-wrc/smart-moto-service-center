@@ -1,0 +1,29 @@
+.receptionist-page {
+  min-height: 100vh;
+  background: #f0f4f8;
+  display: flex;
+  flex-direction: column;
+}
+
+.receptionist-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Main Content */
+.receptionist-main {
+  flex: 1;
+  max-width: 900px;
+  margin: 40px auto;
+  width: 100%;
+  padding: 0 20px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .receptionist-main {
+    margin: 20px auto;
+  }
+}
+
