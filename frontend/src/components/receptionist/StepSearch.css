@@ -173,7 +173,7 @@
 
 .select-btn {
   padding: 8px 16px;
-  background: #4caf50;
+  background: #16a34a;
   color: white;
   border: none;
   border-radius: 6px;
@@ -185,9 +185,9 @@
 }
 
 .select-btn:hover {
-  background: #45a049;
+  background: #15803d;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.4);
 }
 
 .no-results {

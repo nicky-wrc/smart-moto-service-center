@@ -54,7 +54,11 @@ export default function StepConfirm({ customer, onConfirm, onBack }: Props) {
 
         {submitStatus === 'success' ? (
           <div className="success-message">
-            <div className="success-icon">✓</div>
+            <div className="success-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
             <h3>สำเร็จ!</h3>
             <p>ข้อมูลลูกค้าได้ถูกส่งไปยังหัวหน้าช่างแล้ว</p>
           </div>

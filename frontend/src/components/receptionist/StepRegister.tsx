@@ -155,12 +155,47 @@ export default function StepRegister({ onCustomerCreated, onBack }: Props) {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
+
+    // เฉพาะบรรทัดบน: อนุญาตเฉพาะพยัญชนะไทย (ไม่รับสระ/วรรณยุกต์/ตัวเลข/อังกฤษ)
+    if (name === 'licensePlateTop') {
+      // พยัญชนะไทย: ก-ฮ (U+0E01-U+0E2E) และ ฆ (U+0E08), ฅ (U+0E09), ฃ (U+0E02) รวมถึง ฎ ฏ ฐ ฑ ฒ ณ ด ต ถ ท ธ น บ ป ผ ฝ พ ฟ ภ ม ย ร ล ว ศ ษ ส ห ฬ อ ฮ
+      // ไม่รับสระ/วรรณยุกต์ (U+0E30-U+0E4E)
+      // [ก-ฮ] = [\u0E01-\u0E2E]
+      const onlyThaiConsonants = value.replace(/[^ก-ฮ]/g, '')
+      setFormData(prev => ({
+        ...prev,
+        [name]: onlyThaiConsonants,
+      }))
+      if (errors[name]) {
+        setErrors(prev => ({
+          ...prev,
+          [name]: '',
+        }))
+      }
+      return
+    }
+
+    // เฉพาะบรรทัดล่าง: อนุญาตเฉพาะตัวเลข
+    if (name === 'licensePlateBottom') {
+      const onlyNum = value.replace(/[^0-9]/g, '')
+      setFormData(prev => ({
+        ...prev,
+        [name]: onlyNum,
+      }))
+      if (errors[name]) {
+        setErrors(prev => ({
+          ...prev,
+          [name]: '',
+        }))
+      }
+      return
+    }
+
     setFormData(prev => ({
       ...prev,
       [name]: value,
     }))
 
-    // ลบข้อผิดพลาดเมื่อผู้ใช้แก้ไข
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -282,7 +317,7 @@ export default function StepRegister({ onCustomerCreated, onBack }: Props) {
             
             {/* จังหวัด Dropdown */}
             <div className="license-province-wrapper">
-              <label className="license-input-label">บรรทัดบน</label>
+              <label className="license-input-label">จังหวัด</label>
               <input
                 type="text"
                 name="licenseProvince"
