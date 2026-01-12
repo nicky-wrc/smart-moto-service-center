@@ -49,7 +49,7 @@ export default function ReceptionistHeader({ onOpenHistory, onLogout: onLogoutPr
               <p className="subtitle">ระบบต้อนรับลูกค้า</p>
             </div>
           </div>
-          <ProfileDropdown user={user} onLogout={handleLogout} />
+          <ProfileDropdown user={user} onLogout={handleLogout} onViewHistory={handleViewHistory} />
         </div>
       </div>
     </header>

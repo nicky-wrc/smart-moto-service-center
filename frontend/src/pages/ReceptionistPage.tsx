@@ -51,7 +51,7 @@ export default function ReceptionistPage({ onOpenHistory, onLogout }: Props) {
     <div className="receptionist-page">
       <div className="receptionist-container">
         {/* Header */}
-        <ReceptionistHeader currentStep={step} />
+        <ReceptionistHeader onOpenHistory={onOpenHistory} onLogout={onLogout} />
 
         {/* Main Content */}
         <main className="receptionist-main">
