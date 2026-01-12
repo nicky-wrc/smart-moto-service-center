@@ -17,6 +17,7 @@ interface FilterOptions {
   recordType: 'all' | 'new-customer' | 'customer-search' | 'sent-to-tech-lead'
   dateRange: 'all' | 'today' | 'week' | 'month'
   motorcycleModel: string
+  selectedMonth?: Date
 }
 
 interface Props {
@@ -89,7 +90,14 @@ export default function HistoryPage({ onBack, onOpenHistory, onLogout }: Props) 
     recordType: 'all',
     dateRange: 'all',
     motorcycleModel: '',
+    selectedMonth: new Date(currentTime.getFullYear(), currentTime.getMonth(), 1),
   })
+
+  // Filter visibility state
+  const [isFilterVisible, setIsFilterVisible] = useState(false)
+
+  // Calendar state
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false)
 
   // Detail modal state
   const [selectedRecord, setSelectedRecord] = useState<HistoryRecord | null>(null)
@@ -187,6 +195,34 @@ export default function HistoryPage({ onBack, onOpenHistory, onLogout }: Props) 
     return date >= startOfMonth && date <= now
   }
 
+  // Check if date is in selected month
+  const isInSelectedMonth = (date: Date, selectedMonth: Date) => {
+    return date.getFullYear() === selectedMonth.getFullYear() && date.getMonth() === selectedMonth.getMonth()
+  }
+
+  // Get available months (current + past 12 months)
+  const getAvailableMonths = () => {
+    const months = []
+    const now = new Date()
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
+    
+    for (let i = 0; i < 12; i++) {
+      const month = new Date(firstDay.getFullYear(), firstDay.getMonth() - i, 1)
+      months.push(month)
+    }
+    return months
+  }
+
+  // Format month for display
+  const formatMonthDisplay = (date: Date) => {
+    const monthNames = [
+      'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+      'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+    ]
+    const year = date.getFullYear() + 543 // Buddhist calendar
+    return `${monthNames[date.getMonth()]} ${year}`
+  }
+
   // Filter records based on active filters
   const filteredRecords = useMemo(() => {
     return records.filter((record) => {
@@ -223,6 +259,11 @@ export default function HistoryPage({ onBack, onOpenHistory, onLogout }: Props) 
         return false
       }
 
+      // Month filter (if selectedMonth is set)
+      if (filters.selectedMonth && !isInSelectedMonth(record.timestamp, filters.selectedMonth)) {
+        return false
+      }
+
       return true
     })
   }, [records, filters])
@@ -237,6 +278,7 @@ export default function HistoryPage({ onBack, onOpenHistory, onLogout }: Props) 
       recordType: 'all',
       dateRange: 'all',
       motorcycleModel: '',
+      selectedMonth: new Date(currentTime.getFullYear(), currentTime.getMonth(), 1),
     })
   }
 
@@ -252,6 +294,7 @@ export default function HistoryPage({ onBack, onOpenHistory, onLogout }: Props) 
           <div className="history-title-section">
             <button className="back-button" onClick={handleBack}>
               <svg
+                xmlns="http://www.w3.org/2000/svg"
                 width="20"
                 height="20"
                 viewBox="0 0 24 24"
@@ -261,34 +304,56 @@ export default function HistoryPage({ onBack, onOpenHistory, onLogout }: Props) 
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
-                <line x1="19" y1="12" x2="5" y2="12" />
-                <polyline points="12 19 5 12 12 5" />
+                <path d="m15 18-6-6 6-6" />
               </svg>
-              ย้อนกลับ
             </button>
             <h1 className="page-title">ประวัติการทำงาน</h1>
+            <button className="filter-toggle-button" onClick={() => setIsFilterVisible(!isFilterVisible)}>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+              </svg>
+              {isFilterVisible ? 'ซ่อนตัวกรอง' : 'แสดงตัวกรอง'}
+            </button>
+          </div>
+
+          {/* Search Bar (Outside Filter) */}
+          <div className="search-bar-container">
+            <div className="search-input-wrapper">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="m21 21-4.34-4.34" />
+                <circle cx="11" cy="11" r="8" />
+              </svg>
+              <input
+                type="text"
+                placeholder="ชื่อลูกค้า, เบอร์โทร, ป้ายทะเบียน"
+                value={filters.searchText}
+                onChange={(e) => setFilters({ ...filters, searchText: e.target.value })}
+                className="search-input"
+              />
+            </div>
           </div>
 
           {/* Filter Section */}
-          <div className="filter-section">
-            {/* Search Input */}
-            <div className="filter-group search-group">
-              <label className="filter-label">ค้นหา</label>
-              <div className="search-input-wrapper">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="m21 21-4.35-4.35" />
-                </svg>
-                <input
-                  type="text"
-                  placeholder="ชื่อลูกค้า, เบอร์โทร, ป้ายทะเบียน"
-                  value={filters.searchText}
-                  onChange={(e) => setFilters({ ...filters, searchText: e.target.value })}
-                  className="search-input"
-                />
-              </div>
-            </div>
-
+          <div className={`filter-section ${isFilterVisible ? 'visible' : 'hidden'}`}>
             {/* Date Range Filter */}
             <div className="filter-group">
               <label className="filter-label">ช่วงเวลา</label>
@@ -311,13 +376,40 @@ export default function HistoryPage({ onBack, onOpenHistory, onLogout }: Props) 
                 >
                   สัปดาห์นี้
                 </button>
-                <button
-                  className={`filter-btn ${filters.dateRange === 'month' ? 'active' : ''}`}
-                  onClick={() => setFilters({ ...filters, dateRange: 'month' })}
-                >
-                  เดือนนี้
-                </button>
               </div>
+            </div>
+
+            {/* Month Picker */}
+            <div className="filter-group">
+              <label className="filter-label">เลือกเดือน</label>
+              <button 
+                className="month-picker-button"
+                onClick={() => setIsCalendarOpen(!isCalendarOpen)}
+              >
+                {filters.selectedMonth ? formatMonthDisplay(filters.selectedMonth) : 'เลือกเดือน'}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+              
+              {isCalendarOpen && (
+                <div className="month-picker-calendar">
+                  {getAvailableMonths().map((month) => (
+                    <button
+                      key={month.toISOString()}
+                      className={`month-picker-item ${
+                        filters.selectedMonth && isInSelectedMonth(month, filters.selectedMonth) ? 'selected' : ''
+                      }`}
+                      onClick={() => {
+                        setFilters({ ...filters, selectedMonth: month })
+                        setIsCalendarOpen(false)
+                      }}
+                    >
+                      {formatMonthDisplay(month)}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Record Type Filter */}
@@ -415,18 +507,17 @@ export default function HistoryPage({ onBack, onOpenHistory, onLogout }: Props) 
                       {record.customer.phone}
                     </p>
                     <p className="customer-bike">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="18" cy="18" r="3" />
-                        <circle cx="6" cy="18" r="3" />
-                        <path d="M6 9h12M9 9v6M15 9v6M6 18h12" />
-                      </svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-motorbike-icon lucide-motorbike"><path d="m18 14-1-3"/><path d="m3 9 6 2a2 2 0 0 1 2-2h2a2 2 0 0 1 1.99 1.81"/><path d="M8 17h3a1 1 0 0 0 1-1 6 6 0 0 1 6-6 1 1 0 0 0 1-1v-.75A5 5 0 0 0 17 5"/><circle cx="19" cy="17" r="3"/><circle cx="5" cy="17" r="3"/></svg>
                       {record.customer.motorcycleModel} ({record.customer.licensePlate})
                     </p>
                     {record.details && <p className="record-details">{record.details}</p>}
                   </div>
 
                   <div className="history-item-right">
-                    <span className="time-badge">{formatDate(record.timestamp)}</span>
+                    <div className="time-info">
+                      <p className="time-label">ทำรายการเมื่อ</p>
+                      <p className="time-value">{formatDate(record.timestamp)}</p>
+                    </div>
                     <button
                       className="detail-button"
                       onClick={() => {
