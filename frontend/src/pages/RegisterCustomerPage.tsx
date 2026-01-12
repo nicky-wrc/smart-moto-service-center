@@ -4,6 +4,8 @@ import type { ICustomer } from '../types'
 import ProgressIndicator from '../components/common/ProgressIndicator'
 import ReceptionistHeader from '../components/common/ReceptionistHeader'
 import ReceptionistFooter from '../components/common/ReceptionistFooter'
+import LicensePlateInput from '../components/common/LicensePlateInput'
+import MotorcycleModelSelect from '../components/common/MotorcycleModelSelect'
 import './RegisterCustomerPage.css'
 
 interface Props {
@@ -14,9 +16,10 @@ interface Props {
 }
 
 interface FormData {
-  name: string
+  firstName: string
+  lastName: string
   phone: string
-  motorcycleModel: string
+  motorcycleModelId: string
   licenseProvince: string
   licensePlateTop: string
   licensePlateBottom: string
@@ -31,81 +34,104 @@ const COLORS = ['ดำ', 'ขาว', 'แดง', 'น้ำเงิน', '�
 
 const PROVINCES = [
   'กรุงเทพมหานคร',
-  'ปทุมธานี',
-  'นนทบุรี',
-  'สมุทรปราการ',
-  'สมุทรสาคร',
-  'อยุธยา',
-  'ปราจีนบุรี',
-  'ระยอง',
+  'กำแพงเพชร',
+  'ขอนแก่น',
+  'จันทบุรี',
   'ฉะเชิงเทรา',
   'ชลบุรี',
-  'สตูล',
-  'ภูเก็ต',
-  'ตรัง',
-  'พัทลุง',
-  'สองพี่น้อง',
-  'เพชรบุรี',
-  'ประจวบคีรีขันธ์',
-  'ชุมพร',
-  'ระนอง',
-  'นครศรีธรรมราช',
-  'สุราษฎร์ธานี',
-  'พังงา',
-  'กระบี่',
-  'ลำพูน',
-  'แพร่',
-  'น่าน',
-  'พะเยา',
-  'เชียงใหม่',
-  'เชียงราย',
-  'ลำพูน',
-  'ลำชาง',
-  'อุตรดิตถ์',
-  'ตาก',
-  'สุโขทัย',
-  'ที่สุโขทัย',
-  'พิษณุโลก',
-  'เพชรบูรณ์',
-  'นครสวรรค์',
-  'อุทัยธานี',
-  'ลพบุรี',
-  'สระบุรี',
-  'นครราชสีมา',
-  'บุรีรัมย์',
-  'สุรินทร์',
-  'ศรีสะเกษ',
-  'มุกดาหาร',
-  'ยโสธร',
-  'กาฬสินธุ์',
-  'ขอนแก่น',
-  'อำนาจเจริญ',
-  'ร้อยเอ็ด',
-  'มหาสารคาม',
-  'เลย',
-  'นครพนม',
-  'ค่ายคำ',
-  'มุกดาหาร',
-  'อุบลราชธานี',
-  'กุมภวาปี',
+  'ชัยนาท',
   'ชัยภูมิ',
-  'หนองคาย',
+  'ชุมพร',
+  'เชียงราย',
+  'เชียงใหม่',
+  'ตรัง',
+  'ตราด',
+  'ตาก',
+  'นครนายก',
+  'นครปฐม',
   'นครพนม',
-  'สุรินทร์',
-  'ชัยบาดาล',
-  'อุดรธานี',
-  'เลย',
+  'นครราชสีมา',
+  'นครศรีธรรมราช',
   'นครสวรรค์',
+  'นนทบุรี',
+  'นพพลัส',
+  'นราธิวาส',
+  'น่าน',
+  'บึงกาฬ',
+  'บุรีรัมย์',
+  'ปทุมธานี',
+  'ปราจีนบุรี',
+  'ปัตตานี',
+  'พะเยา',
+  'พังงา',
   'พิจิตร',
+  'พิษณุโลก',
+  'เพชรบุรี',
   'เพชรบูรณ์',
-  'สตูล'
+  'แพร่',
+  'ภูเก็ต',
+  'มหาสารคาม',
+  'มุกดาหาร',
+  'แม่ฮ่องสอน',
+  'ยะลา',
+  'ยโสธร',
+  'ระนอง',
+  'ระยอง',
+  'ราชบุรี',
+  'ลพบุรี',
+  'ลำปาง',
+  'ลำพูน',
+  'เลย',
+  'ศรีสะเกษ',
+  'สกลนคร',
+  'สงขลา',
+  'สตูล',
+  'สมุทรปราการ',
+  'สมุทรสาคร',
+  'สระแก้ว',
+  'สระบุรี',
+  'สระหวาย',
+  'สิงห์บุรี',
+  'สุโขทัย',
+  'สุพรรณบุรี',
+  'สุราษฎร์ธานี',
+  'สุรินทร์',
+  'หนองคาย',
+  'หนองบัวลำภู',
+  'อ่างทอง',
+  'อำนาจเจริญ',
+  'อุดรธานี',
+  'อุตรดิตถ์',
+  'อุทัยธานี',
+  'อุบลราชธานี',
+  'กำแพงเพชร',
+  'กาญจนบุรี',
+  'ประจวบคีรีขันธ์',
+  'พิจิตร'
+]
+
+const MOTORCYCLE_MODELS = [
+  { id: '1', name: 'Honda CB150R', year: 2023, color: 'ดำ' },
+  { id: '2', name: 'Honda CB150R', year: 2023, color: 'เงิน' },
+  { id: '3', name: 'Honda CB150R', year: 2023, color: 'แดง' },
+  { id: '4', name: 'Yamaha YZF-R15', year: 2023, color: 'น้ำเงิน' },
+  { id: '5', name: 'Yamaha YZF-R15', year: 2023, color: 'ดำ' },
+  { id: '6', name: 'Kawasaki Ninja 400', year: 2022, color: 'เขียว' },
+  { id: '7', name: 'Kawasaki Ninja 400', year: 2022, color: 'ดำ' },
+  { id: '8', name: 'Suzuki GSX-R150', year: 2023, color: 'แดง' },
+  { id: '9', name: 'Suzuki GSX-R150', year: 2023, color: 'ดำ' },
+  { id: '10', name: 'Bajaj Pulsar NS200', year: 2022, color: 'เหลือง' },
+  { id: '11', name: 'Bajaj Pulsar NS200', year: 2022, color: 'ดำ' },
+  { id: '12', name: 'KTM 390 Duke', year: 2023, color: 'ส้ม' },
+  { id: '13', name: 'KTM 390 Duke', year: 2023, color: 'ดำ' },
 ]
 
 export default function RegisterCustomerPage({ onCustomerCreated, onBack, onOpenHistory, onLogout }: Props) {
   const [formData, setFormData] = useState<FormData>({
-    name: '',
+    firstName: '',
+    lastName: '',
     phone: '',
-    motorcycleModel: '',
+    motorcycleModelId: '',
     licenseProvince: '',
     licensePlateTop: '',
     licensePlateBottom: '',
@@ -118,10 +144,16 @@ export default function RegisterCustomerPage({ onCustomerCreated, onBack, onOpen
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {}
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'กรุณากรอกชื่อลูกค้า'
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'ชื่อต้องมีอย่างน้อย 2 ตัวอักษร'
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'กรุณากรอกชื่อ'
+    } else if (formData.firstName.trim().length < 2) {
+      newErrors.firstName = 'ชื่อต้องมีอย่างน้อย 2 ตัวอักษร'
+    }
+
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'กรุณากรอกนามสกุล'
+    } else if (formData.lastName.trim().length < 2) {
+      newErrors.lastName = 'นามสกุลต้องมีอย่างน้อย 2 ตัวอักษร'
     }
 
     if (!formData.phone.trim()) {
@@ -133,20 +165,55 @@ export default function RegisterCustomerPage({ onCustomerCreated, onBack, onOpen
       }
     }
 
-    if (!formData.motorcycleModel.trim()) {
-      newErrors.motorcycleModel = 'กรุณากรอกรุ่นรถ'
-    } else if (formData.motorcycleModel.trim().length < 2) {
-      newErrors.motorcycleModel = 'รุ่นรถต้องมีอย่างน้อย 2 ตัวอักษร'
+    if (!formData.motorcycleModelId.trim()) {
+      newErrors.motorcycleModelId = 'กรุณาเลือกรุ่นรถ'
     }
 
     if (!formData.licenseProvince.trim()) {
       newErrors.licenseProvince = 'กรุณาเลือกจังหวัด'
+    } else if (!PROVINCES.includes(formData.licenseProvince.trim())) {
+      newErrors.licenseProvince = 'กรุณาเลือกจังหวัดจากรายการเท่านั้น'
     }
 
     if (!formData.licensePlateTop.trim() || !formData.licensePlateBottom.trim()) {
       newErrors.licensePlate = 'กรุณากรอกป้ายทะเบียนทั้งสองบรรทัด'
-    } else if (formData.licensePlateTop.trim().length < 2 || formData.licensePlateBottom.trim().length < 1) {
-      newErrors.licensePlate = 'ป้ายทะเบียนไม่ถูกต้อง'
+    } else {
+      // Validate license plate top
+      const topValue = formData.licensePlateTop.trim()
+      const topHasNumbers = /[0-9]/.test(topValue)
+      const topHasThaiChars = /[ก-ฮ]/.test(topValue)
+      
+      if (topHasNumbers && topHasThaiChars) {
+        // Has both numbers and Thai - must be exactly 1 digit + 2 Thai characters
+        const numberMatch = topValue.match(/^[0-9]+/)
+        const thaiChars = topValue.replace(/[^ก-ฮ]/g, '')
+        
+        if (!numberMatch) {
+          newErrors.licensePlate = 'ป้ายทะเบียนบรรทัดบน : ตัวเลขต้องอยู่หน้าสุด'
+        } else if (thaiChars.length !== 2) {
+          newErrors.licensePlate = 'ป้ายทะเบียนบรรทัดบน : เมื่อมีตัวเลขต้องตามท้ายด้วยตัวอักษร 2 ตัวเท่านั้น'
+        }
+      } else if (topHasNumbers) {
+        // Only numbers - not allowed
+        newErrors.licensePlate = 'ป้ายทะเบียนบรรทัดบน : ไม่สามารถกรอกเฉพาะตัวเลขได้'
+      } else if (topHasThaiChars) {
+        // Only Thai - limit to 3
+        if (topValue.length > 3) {
+          newErrors.licensePlate = 'ป้ายทะเบียนบรรทัดบน : ป้ายหมวดเก่าต้องประกอบไปด้วยตัวอักษรไทย 3 ตัว'
+        }
+      }
+
+      // Validate license plate bottom
+      const bottomValue = formData.licensePlateBottom.trim()
+      if (bottomValue.length < 1 || bottomValue.length > 4) {
+        newErrors.licensePlate = 'ป้ายทะเบียนบรรทัดล่าง : กรุณากรอกเลข 1-4 หลัก'
+      } else if (/^0+$/.test(bottomValue)) {
+        // Check if it's all zeros (0, 00, 000, 0000)
+        newErrors.licensePlate = 'ป้ายทะเบียนบรรทัดล่าง : ไม่สามารถเป็นเลข 0 ทั้งหมด'
+      } else if (/^0/.test(bottomValue)) {
+        // Check if it starts with 0 (01, 001, 0001, etc.)
+        newErrors.licensePlate = 'ป้ายทะเบียนบรรทัดล่า : ตัวเลข 2-4 หลัก ไม่สามารถขึ้นต้นด้วย 0 ทั้งหมดได้'
+      }
     }
 
     if (!formData.color.trim()) {
@@ -161,10 +228,63 @@ export default function RegisterCustomerPage({ onCustomerCreated, onBack, onOpen
     const { name, value } = e.target
 
     if (name === 'licensePlateTop') {
-      const onlyThaiConsonants = value.replace(/[^ก-ฮ]/g, '')
+      const currentValue = formData.licensePlateTop
+      let processedValue = value.replace(/[^0-9ก-ฮ]/g, '') // Allow numbers and Thai chars
+      
+      // Check if user is deleting (value is shorter than current)
+      if (processedValue.length < currentValue.length) {
+        // Allow deletion - just accept the shorter value
+        setFormData(prev => ({
+          ...prev,
+          [name]: processedValue,
+        }))
+        if (errors[name]) {
+          setErrors(prev => ({
+            ...prev,
+            [name]: '',
+          }))
+        }
+        return
+      }
+
+      // User is adding characters (value is longer)
+      const currentHasNumbers = /[0-9]/.test(processedValue)
+      const currentHasThaiChars = /[ก-ฮ]/.test(processedValue)
+      
+      // If the new input has both numbers and Thai
+      if (currentHasNumbers && currentHasThaiChars) {
+        // Extract number(s) and Thai characters
+        const numberMatch = processedValue.match(/^[0-9]+/)
+        const thaiChars = processedValue.replace(/[^ก-ฮ]/g, '')
+        
+        if (numberMatch) {
+          // Numbers at start + Thai - must have exactly 2 Thai characters
+          const firstDigit = numberMatch[0].charAt(0)
+          // Limit to exactly 2 Thai characters
+          const exactlyTwoThaiChars = thaiChars.slice(0, 2)
+          
+          // Only allow if it has exactly 2 Thai characters
+          if (exactlyTwoThaiChars.length === 2) {
+            processedValue = firstDigit + exactlyTwoThaiChars
+          } else {
+            // Not enough Thai characters yet, keep what we have but don't add more if incomplete
+            processedValue = firstDigit + exactlyTwoThaiChars
+          }
+        } else {
+          // Numbers not at start - keep Thai only
+          processedValue = thaiChars.slice(0, 3)
+        }
+      } else if (currentHasNumbers) {
+        // Only numbers - keep only first digit
+        processedValue = processedValue.replace(/[^0-9]/g, '').charAt(0)
+      } else if (currentHasThaiChars) {
+        // Only Thai characters - limit to 3
+        processedValue = processedValue.slice(0, 3)
+      }
+
       setFormData(prev => ({
         ...prev,
-        [name]: onlyThaiConsonants,
+        [name]: processedValue,
       }))
       if (errors[name]) {
         setErrors(prev => ({
@@ -177,9 +297,12 @@ export default function RegisterCustomerPage({ onCustomerCreated, onBack, onOpen
 
     if (name === 'licensePlateBottom') {
       const onlyNum = value.replace(/[^0-9]/g, '')
+      // Limit to 4 digits
+      const limitedNum = onlyNum.slice(0, 4)
+      
       setFormData(prev => ({
         ...prev,
-        [name]: onlyNum,
+        [name]: limitedNum,
       }))
       if (errors[name]) {
         setErrors(prev => ({
@@ -212,10 +335,15 @@ export default function RegisterCustomerPage({ onCustomerCreated, onBack, onOpen
 
     setIsSubmitting(true)
     try {
+      const selectedModel = MOTORCYCLE_MODELS.find(m => m.id === formData.motorcycleModelId)
       const fullLicensePlate = `${formData.licenseProvince} ${formData.licensePlateTop} ${formData.licensePlateBottom}`.trim()
+      const fullName = `${formData.firstName} ${formData.lastName}`.trim()
       const newCustomer = await createCustomer({
-        ...formData,
-        licensePlate: fullLicensePlate
+        name: fullName,
+        phone: formData.phone,
+        motorcycleModel: selectedModel?.name || '',
+        licensePlate: fullLicensePlate,
+        color: selectedModel?.color || formData.color
       })
       onCustomerCreated(newCustomer)
     } catch (error) {
@@ -242,146 +370,116 @@ export default function RegisterCustomerPage({ onCustomerCreated, onBack, onOpen
               </div>
 
               <form onSubmit={handleSubmit} className="register-form">
-                <div className="form-group">
-                  <label htmlFor="name">
-                    ชื่อลูกค้า <span className="required">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    placeholder="เช่น สมชาย ใจดี"
-                    className={`form-input ${errors.name ? 'error' : ''}`}
-                    disabled={isSubmitting}
-                  />
-                  {errors.name && <span className="error-message">{errors.name}</span>}
-                </div>
+                {/* Customer Information Section */}
+                <div className="form-section">
+                  <h3 className="form-section-title">ข้อมูลลูกค้า</h3>
+                  
+                  {/* Name Fields (First Name and Last Name in same row) */}
+                  <div className="form-row-two-columns">
+                    <div className="form-group">
+                      <label htmlFor="firstName">
+                        ชื่อ <span className="required">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="firstName"
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleChange}
+                        placeholder="เช่น สมชาย"
+                        className={`form-input ${errors.firstName ? 'error' : ''}`}
+                        disabled={isSubmitting}
+                      />
+                      {errors.firstName && <span className="error-message">{errors.firstName}</span>}
+                    </div>
 
-                <div className="form-group">
-                  <label htmlFor="phone">
-                    เบอร์โทร <span className="required">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    placeholder="0812345678"
-                    className={`form-input ${errors.phone ? 'error' : ''}`}
-                    disabled={isSubmitting}
-                  />
-                  {errors.phone && <span className="error-message">{errors.phone}</span>}
-                </div>
+                    <div className="form-group">
+                      <label htmlFor="lastName">
+                        นามสกุล <span className="required">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="lastName"
+                        name="lastName"
+                        value={formData.lastName}
+                        onChange={handleChange}
+                        placeholder="เช่น ใจดี"
+                        className={`form-input ${errors.lastName ? 'error' : ''}`}
+                        disabled={isSubmitting}
+                      />
+                      {errors.lastName && <span className="error-message">{errors.lastName}</span>}
+                    </div>
+                  </div>
 
-                <div className="form-group">
-                  <label htmlFor="motorcycleModel">
-                    รุ่นรถ <span className="required">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="motorcycleModel"
-                    name="motorcycleModel"
-                    value={formData.motorcycleModel}
-                    onChange={handleChange}
-                    placeholder="เช่น Honda CB150R"
-                    className={`form-input ${errors.motorcycleModel ? 'error' : ''}`}
-                    disabled={isSubmitting}
-                  />
-                  {errors.motorcycleModel && <span className="error-message">{errors.motorcycleModel}</span>}
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="color">
-                    สี <span className="required">*</span>
-                  </label>
-                  <select
-                    id="color"
-                    name="color"
-                    value={formData.color}
-                    onChange={handleChange}
-                    className={`form-input ${errors.color ? 'error' : ''}`}
-                    disabled={isSubmitting}
-                  >
-                    <option value="">-- เลือกสี --</option>
-                    {COLORS.map(color => (
-                      <option key={color} value={color}>
-                        {color}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.color && <span className="error-message">{errors.color}</span>}
-                </div>
-
-                <div className="form-group">
-                  <label>
-                    ป้ายทะเบียน <span className="required">*</span>
-                  </label>
-
-                  <div className="license-province-wrapper">
-                    <label className="license-input-label">จังหวัด</label>
+                  <div className="form-group">
+                    <label htmlFor="phone">
+                      เบอร์โทร <span className="required">*</span>
+                    </label>
                     <input
-                      type="text"
-                      name="licenseProvince"
-                      value={formData.licenseProvince}
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      value={formData.phone}
                       onChange={handleChange}
-                      placeholder="ค้นหาจังหวัด..."
-                      list="provinces-list"
-                      className={`form-input license-province-select ${errors.licenseProvince ? 'error' : ''}`}
+                      placeholder="0812345678"
+                      className={`form-input ${errors.phone ? 'error' : ''}`}
                       disabled={isSubmitting}
                     />
-                    <datalist id="provinces-list">
-                      {PROVINCES.map(province => (
-                        <option key={province} value={province} />
-                      ))}
-                    </datalist>
-                    {errors.licenseProvince && <span className="error-message">{errors.licenseProvince}</span>}
+                    {errors.phone && <span className="error-message">{errors.phone}</span>}
+                  </div>
+                </div>
+
+
+                {/* Motorcycle Information Section */}
+                <div className="form-section">
+                  <h3 className="form-section-title">ข้อมูลรถ</h3>
+
+                  <div className="form-group">
+                    <label htmlFor="motorcycleModelId">
+                      รุ่นรถ <span className="required">*</span>
+                    </label>
+                    <MotorcycleModelSelect
+                      value={formData.motorcycleModelId}
+                      onChange={(value) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          motorcycleModelId: value,
+                        }))
+                        if (errors.motorcycleModelId) {
+                          setErrors(prev => ({
+                            ...prev,
+                            motorcycleModelId: '',
+                          }))
+                        }
+                      }}
+                      motorcycleModels={MOTORCYCLE_MODELS}
+                      placeholder="เลือกรุ่นรถ..."
+                      error={errors.motorcycleModelId}
+                      disabled={isSubmitting}
+                    />
                   </div>
 
-                  <div className="license-plate-inputs">
-                    <div className="license-input-wrapper">
-                      <label className="license-input-label">บรรทัดบน</label>
-                      <input
-                        type="text"
-                        name="licensePlateTop"
-                        value={formData.licensePlateTop}
-                        onChange={handleChange}
-                        placeholder="เช่น กก"
-                        className={`form-input ${errors.licensePlate ? 'error' : ''}`}
-                        disabled={isSubmitting}
-                      />
-                    </div>
-                    <div className="license-input-wrapper">
-                      <label className="license-input-label">บรรทัดล่าง</label>
-                      <input
-                        type="text"
-                        name="licensePlateBottom"
-                        value={formData.licensePlateBottom}
-                        onChange={handleChange}
-                        placeholder="เช่น 1111"
-                        className={`form-input ${errors.licensePlate ? 'error' : ''}`}
-                        disabled={isSubmitting}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="license-plate-preview">
-                    <label className="preview-label">ตัวอย่าง</label>
-                    <div className="plate-display">
-                      <div className="plate-row plate-row-top">
-                        <span className="plate-text">{formData.licensePlateTop || 'กก'}</span>
-                      </div>
-                      <div className="plate-row plate-row-middle">
-                        <span className="plate-text">{formData.licenseProvince || 'จังหวัด'}</span>
-                      </div>
-                      <div className="plate-row plate-row-bottom">
-                        <span className="plate-text-bottom">{formData.licensePlateBottom || '1111'}</span>
-                      </div>
-                    </div>
-                  </div>
-                  {errors.licensePlate && <span className="error-message">{errors.licensePlate}</span>}
+                <LicensePlateInput
+                  province={formData.licenseProvince}
+                  top={formData.licensePlateTop}
+                  bottom={formData.licensePlateBottom}
+                  onProvinceChange={(value) => {
+                    const event = { target: { name: 'licenseProvince', value } } as React.ChangeEvent<HTMLInputElement>
+                    handleChange(event)
+                  }}
+                  onTopChange={(value) => {
+                    const event = { target: { name: 'licensePlateTop', value } } as React.ChangeEvent<HTMLInputElement>
+                    handleChange(event)
+                  }}
+                  onBottomChange={(value) => {
+                    const event = { target: { name: 'licensePlateBottom', value } } as React.ChangeEvent<HTMLInputElement>
+                    handleChange(event)
+                  }}
+                  provinceError={errors.licenseProvince}
+                  licensePlateError={errors.licensePlate}
+                  isSubmitting={isSubmitting}
+                  provinces={PROVINCES}
+                />
                 </div>
 
                 {errors.submit && <div className="form-error-alert">{errors.submit}</div>}

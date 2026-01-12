@@ -119,6 +119,10 @@
 
 .search-bar-container svg {
   flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
   color: #9ca3af;
   transition: color 0.3s ease;
   padding-left: 12px;
