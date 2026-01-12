@@ -1,14 +1,19 @@
 import { useState } from 'react'
 import type { ICustomer, ReceptionistStep } from '../types'
-import StepInitial from '../components/receptionist/StepInitial'
-import StepSearch from '../components/receptionist/StepSearch'
-import StepRegister from '../components/receptionist/StepRegister'
-import StepConfirm from '../components/receptionist/StepConfirm'
-import ReceptionistHeader from '../components/receptionist/ReceptionistHeader'
-import ReceptionistFooter from '../components/receptionist/ReceptionistFooter'
+import StepInitial from '../components/service-advisor/StepInitial'
+import StepSearch from '../components/service-advisor/StepSearch'
+import StepRegister from '../components/service-advisor/StepRegister'
+import StepConfirm from '../components/service-advisor/StepConfirm'
+import ReceptionistHeader from '../components/common/ReceptionistHeader'
+import ReceptionistFooter from '../components/common/ReceptionistFooter'
 import './ReceptionistPage.css'
 
-export default function ReceptionistPage() {
+interface Props {
+  onOpenHistory?: () => void
+  onLogout?: () => void
+}
+
+export default function ReceptionistPage({ onOpenHistory, onLogout }: Props) {
   const [step, setStep] = useState<ReceptionistStep>('check')
   const [selectedCustomer, setSelectedCustomer] = useState<ICustomer | null>(null)
 

@@ -1,5 +1,5 @@
 import './StepInitial.css'
-import ProgressIndicator from './ProgressIndicator'
+import ProgressIndicator from '../common/ProgressIndicator'
 
 interface Props {
   onSelectExisting: () => void

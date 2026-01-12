@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { createCustomer } from '../../services/api'
 import type { ICustomer } from '../../types'
-import ProgressIndicator from './ProgressIndicator'
+import ProgressIndicator from '../common/ProgressIndicator'
 import './StepRegister.css'
 
 interface Props {
@@ -386,10 +386,10 @@ export default function StepRegister({ onCustomerCreated, onBack }: Props) {
 
           <div className="form-actions">
             <button type="button" onClick={onBack} className="btn-back" disabled={isSubmitting}>
-              ← Back
+              ←  Back
             </button>
             <button type="submit" className="btn-submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Loading...' : '✓ Next'}
+              {isSubmitting ? 'Loading...' : '✓  Next'}
             </button>
           </div>
         </form>

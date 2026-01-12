@@ -1,3 +1,21 @@
+// This is the content of CustomerSearchForm.tsx
+import React from 'react';
+
+const CustomerSearchForm = () => {
+  return (
+    <form>
+      {/* Search form fields go here */}
+    </form>
+  );
+};
+
+export default CustomerSearchForm;
+
+// Additional code or comments can go here
+
+// This file is being moved to service-advisor
+
+// End of CustomerSearchForm.tsx
 import { useState } from 'react'
 import '../styles/CustomerSearchForm.css'
 

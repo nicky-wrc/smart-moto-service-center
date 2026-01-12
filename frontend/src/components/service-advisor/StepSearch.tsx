@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { searchCustomers } from '../../services/api'
 import type { ICustomer } from '../../types'
-import ProgressIndicator from './ProgressIndicator'
+import ProgressIndicator from '../common/ProgressIndicator'
 import './StepSearch.css'
 
 interface Props {

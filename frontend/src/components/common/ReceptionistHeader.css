@@ -5,7 +5,7 @@
   padding: 30px 0;
   box-shadow: 0 4px 20px rgba(30, 58, 138, 0.15);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .header-content {
@@ -17,7 +17,15 @@
   align-items: flex-start;
   gap: 20px;
   position: relative;
-  z-index: 1;
+  z-index: auto;
+}
+
+.header-main {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
 }
 
 .logo-section {
@@ -61,6 +69,12 @@
     padding: 20px 0;
   }
 
+  .header-main {
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+  }
+
   .logo-section h1 {
     font-size: 1.4em;
   }
@@ -69,3 +83,4 @@
     font-size: 0.85em;
   }
 }
+

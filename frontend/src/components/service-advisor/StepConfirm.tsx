@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { submitToTechLead, confirmCustomer } from '../../services/api'
 import type { ICustomer } from '../../types'
-import ProgressIndicator from './ProgressIndicator'
+import ProgressIndicator from '../common/ProgressIndicator'
 import './StepConfirm.css'
 
 interface Props {

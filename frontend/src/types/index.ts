@@ -25,3 +25,14 @@ export interface IApiResponse<T> {
   error?: string
   message?: string
 }
+
+export type UserRole = 'service-advisor' | 'tech-lead' | 'manager' | 'receptionist'
+
+export interface IUser {
+  id: string
+  name: string
+  email: string
+  role: UserRole
+  createdAt?: Date
+}
+

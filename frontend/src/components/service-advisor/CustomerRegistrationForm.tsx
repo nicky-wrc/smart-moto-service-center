@@ -1,3 +1,21 @@
+// This is the content of CustomerRegistrationForm.tsx
+import React from 'react';
+
+const CustomerRegistrationForm = () => {
+  return (
+    <form>
+      {/* Registration form fields go here */}
+    </form>
+  );
+};
+
+export default CustomerRegistrationForm;
+
+// Additional code or comments can go here
+
+// This file is being moved to service-advisor
+
+// End of CustomerRegistrationForm.tsx
 import { useState } from 'react'
 import '../styles/CustomerRegistrationForm.css'
 
