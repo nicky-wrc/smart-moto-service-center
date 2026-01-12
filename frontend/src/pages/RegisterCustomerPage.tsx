@@ -216,10 +216,6 @@ export default function RegisterCustomerPage({ onCustomerCreated, onBack, onOpen
       }
     }
 
-    if (!formData.color.trim()) {
-      newErrors.color = 'กรุณาเลือกสีรถ'
-    }
-
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }

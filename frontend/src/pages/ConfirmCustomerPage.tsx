@@ -121,7 +121,7 @@ export default function ConfirmCustomerPage({ customer, onConfirm, onBack, onOpe
                       ← Back
                     </button>
                     <button onClick={handleSubmit} className="btn-submit" disabled={isSubmitting}>
-                      {isSubmitting ? 'Sending...' : 'Submit to Supervisor'}
+                      {isSubmitting ? 'Sending...' : 'Submit to Foreman'}
                     </button>
                   </div>
                 </>
