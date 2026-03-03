@@ -20,13 +20,14 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { PaymentStatus, PaymentMethod } from '@prisma/client';
 import { CreatePaymentDto } from './dto/create-payment.dto';
+import { ProcessPaymentDto } from './dto/process-payment.dto';
 
 @ApiTags('Payments')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth('JWT-auth')
 @Controller('payments')
 export class PaymentsController {
-  constructor(private readonly paymentsService: PaymentsService) {}
+  constructor(private readonly paymentsService: PaymentsService) { }
 
   @Get('job/:jobId/calculate')
   @Roles('CASHIER', 'ADMIN', 'MANAGER')
@@ -45,8 +46,8 @@ export class PaymentsController {
   @Patch(':id/process')
   @Roles('CASHIER', 'ADMIN', 'MANAGER')
   @ApiOperation({ summary: 'ยืนยันการชำระเงิน (mark as paid)' })
-  processPayment(@Param('id') id: string) {
-    return this.paymentsService.processPayment(+id);
+  processPayment(@Param('id') id: string, @Body() dto: ProcessPaymentDto) {
+    return this.paymentsService.processPayment(+id, dto);
   }
 
   @Get()
