@@ -11,6 +11,7 @@ import {
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateSalaryDto } from './dto/update-salary.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -19,7 +20,7 @@ import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 @ApiTags('Users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   // สร้าง User (ยังเปิด Public ไว้ เพื่อให้สมัคร Admin คนแรกได้สะดวก)
   @Post()
@@ -49,7 +50,6 @@ export class UsersController {
     return this.usersService.findOne(+id);
   }
 
-  // แก้ไข (ต้อง Login + ADMIN/MANAGER)
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth('JWT-auth')
@@ -57,6 +57,16 @@ export class UsersController {
   @ApiOperation({ summary: 'อัปเดต User' })
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(+id, updateUserDto);
+  }
+
+  // จัดการเงินเดือนและค่าคอม (ADMIN)
+  @Patch(':id/salary')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'กำหนดเงินเดือนและค่าคอม (Owner/Admin)' })
+  updateSalary(@Param('id') id: string, @Body() dto: UpdateSalaryDto) {
+    return this.usersService.updateSalary(+id, dto);
   }
 
   // ลบ (ต้อง Login + ADMIN)
