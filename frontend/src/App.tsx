@@ -72,6 +72,7 @@ function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/inventory/all-order" element={<AllOrderPage onLogout={handleLogout} />} />
+      <Route path="/inventory/all-order/:orderId" element={<AllOrderPage onLogout={handleLogout} />} />
       <Route
         path="/history"
         element={<HistoryPage onBack={handleNavigateBack} />}

@@ -3,7 +3,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 18px 40px 6px 24px;
+    padding: 18px 40px 6px 18px;
     /* padding: บน ขวา ล่าง ซ้าย 
        - เพิ่มเลขตัวแรก (14px) เพื่อดันลงมาให้ชิดล่างมากขึ้น
        - ลดเลขตัวที่สาม (6px) เพื่อให้ด้านล่างแคบลง */

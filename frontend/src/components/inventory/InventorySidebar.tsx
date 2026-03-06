@@ -16,9 +16,7 @@ export const inventoryNavItems: NavItem[] = [
         label: 'รายการคำร้องขอเบิกอะไหล่ทั้งหมด',
         path: '/inventory/all-order',
         icon: (
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.8" stroke="currentColor" width="22" height="22">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487a2.25 2.25 0 0 1 3.18 3.18L7.5 20.207 3 21l.793-4.5L16.862 4.487Z" />
-            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 16 16"><path fill="currentColor" fillRule="evenodd" d="m10.71 1.29l3 3L14 5v9l-1 1H4l-1-1V2l1-1h6l.71.29ZM4 14h9V5l-3-3H4v12Zm4-8H6v1h2v2h1V7h2V6H9V4H8v2Zm-2 5h5v1H6v-1Z" clipRule="evenodd" /></svg>
         ),
     },
     {
@@ -26,9 +24,7 @@ export const inventoryNavItems: NavItem[] = [
         label: 'คลังอะไหล่',
         path: '/inventory/stock',
         icon: (
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.8" stroke="currentColor" width="22" height="22">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5 12 3 3.75 7.5M20.25 7.5v9L12 21m8.25-13.5L12 12M12 21 3.75 16.5v-9M12 21V12M3.75 7.5 12 12" />
-            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"><path fill="currentColor" d="M3 20V8.7q-.425-.275-.713-.7T2 7V4q0-.825.588-1.413T4 2h16q.825 0 1.413.588T22 4v3q0 .575-.288 1T21 8.7V20q0 .825-.588 1.413T19 22H5q-.825 0-1.413-.588T3 20ZM20 7V4H4v3h16ZM9 14h6v-2H9v2Z" /></svg>
         ),
     },
     {
