@@ -25,13 +25,13 @@ export default function LoginPage() {
 
       // Mock user data based on email
       let userRole: 'service-advisor' | 'tech-lead' | 'manager' | 'receptionist' = 'service-advisor'
-      
+
       if (email.includes('tech')) {
         userRole = 'tech-lead'
       } else if (email.includes('manager')) {
         userRole = 'manager'
-      } else if (email.includes('receptionist')) {
-        userRole = 'receptionist'
+      } else if (email.includes('receptionist') || email.includes('inventory')) {
+        userRole = 'receptionist' // Using receptionist role for inventory for now
       }
 
       const mockUser: IUser = {
@@ -45,8 +45,13 @@ export default function LoginPage() {
       localStorage.setItem('user', JSON.stringify(mockUser))
       localStorage.setItem('token', 'mock-token-' + Date.now())
 
-      // Redirect to home page
-      window.location.href = '/'
+      // Redirect based on role or email
+      if (email.includes('inventory')) {
+        window.location.href = '/inventory/all-order'
+      } else {
+        // Default to receptionist for now since other dashboards don't exist yet
+        window.location.href = '/receptionist'
+      }
     } catch {
       setError('เกิดข้อผิดพลาดในการเข้าสู่ระบบ')
     } finally {
@@ -108,6 +113,9 @@ export default function LoginPage() {
             </li>
             <li>
               <strong>Receptionist : </strong> receptionist@smartmoto.com
+            </li>
+            <li>
+              <strong>Inventory department : </strong> inventory@smartmoto.com
             </li>
           </ul>
           <p className="demo-note">รหัสผ่าน: อะไรก็ได้ (ใช้สำหรับทดสอบเท่านั้น)</p>

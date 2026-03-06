@@ -48,15 +48,32 @@
 /* Dropdown Menu */
 .dropdown-menu {
   position: absolute;
-  top: 100%;
-  right: 0;
   background: white;
   border-radius: 12px;
   box-shadow: 0 10px 32px rgba(0, 0, 0, 0.15);
   min-width: 280px;
   z-index: 10000;
-  margin-top: 12px;
   animation: slideDown 0.3s ease;
+}
+
+/* Vertical positioning */
+.dropdown-menu.dropdown-bottom {
+  top: 100%;
+  margin-top: 12px;
+}
+
+.dropdown-menu.dropdown-top {
+  bottom: 100%;
+  margin-bottom: 12px;
+}
+
+/* Horizontal positioning */
+.dropdown-menu.dropdown-right {
+  right: 0;
+}
+
+.dropdown-menu.dropdown-left {
+  left: 0;
 }
 
 @keyframes slideDown {
@@ -212,4 +229,100 @@
   right: 0;
   bottom: 0;
   z-index: 9999;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dropdown-menu {
+    min-width: 260px;
+    margin-top: 8px;
+  }
+
+  .dropdown-menu.dropdown-top {
+    margin-bottom: 8px;
+  }
+
+  .user-name {
+    font-size: 15px;
+  }
+
+  .user-email {
+    font-size: 12px;
+  }
+
+  .history-button,
+  .logout-button {
+    font-size: 13px;
+    padding: 11px 14px;
+  }
+
+  .role-value {
+    font-size: 13px;
+    padding: 5px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-button {
+    padding: 6px;
+  }
+
+  .profile-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  .dropdown-menu {
+    min-width: 240px;
+    margin-top: 6px;
+  }
+
+  .dropdown-menu.dropdown-top {
+    margin-bottom: 6px;
+  }
+
+  .dropdown-header {
+    padding: 12px 12px;
+  }
+
+  .user-name {
+    font-size: 14px;
+  }
+
+  .user-email {
+    font-size: 11px;
+  }
+
+  .dropdown-content {
+    padding: 10px 12px;
+  }
+
+  .role-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+
+  .role-label {
+    font-size: 11px;
+  }
+
+  .role-value {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+
+  .history-button,
+  .logout-button {
+    font-size: 12px;
+    padding: 10px 12px;
+    gap: 6px;
+  }
+
+  .history-icon,
+  .logout-icon {
+    width: 16px;
+    height: 16px;
+  }
 }

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import ReceptionistPage from './pages/ReceptionistPage'
 import SearchCustomerPage from './pages/SearchCustomerPage'
 import RegisterCustomerPage from './pages/RegisterCustomerPage'
 import ConfirmCustomerPage from './pages/ConfirmCustomerPage'
 import LoginPage from './pages/LoginPage'
 import HistoryPage from './pages/HistoryPage'
+import AllOrderPage from './pages/inventory-department/AllOrderPage'
 import type { ICustomer } from './types'
 import './index.css'
 
@@ -70,6 +71,7 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/inventory/all-order" element={<AllOrderPage onLogout={handleLogout} />} />
       <Route
         path="/history"
         element={<HistoryPage onBack={handleNavigateBack} />}
@@ -114,14 +116,7 @@ function App() {
       />
       <Route
         path="/"
-        element={
-          <ReceptionistPage
-            onSelectExisting={handleSelectExisting}
-            onSelectNew={handleSelectNew}
-            onOpenHistory={handleNavigateToHistory}
-            onLogout={handleLogout}
-          />
-        }
+        element={<Navigate to="/login" replace />}
       />
       <Route
         path="/receptionist"

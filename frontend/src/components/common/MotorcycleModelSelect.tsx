@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import './MotorcycleModelSelect.css'
 
 interface MotorcycleModel {
@@ -28,8 +28,38 @@ const MotorcycleModelSelect: React.FC<Props> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [position, setPosition] = useState<'bottom' | 'top'>('bottom')
+  const triggerRef = useRef<HTMLDivElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   const selectedModel = motorcycleModels.find(m => m.id === value)
+
+  // Calculate dropdown position after dropdown renders
+  useEffect(() => {
+    if (!isOpen || !triggerRef.current || !dropdownRef.current) return
+
+    // Use requestAnimationFrame to ensure dropdown is fully rendered
+    const timer = requestAnimationFrame(() => {
+      if (!triggerRef.current || !dropdownRef.current) return
+
+      const triggerRect = triggerRef.current.getBoundingClientRect()
+      const dropdownHeight = dropdownRef.current.offsetHeight
+      const viewportHeight = window.innerHeight
+
+      // Calculate space available below and above
+      const spaceBelow = viewportHeight - triggerRect.bottom
+      const spaceAbove = triggerRect.top
+
+      // If not enough space below and more space above, position on top
+      if (spaceBelow < dropdownHeight + 10 && spaceAbove > spaceBelow) {
+        setPosition('top')
+      } else {
+        setPosition('bottom')
+      }
+    })
+
+    return () => cancelAnimationFrame(timer)
+  }, [isOpen])
   
   const filteredModels = motorcycleModels.filter(model =>
     model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -44,7 +74,11 @@ const MotorcycleModelSelect: React.FC<Props> = ({
 
   return (
     <div className="motorcycle-model-select">
-      <div className={`select-trigger ${isOpen ? 'open' : ''} ${error ? 'error' : ''}`} onClick={() => !disabled && setIsOpen(!isOpen)}>
+      <div
+        ref={triggerRef}
+        className={`select-trigger ${isOpen ? 'open' : ''} ${error ? 'error' : ''}`}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+      >
         {selectedModel ? (
           <div className="selected-model">
             {selectedModel.image && (
@@ -67,7 +101,10 @@ const MotorcycleModelSelect: React.FC<Props> = ({
       {isOpen && (
         <>
           <div className="dropdown-overlay" onClick={() => setIsOpen(false)}></div>
-          <div className="dropdown-menu">
+          <div
+            ref={dropdownRef}
+            className={`dropdown-menu dropdown-${position}`}
+          >
             <div className="search-box">
               <input
                 type="text"

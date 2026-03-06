@@ -1,0 +1,7 @@
+.main-layout-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #44403C;
+    font-family: inherit;
+}
