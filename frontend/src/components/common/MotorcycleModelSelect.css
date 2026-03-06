@@ -1,0 +1,427 @@
+.motorcycle-model-select {
+  position: relative;
+}
+
+.select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 16px;
+  border: 2px solid #f0f2f5;
+  border-radius: 10px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+  min-height: 48px;
+}
+
+.select-trigger:hover:not(.error) {
+  border-color: #e0e0e0;
+}
+
+.select-trigger.open {
+  border-color: #1e40af;
+  box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.1);
+}
+
+.select-trigger.error {
+  border-color: #e74c3c;
+  background: #fdeaea;
+}
+
+.selected-model {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.model-thumbnail {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 6px;
+  background: #f5f5f5;
+}
+
+.model-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.model-name {
+  font-size: 0.95em;
+  font-weight: 600;
+  color: #2d3436;
+}
+
+.model-meta {
+  display: flex;
+  gap: 8px;
+  font-size: 0.8em;
+  color: #95a5a6;
+}
+
+.model-year,
+.model-color {
+  display: flex;
+  align-items: center;
+}
+
+.placeholder {
+  color: #bdc3c7;
+  font-size: 1em;
+}
+
+.dropdown-icon {
+  margin-left: 8px;
+  color: #95a5a6;
+  transition: transform 0.3s ease;
+  font-size: 0.75em;
+}
+
+.select-trigger.open .dropdown-icon {
+  transform: rotate(180deg);
+}
+
+.dropdown-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+}
+
+.dropdown-menu {
+  position: absolute;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(30, 58, 138, 0.15);
+  z-index: 1000;
+  max-height: 400px;
+  display: flex;
+  flex-direction: column;
+  left: 0;
+  right: 0;
+}
+
+/* Default: dropdown appears below the trigger */
+.dropdown-menu.dropdown-bottom {
+  top: 100%;
+  margin-top: 6px;
+}
+
+/* Alternative: dropdown appears above the trigger */
+.dropdown-menu.dropdown-top {
+  bottom: 100%;
+  margin-bottom: 6px;
+}
+
+.search-box {
+  padding: 12px;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #f0f2f5;
+  border-radius: 8px;
+  font-size: 0.9em;
+  font-family: inherit;
+  transition: all 0.3s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #1e40af;
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+}
+
+.models-list {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.model-option {
+  display: flex;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid #f0f2f5;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  gap: 12px;
+  position: relative;
+}
+
+.model-option:last-child {
+  border-bottom: none;
+}
+
+.model-option:hover {
+  background-color: #f8faff;
+}
+
+.model-option.selected {
+  background-color: #f0f6ff;
+}
+
+.option-thumbnail {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 6px;
+  background: #f5f5f5;
+}
+
+.option-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.option-name {
+  font-size: 0.95em;
+  font-weight: 600;
+  color: #2d3436;
+}
+
+.option-meta {
+  display: flex;
+  gap: 8px;
+  font-size: 0.8em;
+  color: #95a5a6;
+}
+
+.option-year,
+.option-color {
+  display: flex;
+  align-items: center;
+}
+
+.checkmark {
+  color: #10b981;
+  font-weight: bold;
+  font-size: 1.2em;
+  margin-left: auto;
+}
+
+.no-results {
+  padding: 20px;
+  text-align: center;
+  color: #95a5a6;
+  font-size: 0.9em;
+}
+
+.error-message {
+  font-size: 0.85em;
+  color: #e74c3c;
+  margin-top: 8px;
+  font-weight: 600;
+  display: block;
+}
+
+/* Scrollbar styling */
+.models-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.models-list::-webkit-scrollbar-track {
+  background: #f0f2f5;
+  border-radius: 10px;
+}
+
+.models-list::-webkit-scrollbar-thumb {
+  background: #d0d0d0;
+  border-radius: 10px;
+}
+
+.models-list::-webkit-scrollbar-thumb:hover {
+  background: #a0a0a0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .select-trigger {
+    padding: 12px 14px;
+    min-height: 44px;
+  }
+
+  .model-thumbnail {
+    width: 36px;
+    height: 36px;
+  }
+
+  .model-name {
+    font-size: 0.9em;
+  }
+
+  .model-meta {
+    font-size: 0.75em;
+    gap: 6px;
+  }
+
+  .dropdown-menu {
+    max-height: 350px;
+    margin-top: 4px;
+  }
+
+  .dropdown-menu.dropdown-top {
+    margin-bottom: 4px;
+  }
+
+  .dropdown-menu.dropdown-bottom {
+    left: -12px;
+    right: -12px;
+  }
+
+  .dropdown-menu.dropdown-top {
+    left: -12px;
+    right: -12px;
+  }
+
+  .search-box {
+    padding: 10px;
+  }
+
+  .search-input {
+    padding: 9px 11px;
+    font-size: 0.85em;
+  }
+
+  .model-option {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  .option-thumbnail {
+    width: 40px;
+    height: 40px;
+  }
+
+  .option-name {
+    font-size: 0.9em;
+  }
+
+  .option-meta {
+    font-size: 0.75em;
+    gap: 6px;
+  }
+
+  .checkmark {
+    font-size: 1em;
+  }
+}
+
+@media (max-width: 480px) {
+  .select-trigger {
+    padding: 11px 12px;
+    min-height: 40px;
+  }
+
+  .selected-model {
+    gap: 10px;
+  }
+
+  .model-thumbnail {
+    width: 32px;
+    height: 32px;
+  }
+
+  .model-name {
+    font-size: 0.85em;
+  }
+
+  .model-meta {
+    font-size: 0.7em;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .dropdown-menu {
+    max-height: 300px;
+    margin-top: 2px;
+  }
+
+  .dropdown-menu.dropdown-top {
+    margin-bottom: 2px;
+  }
+
+  .dropdown-menu.dropdown-bottom {
+    left: -14px;
+    right: -14px;
+    border-radius: 6px;
+  }
+
+  .dropdown-menu.dropdown-top {
+    left: -14px;
+    right: -14px;
+    border-radius: 6px;
+  }
+
+  .search-box {
+    padding: 8px;
+  }
+
+  .search-input {
+    padding: 8px 10px;
+    font-size: 0.8em;
+  }
+
+  .model-option {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .option-thumbnail {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+  }
+
+  .option-info {
+    min-width: 0;
+  }
+
+  .option-name {
+    font-size: 0.85em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .option-meta {
+    font-size: 0.7em;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .dropdown-icon {
+    font-size: 0.7em;
+    margin-left: 4px;
+  }
+
+  .placeholder {
+    font-size: 0.9em;
+  }
+
+  .checkmark {
+    font-size: 0.9em;
+    margin-left: 8px;
+    flex-shrink: 0;
+  }
+
+  .no-results {
+    padding: 16px 10px;
+    font-size: 0.8em;
+  }
+
+  .error-message {
+    font-size: 0.75em;
+  }
+}

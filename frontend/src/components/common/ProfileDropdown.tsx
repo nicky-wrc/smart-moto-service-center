@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { IUser } from '../../types'
 import './ProfileDropdown.css'
 
@@ -8,8 +8,50 @@ interface Props {
   onViewHistory?: () => void
 }
 
+type VerticalPosition = 'bottom' | 'top'
+type HorizontalPosition = 'right' | 'left'
+
 export default function ProfileDropdown({ user, onLogout, onViewHistory }: Props) {
   const [isOpen, setIsOpen] = useState(false)
+  const [verticalPos, setVerticalPos] = useState<VerticalPosition>('bottom')
+  const [horizontalPos, setHorizontalPos] = useState<HorizontalPosition>('right')
+  const triggerRef = useRef<HTMLDivElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  // Calculate optimal positioning for dropdown menu
+  useEffect(() => {
+    if (!isOpen || !triggerRef.current || !menuRef.current) return
+
+    // Use requestAnimationFrame to ensure menu is fully rendered
+    const timer = requestAnimationFrame(() => {
+      if (!triggerRef.current || !menuRef.current) return
+
+      const triggerRect = triggerRef.current.getBoundingClientRect()
+      const menuHeight = menuRef.current.offsetHeight
+      const menuWidth = menuRef.current.offsetWidth
+      const viewportHeight = window.innerHeight
+      const viewportWidth = window.innerWidth
+
+      // Calculate space available
+      const spaceBelow = viewportHeight - triggerRect.bottom
+      const spaceAbove = triggerRect.top
+      const spaceRight = viewportWidth - triggerRect.right
+      const spaceLeft = triggerRect.left
+
+      // Determine vertical position
+      const newVerticalPos: VerticalPosition =
+        spaceBelow < menuHeight + 10 && spaceAbove > spaceBelow ? 'top' : 'bottom'
+
+      // Determine horizontal position
+      const newHorizontalPos: HorizontalPosition =
+        spaceRight < menuWidth + 10 && spaceLeft > spaceRight ? 'left' : 'right'
+
+      setVerticalPos(newVerticalPos)
+      setHorizontalPos(newHorizontalPos)
+    })
+
+    return () => cancelAnimationFrame(timer)
+  }, [isOpen])
 
   const handleLogout = () => {
     setIsOpen(false)
@@ -26,7 +68,7 @@ export default function ProfileDropdown({ user, onLogout, onViewHistory }: Props
   if (!user) return null
 
   return (
-    <div className="profile-dropdown">
+    <div className="profile-dropdown" ref={triggerRef}>
       <button
         className="profile-button"
         onClick={() => setIsOpen(!isOpen)}
@@ -52,7 +94,10 @@ export default function ProfileDropdown({ user, onLogout, onViewHistory }: Props
       </button>
 
       {isOpen && (
-        <div className="dropdown-menu">
+        <div
+          ref={menuRef}
+          className={`dropdown-menu dropdown-${verticalPos} dropdown-${horizontalPos}`}
+        >
           <div className="dropdown-header">
             <p className="user-name">{user.name}</p>
             <p className="user-email">{user.email}</p>

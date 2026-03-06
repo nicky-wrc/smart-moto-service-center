@@ -1,56 +1,137 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import ReceptionistPage from './pages/ReceptionistPage'
+import SearchCustomerPage from './pages/SearchCustomerPage'
+import RegisterCustomerPage from './pages/RegisterCustomerPage'
+import ConfirmCustomerPage from './pages/ConfirmCustomerPage'
 import LoginPage from './pages/LoginPage'
 import HistoryPage from './pages/HistoryPage'
-import type { IUser } from './types'
+import AllOrderPage from './pages/inventory-department/AllOrderPage'
+import type { ICustomer } from './types'
 import './index.css'
 
-type PageType = 'login' | 'receptionist' | 'history'
-
 function App() {
-  const [currentPage, setCurrentPage] = useState<PageType>(() => {
-    // Check if user is logged in
-    const storedUser = localStorage.getItem('user')
-    return storedUser ? 'receptionist' : 'login'
-  })
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [selectedCustomer, setSelectedCustomer] = useState<ICustomer | null>(null)
 
-  const [user] = useState<IUser | null>(() => {
-    // Initialize from localStorage
+  // Check authentication on mount
+  useEffect(() => {
     const storedUser = localStorage.getItem('user')
-    if (storedUser) {
-      try {
-        return JSON.parse(storedUser)
-      } catch {
-        localStorage.removeItem('user')
-      }
+    if (!storedUser && location.pathname !== '/login') {
+      navigate('/login', { replace: true })
     }
-    return null
-  })
+  }, [navigate, location.pathname])
 
+  // Navigation handlers
   const handleNavigateToHistory = () => {
-    setCurrentPage('history')
+    navigate('/history')
   }
 
   const handleNavigateBack = () => {
-    setCurrentPage('receptionist')
+    navigate('/receptionist')
+    setSelectedCustomer(null)
   }
 
   const handleLogout = () => {
     localStorage.removeItem('user')
     localStorage.removeItem('token')
-    setCurrentPage('login')
+    navigate('/login', { replace: true })
   }
 
-  // Render based on current page
-  if (currentPage === 'login') {
-    return <LoginPage />
+  // Step handlers
+  const handleSelectExisting = () => {
+    navigate('/search')
   }
 
-  if (currentPage === 'history') {
-    return <HistoryPage onBack={handleNavigateBack} />
+  const handleSelectNew = () => {
+    navigate('/register')
+    setSelectedCustomer(null)
   }
 
-  return <ReceptionistPage onOpenHistory={handleNavigateToHistory} onLogout={handleLogout} />
+  const handleCustomerFound = (customer: ICustomer) => {
+    setSelectedCustomer(customer)
+    navigate('/confirm')
+  }
+
+  const handleCustomerCreated = (customer: ICustomer) => {
+    setSelectedCustomer(customer)
+    navigate('/confirm')
+  }
+
+  const handleConfirm = () => {
+    navigate('/receptionist')
+    setSelectedCustomer(null)
+  }
+
+  const handleBackFromStep = () => {
+    navigate(-1)
+  }
+
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/inventory/all-order" element={<AllOrderPage onLogout={handleLogout} />} />
+      <Route path="/inventory/all-order/:orderId" element={<AllOrderPage onLogout={handleLogout} />} />
+      <Route
+        path="/history"
+        element={<HistoryPage onBack={handleNavigateBack} />}
+      />
+      <Route
+        path="/search"
+        element={
+          <SearchCustomerPage
+            onCustomerFound={handleCustomerFound}
+            onBack={handleBackFromStep}
+            onOpenHistory={handleNavigateToHistory}
+            onLogout={handleLogout}
+          />
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          <RegisterCustomerPage
+            onCustomerCreated={handleCustomerCreated}
+            onBack={handleBackFromStep}
+            onOpenHistory={handleNavigateToHistory}
+            onLogout={handleLogout}
+          />
+        }
+      />
+      <Route
+        path="/confirm"
+        element={
+          selectedCustomer ? (
+            <ConfirmCustomerPage
+              customer={selectedCustomer}
+              onConfirm={handleConfirm}
+              onBack={handleBackFromStep}
+              onOpenHistory={handleNavigateToHistory}
+              onLogout={handleLogout}
+            />
+          ) : (
+            <div>Loading...</div>
+          )
+        }
+      />
+      <Route
+        path="/"
+        element={<Navigate to="/login" replace />}
+      />
+      <Route
+        path="/receptionist"
+        element={
+          <ReceptionistPage
+            onSelectExisting={handleSelectExisting}
+            onSelectNew={handleSelectNew}
+            onOpenHistory={handleNavigateToHistory}
+            onLogout={handleLogout}
+          />
+        }
+      />
+    </Routes>
+  )
 }
 
 export default App
