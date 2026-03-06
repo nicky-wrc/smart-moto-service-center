@@ -8,6 +8,7 @@ interface OrderItem {
     partName: string;
     requestedQty: number;
     currentStock: number;
+    pricePerUnit: number; // Added to calculate subtotal
 }
 
 interface OrderRequest {
@@ -28,8 +29,8 @@ const mockOrders: OrderRequest[] = [
         motorcycleModel: 'Honda Wave 110i',
         licensePlate: '1กค 1234 กทม',
         items: [
-            { id: '1', partNumber: '15410-MFJ-D01', partName: 'ไส้กรองน้ำมันเครื่อง', requestedQty: 5, currentStock: 12 },
-            { id: '2', partNumber: '90304-KGH-901', partName: 'น็อตยึดแคร้ง', requestedQty: 10, currentStock: 50 },
+            { id: '1', partNumber: '15410-MFJ-D01', partName: 'ไส้กรองน้ำมันเครื่อง', requestedQty: 5, currentStock: 12, pricePerUnit: 120 },
+            { id: '2', partNumber: '90304-KGH-901', partName: 'น็อตยึดแคร้ง', requestedQty: 10, currentStock: 50, pricePerUnit: 15 },
         ]
     },
     {
@@ -39,7 +40,7 @@ const mockOrders: OrderRequest[] = [
         motorcycleModel: 'Yamaha Finn',
         licensePlate: '2ขร 5678 ชลบุรี',
         items: [
-            { id: '3', partNumber: '06455-KRE-K01', partName: 'ผ้าเบรคหน้า', requestedQty: 2, currentStock: 8 },
+            { id: '3', partNumber: '06455-KRE-K01', partName: 'ผ้าเบรคหน้า', requestedQty: 2, currentStock: 8, pricePerUnit: 250 },
         ]
     },
     {
@@ -49,7 +50,7 @@ const mockOrders: OrderRequest[] = [
         motorcycleModel: 'Honda Click 160',
         licensePlate: '9กต 9999 นนทบุรี',
         items: [
-            { id: '4', partNumber: '31919-K25-601', partName: 'หัวเทียน', requestedQty: 20, currentStock: 5 },
+            { id: '4', partNumber: '31919-K25-601', partName: 'หัวเทียน', requestedQty: 20, currentStock: 5, pricePerUnit: 85 },
         ]
     },
     {
@@ -59,8 +60,8 @@ const mockOrders: OrderRequest[] = [
         motorcycleModel: 'Honda PCX 160',
         licensePlate: '5กล 1111 เชียงใหม่',
         items: [
-            { id: '5', partNumber: '06455-K84-901', partName: 'ผ้าเบรคหลัง', requestedQty: 4, currentStock: 15 },
-            { id: '6', partNumber: '15410-MFJ-D01', partName: 'ไส้กรองน้ำมันเครื่อง', requestedQty: 2, currentStock: 12 },
+            { id: '5', partNumber: '06455-K84-901', partName: 'ผ้าเบรคหลัง', requestedQty: 4, currentStock: 15, pricePerUnit: 180 },
+            { id: '6', partNumber: '15410-MFJ-D01', partName: 'ไส้กรองน้ำมันเครื่อง', requestedQty: 2, currentStock: 12, pricePerUnit: 120 },
         ]
     },
     {
@@ -70,7 +71,7 @@ const mockOrders: OrderRequest[] = [
         motorcycleModel: 'Yamaha XMAX 300',
         licensePlate: '7ขข 7777 กทม',
         items: [
-            { id: '7', partNumber: '5YP-E3440-00', partName: 'ไส้กรองน้ำมันเครื่อง', requestedQty: 3, currentStock: 0 },
+            { id: '7', partNumber: '5YP-E3440-00', partName: 'ไส้กรองน้ำมันเครื่อง', requestedQty: 3, currentStock: 0, pricePerUnit: 160 },
         ]
     },
     {
@@ -80,8 +81,8 @@ const mockOrders: OrderRequest[] = [
         motorcycleModel: 'Honda ADV 160',
         licensePlate: '3กม 3333 ภูเก็ต',
         items: [
-            { id: '8', partNumber: '23100-K0W-N01', partName: 'สายพาน V-Belt', requestedQty: 1, currentStock: 3 },
-            { id: '9', partNumber: '22123-K0W-N00', partName: 'เม็ดตุ้มน้ำหนัก', requestedQty: 6, currentStock: 30 },
+            { id: '8', partNumber: '23100-K0W-N01', partName: 'สายพาน V-Belt', requestedQty: 1, currentStock: 3, pricePerUnit: 850 },
+            { id: '9', partNumber: '22123-K0W-N00', partName: 'เม็ดตุ้มน้ำหนัก', requestedQty: 6, currentStock: 30, pricePerUnit: 60 },
         ]
     }
 ];
@@ -118,6 +119,20 @@ export default function AllOrderContent() {
 
     // Determine if we are in detail view based on the URL parameter
     const selectedOrder = orderId ? orders.find(o => o.id === orderId) : null;
+
+    const totalAmount = selectedOrder
+        ? selectedOrder.items.reduce((sum, item) => sum + (item.requestedQty * item.pricePerUnit), 0)
+        : 0;
+
+    const handleReject = () => {
+        alert(`ปฏิเสธการเบิกคำขอที่ ${selectedOrder?.id} เรียบร้อยแล้ว\n(สถานะถูกเปลี่ยนเป็น "ยกเลิก/ปฏิเสธ" และย้ายไปที่ประวัติ)`);
+        navigate('/inventory/all-order');
+    };
+
+    const handleApprove = () => {
+        alert(`อนุมัติการเบิกคำขอที่ ${selectedOrder?.id} เรียบร้อยแล้ว\n(สต็อกถูกตัดตามจำนวน และย้ายไปที่ประวัติพร้อมสถานะ "เบิกสำเร็จ")`);
+        navigate('/inventory/all-order');
+    };
 
     if (isLoading) {
         return (
@@ -170,10 +185,12 @@ export default function AllOrderContent() {
                     <table className="inv-table">
                         <thead>
                             <tr>
-                                <th>รหัสอะไหล่</th>
-                                <th>ชื่ออะไหล่</th>
-                                <th className="text-right">จำนวนที่ขอเบิก</th>
-                                <th className="text-right">คงเหลือในคลัง</th>
+                                <th>รหัสสินค้า</th>
+                                <th>ชื่อสินค้า</th>
+                                <th className="text-center">ราคาต่อหน่วย</th>
+                                <th className="text-center">จำนวน</th>
+                                <th className="text-center">subtotal</th>
+                                <th className="text-center">จัดการ</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -181,17 +198,45 @@ export default function AllOrderContent() {
                                 <tr key={item.id}>
                                     <td>{item.partNumber}</td>
                                     <td>{item.partName}</td>
-                                    <td className="text-right target-qty">{item.requestedQty}</td>
-                                    <td className="text-right stock-qty">{item.currentStock}</td>
+                                    <td className="text-center">{item.pricePerUnit}</td>
+                                    <td className="text-center">{item.requestedQty}</td>
+                                    <td className="text-center">{item.requestedQty * item.pricePerUnit}</td>
+                                    <td className="text-center">
+                                        <div className="inv-table-actions">
+                                            <button className="inv-act-btn inv-act-reject">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                                                Reject
+                                            </button>
+                                            <button className="inv-act-btn inv-act-edit">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z" /></svg>
+                                                Edit
+                                            </button>
+                                            <button className="inv-act-btn inv-act-view">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /><circle cx="12" cy="12" r="3" /></svg>
+                                                view
+                                            </button>
+                                        </div>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
 
-                <div className="inv-detail-actions">
-                    <button className="inv-btn inv-btn-danger">ปฏิเสธการเบิก</button>
-                    <button className="inv-btn inv-btn-success">อนุมัติการเบิก</button>
+                <div className="inv-detail-summary-row">
+                    <span className="inv-total-label">Total</span>
+                    <span className="inv-total-value">{totalAmount.toLocaleString()}</span>
+                </div>
+
+                <div className="inv-detail-bottom-actions">
+                    <button className="inv-btn-global inv-btn-global-reject" onClick={handleReject}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="m15 9-6 6" /><path d="m9 9 6 6" /></svg>
+                        ไม่อนุมัติการเบิกสินค้า
+                    </button>
+                    <button className="inv-btn-global inv-btn-global-approve" onClick={handleApprove}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                        อนุมัติการเบิกสินค้า
+                    </button>
                 </div>
             </div>
         );
@@ -216,7 +261,7 @@ export default function AllOrderContent() {
                     <div key={order.id} className="inv-order-card" onClick={() => navigate(`/inventory/all-order/${order.id}`)}>
                         <div className="inv-card-header-new">
                             <div className="inv-card-tab">
-                                คำขอที่ {order.id}
+                                คำร้องขอเบิกที่  {order.id}
                             </div>
                             <div className="inv-card-date-new">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>

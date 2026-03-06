@@ -257,11 +257,12 @@
 }
 
 .inv-detail-table-container {
-    background: #ffffff;
+    background: transparent;
     border: 1px solid #e5e7eb;
-    border-radius: 12px;
+    border-radius: 12px 12px 0 0;
     overflow: hidden;
-    margin-bottom: 24px;
+    margin-bottom: 0;
+    width: 100%;
 }
 
 .inv-table {
@@ -277,10 +278,17 @@
 }
 
 .inv-table th {
-    background-color: #f9fafb;
+    background-color: #f2f2f2;
     font-weight: 600;
     color: #374151;
-    font-size: 14px;
+    font-size: 15px;
+    padding: 20px 16px;
+    border: none;
+}
+
+.inv-table td {
+    border-bottom: 1px solid #e5e7eb;
+    background-color: #ffffff;
 }
 
 .inv-table td {
@@ -292,51 +300,106 @@
     border-bottom: none;
 }
 
-.text-right {
-    text-align: right !important;
+.text-center {
+    text-align: center !important;
 }
 
-.target-qty {
+.inv-table-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.inv-act-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.inv-act-btn:hover {
+    opacity: 0.85;
+}
+
+.inv-act-reject {
+    background-color: #FA8C00;
+}
+
+.inv-act-edit {
+    background-color: #255B91;
+}
+
+.inv-act-view {
+    background-color: #303030;
+}
+
+.inv-detail-summary-row {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 24px;
+    margin-top: 0;
+    margin-bottom: 32px;
+    padding: 20px 32px;
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+}
+
+.inv-total-label {
+    font-size: 18px;
     font-weight: 600;
-    color: #F8981D;
+    color: #4b5563;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.stock-qty {
-    color: #6b7280;
+.inv-total-value {
+    font-size: 24px;
+    font-weight: 400;
+    color: #111827;
+    min-width: 120px;
+    text-align: right;
 }
 
-.inv-detail-actions {
+.inv-detail-bottom-actions {
     display: flex;
     justify-content: flex-end;
     gap: 16px;
     margin-top: auto;
 }
 
-.inv-btn {
+.inv-btn-global {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     padding: 12px 24px;
     border-radius: 8px;
-    font-weight: 600;
-    font-size: 15px;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: none;
-}
-
-.inv-btn-success {
-    background-color: #16a34a;
+    font-size: 16px;
+    font-weight: 500;
     color: white;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s;
 }
 
-.inv-btn-success:hover {
-    background-color: #15803d;
+.inv-btn-global:hover {
+    opacity: 0.85;
 }
 
-.inv-btn-danger {
-    background-color: #ffffff;
-    border: 1px solid #dc2626;
-    color: #dc2626;
+.inv-btn-global-reject {
+    background-color: #dc2626;
 }
 
-.inv-btn-danger:hover {
-    background-color: #fef2f2;
+.inv-btn-global-approve {
+    background-color: #16a34a;
 }
