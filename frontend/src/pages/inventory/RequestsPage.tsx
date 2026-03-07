@@ -72,50 +72,62 @@ export default function RequestsPage() {
 
         {/* Filter row */}
         {showFilters && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">ผู้ทำเรื่องเบิก</label>
-              <select
-                value={filterRequester}
-                onChange={(e) => setFilterRequester(e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-              >
-                <option value="">ทั้งหมด</option>
-                {uniqueRequesters.map((r) => (
-                  <option key={r} value={r}>{r}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">รุ่นรถ</label>
-              <select
-                value={filterModel}
-                onChange={(e) => setFilterModel(e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-              >
-                <option value="">ทั้งหมด</option>
-                {uniqueModels.map((m) => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">วันที่</label>
-              <input
-                type="date"
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">เวลา</label>
-              <input
-                type="time"
-                value={filterTime}
-                onChange={(e) => setFilterTime(e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-              />
+          <div className="relative mt-2 p-5 bg-white rounded-xl border border-gray-200 shadow-md">
+            {/* Triangle pointer */}
+            <div className="absolute -top-[10px] right-[1270px] w-0 h-0 
+                            border-l-[10px] border-l-transparent 
+                            border-r-[10px] border-r-transparent 
+                            border-b-[10px] border-b-white z-20" />
+            <div className="absolute -top-[12px] right-[1270px] w-0 h-0 
+                            border-l-[10px] border-l-transparent 
+                            border-r-[10px] border-r-transparent 
+                            border-b-[12px] border-b-gray-200 z-10" />
+
+            <div className="relative z-30 grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">ผู้ทำเรื่องเบิก</label>
+                <select
+                  value={filterRequester}
+                  onChange={(e) => setFilterRequester(e.target.value)}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                >
+                  <option value="">ทั้งหมด</option>
+                  {uniqueRequesters.map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">รุ่นรถ</label>
+                <select
+                  value={filterModel}
+                  onChange={(e) => setFilterModel(e.target.value)}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                >
+                  <option value="">ทั้งหมด</option>
+                  {uniqueModels.map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">วันที่</label>
+                <input
+                  type="date"
+                  value={filterDate}
+                  onChange={(e) => setFilterDate(e.target.value)}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">เวลา</label>
+                <input
+                  type="time"
+                  value={filterTime}
+                  onChange={(e) => setFilterTime(e.target.value)}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                />
+              </div>
             </div>
           </div>
         )}
