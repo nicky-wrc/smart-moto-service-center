@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import InventoryLayout from './pages/inventory/InventoryLayout'
 import InventoryIndex from './pages/inventory'
 import RequestsPage from './pages/inventory/RequestsPage'
+import RequestDetailPage from './pages/inventory/RequestDetailPage'
 import PartsPage from './pages/inventory/PartsPage'
 import PurchaseOrdersPage from './pages/inventory/PurchaseOrdersPage'
 import ReportsPage from './pages/inventory/ReportsPage'
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="/inventory" element={<InventoryLayout />}>
           <Route index element={<InventoryIndex />} />
           <Route path="requests" element={<RequestsPage />} />
+          <Route path="requests/:id" element={<RequestDetailPage />} />
           <Route path="parts" element={<PartsPage />} />
           <Route path="purchase-orders" element={<PurchaseOrdersPage />} />
           <Route path="reports" element={<ReportsPage />} />
