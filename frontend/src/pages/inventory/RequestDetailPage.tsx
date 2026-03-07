@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { mockRequests } from '../../data/requestsMockData'
 
@@ -5,6 +6,7 @@ export default function RequestDetailPage() {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
     const request = mockRequests.find((r) => r.id === Number(id))
+    const [rejectedItemIds, setRejectedItemIds] = useState<Set<number>>(new Set())
 
     if (!request) {
         return (
@@ -12,7 +14,7 @@ export default function RequestDetailPage() {
                 <p>ไม่พบรายการคำร้องขอเบิกหมายเลข #{id}</p>
                 <button
                     onClick={() => navigate('/inventory/requests')}
-                    className="mt-4 px-4 py-2 bg-amber-500 text-white rounded-lg text-sm hover:bg-amber-600 transition-colors"
+                    className="mt-4 px-4 py-2 bg-amber-500 text-white rounded-lg text-sm hover:bg-amber-600 transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
                 >
                     กลับหน้ารายการ
                 </button>
@@ -20,149 +22,164 @@ export default function RequestDetailPage() {
         )
     }
 
-    const total = request.items.reduce((sum, item) => sum + item.quantity * item.pricePerUnit, 0)
+    const toggleReject = (itemId: number) => {
+        setRejectedItemIds(prev => {
+            const next = new Set(prev)
+            if (next.has(itemId)) {
+                next.delete(itemId)
+            } else {
+                next.add(itemId)
+            }
+            return next
+        })
+    }
+
+    const total = request.items
+        .filter(item => !rejectedItemIds.has(item.id))
+        .reduce((sum, item) => sum + item.quantity * item.pricePerUnit, 0)
 
     return (
-        <div className="p-6">
-            {/* Back button */}
-            <button
-                onClick={() => navigate('/inventory/requests')}
-                className="flex items-center gap-1 text-sm text-gray-500 hover:text-amber-600 mb-5 transition-colors"
-            >
+        <div className="p-6 min-h-full flex flex-col">
+            {/* Top Navigation */}
+            <div className="flex items-center gap-2 text-gray-500 mb-6 cursor-pointer hover:text-amber-600 w-fit transition-colors" onClick={() => navigate('/inventory/requests')}>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
-                กลับหน้ารายการ
-            </button>
+                <span className="text-sm font-medium">ย้อนกลับ</span>
+            </div>
 
-            {/* Header card */}
-            <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm mb-6">
-                <div className="flex items-center justify-between bg-amber-500 px-4 py-2">
-                    <span className="text-white font-semibold text-sm">คำร้องขอเบิก #{request.id}</span>
-                    <span className="text-white text-xs flex items-center gap-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            {/* Title & Request Meta Details */}
+            <div className="flex flex-col gap-3 mb-6">
+                <div className="flex justify-between items-center">
+                    <h1 className="text-xl font-medium text-gray-800">รายการคำร้องขอที่ {request.id}</h1>
+                    <span className="text-gray-500 text-sm flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                         {request.requestedAt}
                     </span>
                 </div>
-                <div className="bg-white px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-8">
-                    {/* Requester */}
-                    <div className="flex items-center gap-2 text-sm text-gray-700">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A8 8 0 1118.88 6.196M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        <span>
-                            <span className="text-gray-400">ผู้ทำเรื่องเบิก : </span>
-                            {request.requester} ({request.requesterRole})
-                        </span>
+
+                <div className="flex gap-6 text-sm text-gray-600">
+                    <div className="flex flex-col gap-3 min-w-[280px]">
+                        <div className="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#38bdf8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            <span>ผู้ทำเรื่องเบิก : {request.requester} ({request.requesterRole})</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <rect x="3" y="7" width="18" height="10" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M7 12h10" />
+                            </svg>
+                            <span>ป้ายทะเบียน : {request.licensePlate}</span>
+                        </div>
                     </div>
 
-                    {/* Motorcycle model */}
-                    <div className="flex items-center gap-2 text-sm text-gray-700">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 0a2 2 0 00-2 2m2-2a2 2 0 012 2m-6 4a6 6 0 0112 0m-6 0v4m0 0H9m3 0h3" />
-                            <circle cx="5" cy="17" r="2" />
-                            <circle cx="19" cy="17" r="2" />
-                        </svg>
-                        <span>
-                            <span className="text-gray-400">รุ่นรถ : </span>
-                            {request.motorcycleModel}
-                        </span>
+                    <div className="flex flex-col gap-3">
+                        <div className="flex items-center gap-2">
+                            <svg className="h-[14px] w-[14px] text-amber-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 17 24" fill="currentColor">
+                                <path d="M8.632 15.526a2.112 2.112 0 0 0-2.106 2.105v4.305a2.106 2.106 0 0 0 4.212 0v-.043v.002v-4.263a2.112 2.112 0 0 0-2.104-2.106z" />
+                                <path d="M16.263 2.631H12.21C11.719 1.094 10.303 0 8.631 0S5.544 1.094 5.06 2.604l-.007.027h-4a1.053 1.053 0 0 0 0 2.106h4.053c.268.899.85 1.635 1.615 2.096l.016.009c-2.871.867-4.929 3.48-4.947 6.577v5.528a1.753 1.753 0 0 0 1.736 1.737h1.422v-3a3.737 3.737 0 1 1 7.474 0v3h1.421a1.752 1.752 0 0 0 1.738-1.737v-5.474a6.855 6.855 0 0 0-4.899-6.567l-.048-.012a3.653 3.653 0 0 0 1.625-2.08l.007-.026h4.053a1.056 1.056 0 0 0 1.053-1.053a1.149 1.149 0 0 0-1.104-1.105h-.002zM8.631 5.84a2.106 2.106 0 1 1 2.106-2.106l.001.06c0 1.13-.916 2.046-2.046 2.046l-.063-.001h.003z" />
+                            </svg>
+                            <span>รุ่นรถ : {request.motorcycleModel}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                            <span>รายการคำขอ : {request.items.length} รายการ ({request.items.reduce((s, i) => s + i.quantity, 0)} ชิ้น)</span>
+                        </div>
                     </div>
-
-                    {/* License plate */}
-                    <div className="flex items-center gap-2 text-sm text-gray-700">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <rect x="3" y="7" width="18" height="10" rx="2" strokeLinecap="round" strokeLinejoin="round" />
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M7 12h10" />
-                        </svg>
-                        <span>
-                            <span className="text-gray-400">ป้ายทะเบียน : </span>
-                            {request.licensePlate}
-                        </span>
-                    </div>
-
-                    {/* Item count */}
-                    <div className="flex items-center gap-2 text-sm text-gray-700">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                        <span>
-                            <span className="text-gray-400">รายการค้าขอ : </span>
-                            {request.items.length} รายการ ({request.items.reduce((s, i) => s + i.quantity, 0)} ชิ้น)
-                        </span>
-                        
-                    </div>
-                    
                 </div>
-                
             </div>
 
-            {/* Items table */}
-            <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-                <table className="w-full text-sm">
+            {/* Main Table Content */}
+            <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white flex-1 mb-6">
+                <table className="w-full text-sm text-center">
                     <thead>
-                        <tr className="bg-gray-50 text-gray-500 text-xs uppercase">
-                            <th className="text-left px-4 py-3 font-semibold w-10">#</th>
-                            <th className="text-left px-4 py-3 font-semibold">รหัสอะไหล่</th>
-                            <th className="text-left px-4 py-3 font-semibold">ชื่ออะไหล่</th>
-                            <th className="text-right px-4 py-3 font-semibold">จำนวน</th>
-                            <th className="text-left px-4 py-3 font-semibold">หน่วย</th>
-                            <th className="text-right px-4 py-3 font-semibold">ราคาต่อหน่วย</th>
-                            <th className="text-right px-4 py-3 font-semibold">รวม</th>
-                            <th className="text-center px-4 py-3 font-semibold">จัดการ</th>
+                        <tr className="bg-[#f3f4f6] text-gray-600 font-medium border-b border-gray-200">
+                            <th className="py-4 px-6 text-left font-medium">รหัสสินค้า</th>
+                            <th className="py-4 px-6 text-left font-medium">ชื่อสินค้า</th>
+                            <th className="py-4 px-6 font-medium">ราคาต่อหน่วย</th>
+                            <th className="py-4 px-6 font-medium">จำนวน</th>
+                            <th className="py-4 px-6 font-medium">subtotal</th>
+                            <th className="py-4 px-6 font-medium">จัดการ</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {request.items.map((item, idx) => (
-                            <tr key={item.id} className="text-gray-700 hover:bg-gray-50 transition-colors">
-                                <td className="px-4 py-3 text-gray-400">{idx + 1}</td>
-                                <td className="px-4 py-3 font-mono text-xs text-gray-500">{item.partCode}</td>
-                                <td className="px-4 py-3">{item.partName}</td>
-                                <td className="px-4 py-3 text-right">{item.quantity}</td>
-                                <td className="px-4 py-3 text-gray-500">{item.unit}</td>
-                                <td className="px-4 py-3 text-right">{item.pricePerUnit.toLocaleString()} ฿</td>
-                                <td className="px-4 py-3 text-right font-semibold text-gray-800">
-                                    {(item.quantity * item.pricePerUnit).toLocaleString()} ฿
-                                </td>
-                                <td className="px-4 py-3">
-                                    <div className="flex items-center justify-center gap-1">
-                                        <button className="px-2 py-1 text-xs bg-red-50 text-red-500 border border-red-200 rounded hover:bg-red-100 transition-colors">
-                                            ปฏิเสธ
-                                        </button>
-                                        <button className="px-2 py-1 text-xs bg-blue-50 text-blue-500 border border-blue-200 rounded hover:bg-blue-100 transition-colors">
-                                            แก้ไข
-                                        </button>
-                                        <button className="px-2 py-1 text-xs bg-gray-50 text-gray-500 border border-gray-200 rounded hover:bg-gray-100 transition-colors">
-                                            ดู
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
+                    <tbody className="divide-y divide-gray-100 text-gray-700">
+                        {request.items.map((item) => {
+                            const isRejected = rejectedItemIds.has(item.id)
+                            return (
+                                <tr key={item.id} className={`transition-colors ${isRejected ? 'bg-red-50/50 opacity-60' : 'hover:bg-gray-50'}`}>
+                                    <td className="py-4 px-6 text-left">{item.partCode}</td>
+                                    <td className="py-4 px-6 text-left">{item.partName}</td>
+                                    <td className="py-4 px-6">{item.pricePerUnit}</td>
+                                    <td className="py-4 px-6">{item.quantity}</td>
+                                    <td className="py-4 px-6">{item.quantity * item.pricePerUnit}</td>
+                                    <td className="py-4 px-6">
+                                        <div className="flex items-center justify-center gap-4">
+                                            <button
+                                                onClick={() => toggleReject(item.id)}
+                                                className={`flex items-center justify-center gap-1.5 w-32 py-1.5 text-xs font-medium text-white rounded transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] ${isRejected ? 'bg-teal-500 hover:bg-teal-600' : 'bg-[#f59e0b] hover:bg-amber-600'}`}
+                                            >
+                                                {isRejected ? (
+                                                    <>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                                        </svg>
+                                                        เปลี่ยนเป็นยืนยัน
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                        </svg>
+                                                        ปฏิเสธคำขอ
+                                                    </>
+                                                )}
+                                            </button>
+                                            <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#255B91] text-white rounded hover:bg-blue-800 transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                                    <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                                                </svg>
+                                                ดูรายละเอียด
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )
+                        })}
                     </tbody>
                     <tfoot>
-                        <tr className="bg-amber-50 border-t-2 border-amber-200">
-                            <td colSpan={6} className="px-4 py-3 text-right font-semibold text-gray-700 text-sm">
-                                ยอดรวมทั้งหมด
-                            </td>
-                            <td className="px-4 py-3 text-right font-bold text-amber-700 text-base">
-                                {total.toLocaleString()} ฿
-                            </td>
-                            <td className="px-4 py-3">
-                                <div className="flex items-center justify-center gap-1">
-                                    <button className="px-3 py-1.5 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors font-semibold">
-                                        ปฏิเสธทั้งหมด
-                                    </button>
-                                    <button className="px-3 py-1.5 text-xs bg-green-500 text-white rounded hover:bg-green-600 transition-colors font-semibold">
-                                        อนุมัติทั้งหมด
-                                    </button>
+                        <tr className="bg-[#f8fafc] border-t border-gray-200">
+                            <td colSpan={6} className="py-5 px-6">
+                                <div className="flex items-center justify-end gap-6 w-full pr-8">
+                                    <span className="text-gray-500 font-medium uppercase tracking-wider text-sm">Total</span>
+                                    <span className="text-xl font-medium text-gray-900">{total}</span>
                                 </div>
                             </td>
                         </tr>
                     </tfoot>
                 </table>
+            </div>
+
+            {/* Bottom Actions */}
+            <div className="mt-auto flex justify-end gap-3 pt-4">
+                <button className="flex items-center gap-2 px-6 py-2.5 bg-[#dc2626] text-white font-medium rounded-lg hover:bg-red-700 transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                    ไม่อนุมัติการเบิกสินค้า
+                </button>
+                <button className="flex items-center gap-2 px-6 py-2.5 bg-[#16a34a] text-white font-medium rounded-lg hover:bg-green-700 transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    อนุมัติการเบิกสินค้า
+                </button>
             </div>
         </div>
     )

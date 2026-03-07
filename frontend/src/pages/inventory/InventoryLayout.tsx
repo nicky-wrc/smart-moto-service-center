@@ -43,8 +43,8 @@ const navItems: NavItem[] = [
 ]
 
 const pageTitles: Record<string, string> = {
-  '/inventory/requests': 'รายการคำร้องขอเบิกอะไหล่ทั้งหมด',
-  '/inventory/parts': 'รายการอะไหล่ทั้งหมด',
+  '/inventory/requests': 'รายการคำร้องขอเบิกอะไหล่',
+  '/inventory/parts': 'รายการอะไหล่',
   '/inventory/purchase-orders': 'ใบสั่งซื้อ',
   '/inventory/reports': 'รายงานสต็อก',
 }
