@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { mockJobs } from './JobOrdersPage'
+import { mockJobs } from './jobs'
 
 // ─── Parts Catalog ────────────────────────────────────────────────────────────
 
@@ -285,8 +285,10 @@ export default function JobDetailPage() {
   const job = mockJobs.find((j) => j.id === Number(id))
 
   // Mechanic assignment (for พร้อมซ่อม status)
-  const [selectedMechanic, setSelectedMechanic] = useState<number | null>(null)
+  const [selectedMechanics, setSelectedMechanics] = useState<number[]>([])
   const [assignConfirmed, setAssignConfirmed] = useState(false)
+  const [mechanicSearch, setMechanicSearch] = useState('')
+  const [mechanicSkillFilter, setMechanicSkillFilter] = useState('')
 
   // Tags (editable)
   const [tags, setTags] = useState(job?.tags ?? [])
@@ -319,6 +321,18 @@ export default function JobDetailPage() {
   const [deepSent, setDeepSent] = useState(false)
   const [estimatedDays, setEstimatedDays] = useState<number | ''>(1)
   const [estimatedUnit, setEstimatedUnit] = useState<'วัน' | 'เดือน'>('วัน')
+
+  // Additional quotation (for กำลังดำเนินงาน — mechanic found extra issues)
+  type AddlItem = { name: string; qty: number; unitPrice: number }
+  const [addlItems, setAddlItems] = useState<AddlItem[]>([])
+  const [addlName, setAddlName] = useState('')
+  const [addlQty, setAddlQty] = useState(1)
+  const [addlPrice, setAddlPrice] = useState<number | ''>(0)
+  const [addlQuotationSent, setAddlQuotationSent] = useState(false)
+
+  // Mechanic report photo lightbox
+  const [mrLightboxOpen, setMrLightboxOpen] = useState(false)
+  const [mrLightboxIdx, setMrLightboxIdx] = useState(0)
 
   if (!job) return <div className="p-6 text-sm text-gray-400">ไม่พบใบงาน</div>
 
@@ -414,6 +428,42 @@ export default function JobDetailPage() {
               </>
             )
           })()}
+        </div>
+      )}
+
+      {/* Mechanic Report Photo Lightbox */}
+      {mrLightboxOpen && job.mechanicReport && (
+        <div
+          className="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center"
+          onClick={() => setMrLightboxOpen(false)}
+        >
+          <button
+            onClick={() => setMrLightboxOpen(false)}
+            className="absolute top-5 right-6 text-white text-2xl bg-transparent border-none cursor-pointer opacity-60 hover:opacity-100 transition-opacity"
+          >
+            ✕
+          </button>
+          <img
+            src={job.mechanicReport.photos[mrLightboxIdx]}
+            alt="รูปจากช่าง"
+            className="max-h-[80vh] max-w-[90vw] object-contain rounded-xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+          {job.mechanicReport.photos.length > 1 && (
+            <div className="flex gap-3 mt-5" onClick={(e) => e.stopPropagation()}>
+              {job.mechanicReport.photos.map((p, i) => (
+                <button
+                  key={i}
+                  onClick={() => setMrLightboxIdx(i)}
+                  className={`w-14 h-14 rounded-lg overflow-hidden border-2 p-0 bg-transparent cursor-pointer transition-all ${
+                    i === mrLightboxIdx ? 'border-white opacity-100' : 'border-transparent opacity-40 hover:opacity-70'
+                  }`}
+                >
+                  <img src={p} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -553,63 +603,138 @@ export default function JobDetailPage() {
               </div>
 
               {/* Mechanic assignment — shown when customer already approved */}
-              {job.status === 'พร้อมซ่อม' && (
-                <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm flex flex-col gap-3">
-                  <p className="text-xs text-gray-400 uppercase tracking-wide">มอบหมายช่าง</p>
+              {job.status === 'พร้อมซ่อม' && (() => {
+                const allSkills = [...new Set(mockMechanics.flatMap((m) => m.skills))]
+                const filtered = mockMechanics.filter((m) => {
+                  const matchSearch = !mechanicSearch || m.name.toLowerCase().includes(mechanicSearch.toLowerCase())
+                  const matchSkill  = !mechanicSkillFilter || m.skills.includes(mechanicSkillFilter)
+                  return matchSearch && matchSkill
+                })
+                const toggleMechanic = (id: number) =>
+                  setSelectedMechanics((prev) =>
+                    prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+                  )
 
-                  {!assignConfirmed ? (
-                    <>
-                      <div className="flex flex-col gap-2">
-                        {mockMechanics.map((m) => {
-                          const selected = selectedMechanic === m.id
-                          return (
+                return (
+                  <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm flex flex-col gap-3">
+                    <p className="text-xs text-gray-400 uppercase tracking-wide">มอบหมายช่าง</p>
+
+                    {!assignConfirmed ? (
+                      <>
+                        {/* Search */}
+                        <div className="relative">
+                          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                          <input
+                            type="text"
+                            value={mechanicSearch}
+                            onChange={(e) => setMechanicSearch(e.target.value)}
+                            placeholder="ค้นหาช่าง..."
+                            className="w-full border border-gray-200 rounded-xl pl-8 pr-3 py-2 text-sm outline-none focus:border-[#F8981D] transition-colors"
+                          />
+                        </div>
+
+                        {/* Skill filter chips */}
+                        <div className="flex gap-1.5 flex-wrap">
+                          <button
+                            onClick={() => setMechanicSkillFilter('')}
+                            className={`text-xs px-2.5 py-1 rounded-full border transition-colors cursor-pointer ${
+                              !mechanicSkillFilter ? 'bg-[#44403C] text-white border-[#44403C]' : 'bg-white text-gray-400 border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            ทั้งหมด
+                          </button>
+                          {allSkills.map((skill) => (
                             <button
-                              key={m.id}
-                              onClick={() => setSelectedMechanic(m.id)}
-                              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 border text-left transition-all cursor-pointer bg-transparent ${
-                                selected ? 'border-[#F8981D] bg-[#F8981D]/5' : 'border-gray-100 hover:border-gray-200 bg-gray-50'
+                              key={skill}
+                              onClick={() => setMechanicSkillFilter(mechanicSkillFilter === skill ? '' : skill)}
+                              className={`text-xs px-2.5 py-1 rounded-full border transition-colors cursor-pointer ${
+                                mechanicSkillFilter === skill ? 'bg-[#F8981D] text-white border-[#F8981D]' : 'bg-white text-gray-400 border-gray-200 hover:border-[#F8981D] hover:text-[#F8981D]'
                               }`}
                             >
-                              <div className={`w-9 h-9 rounded-full text-sm font-semibold flex items-center justify-center shrink-0 ${
-                                selected ? 'bg-[#F8981D] text-white' : 'bg-gray-200 text-gray-500'
-                              }`}>
-                                {m.avatar}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-[#1E1E1E]">{m.name}</p>
-                                <p className="text-xs text-gray-400">{m.skills.join(' · ')}</p>
-                              </div>
-                              <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${
-                                m.jobs === 0 ? 'bg-green-100 text-green-700' :
-                                m.jobs >= 3  ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-700'
-                              }`}>
-                                {m.jobs} งาน
-                              </span>
+                              {skill}
                             </button>
-                          )
-                        })}
-                      </div>
-                      <button
-                        onClick={() => { if (selectedMechanic) setAssignConfirmed(true) }}
-                        disabled={!selectedMechanic}
-                        className="w-full bg-[#F8981D] hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium py-2.5 rounded-xl transition-colors border-none cursor-pointer"
-                      >
-                        มอบหมายงาน
-                      </button>
-                    </>
-                  ) : (
-                    <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3.5">
-                      <p className="text-green-700 text-sm font-medium">มอบหมายงานแล้ว</p>
-                      <p className="text-green-600 text-xs mt-0.5">
-                        {mockMechanics.find((m) => m.id === selectedMechanic)?.name} รับงานนี้แล้ว
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
+                          ))}
+                        </div>
 
-              {/* Workflow — shown for jobs not yet assessed */}
-              {job.status !== 'พร้อมซ่อม' && (
+                        {/* Mechanic list */}
+                        <div className="flex flex-col gap-2">
+                          {filtered.length === 0 && (
+                            <p className="text-center text-xs text-gray-400 py-3">ไม่พบช่างที่ตรงกัน</p>
+                          )}
+                          {filtered.map((m) => {
+                            const isSelected = selectedMechanics.includes(m.id)
+                            return (
+                              <button
+                                key={m.id}
+                                onClick={() => toggleMechanic(m.id)}
+                                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 border text-left transition-all cursor-pointer bg-transparent ${
+                                  isSelected ? 'border-[#F8981D] bg-[#F8981D]/5' : 'border-gray-100 hover:border-gray-200 bg-gray-50'
+                                }`}
+                              >
+                                {/* Checkbox */}
+                                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+                                  isSelected ? 'bg-[#F8981D] border-[#F8981D]' : 'bg-white border-gray-300'
+                                }`}>
+                                  {isSelected && (
+                                    <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  )}
+                                </div>
+                                <div className={`w-8 h-8 rounded-full text-sm font-semibold flex items-center justify-center shrink-0 transition-colors ${
+                                  isSelected ? 'bg-[#F8981D] text-white' : 'bg-gray-200 text-gray-500'
+                                }`}>
+                                  {m.avatar}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-[#1E1E1E]">{m.name}</p>
+                                  <p className="text-xs text-gray-400">{m.skills.join(' · ')}</p>
+                                </div>
+                                <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${
+                                  m.jobs === 0 ? 'bg-stone-100 text-stone-500' :
+                                  m.jobs >= 3  ? 'bg-[#44403C]/10 text-[#44403C]' : 'bg-[#F8981D]/15 text-[#F8981D]'
+                                }`}>
+                                  {m.jobs} งาน
+                                </span>
+                              </button>
+                            )
+                          })}
+                        </div>
+
+                        <button
+                          onClick={() => { if (selectedMechanics.length > 0) setAssignConfirmed(true) }}
+                          disabled={selectedMechanics.length === 0}
+                          className="w-full bg-[#F8981D] hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium py-2.5 rounded-xl transition-colors border-none cursor-pointer"
+                        >
+                          มอบหมายงาน{selectedMechanics.length > 0 ? ` (${selectedMechanics.length} คน)` : ''}
+                        </button>
+                      </>
+                    ) : (
+                      <div className="bg-[#44403C]/5 border border-[#44403C]/15 rounded-xl px-4 py-3.5 flex flex-col gap-2">
+                        <p className="text-sm font-medium text-[#44403C]">มอบหมายงานแล้ว</p>
+                        <div className="flex flex-col gap-1.5">
+                          {selectedMechanics.map((id) => {
+                            const m = mockMechanics.find((x) => x.id === id)!
+                            return (
+                              <div key={id} className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-[#44403C] text-white text-xs flex items-center justify-center font-semibold shrink-0">
+                                  {m.avatar}
+                                </div>
+                                <span className="text-sm text-[#44403C]">{m.name}</span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
+
+              {/* Workflow — shown only while still in assessment phase */}
+              {['รอประเมิน', 'ตรวจเชิงลึก', 'รอลูกค้าอนุมัติ', 'รอสั่งซื้อ'].includes(job.status) && (
               <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm flex flex-col gap-3">
                 <p className="text-xs text-gray-400 uppercase tracking-wide">ประเมินงาน</p>
 
@@ -824,6 +949,149 @@ export default function JobDetailPage() {
                   </div>
                 )}
               </div>
+              )}
+
+              {/* ── กำลังดำเนินงาน: mechanic report + additional quotation ── */}
+              {job.status === 'กำลังดำเนินงาน' && (
+                <div className="flex flex-col gap-3">
+
+                  {/* Mechanic report card */}
+                  {job.mechanicReport ? (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col gap-3">
+                      <div className="flex items-center gap-2">
+                        <svg className="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                        </svg>
+                        <p className="text-sm font-semibold text-amber-700">ช่างรายงานปัญหาเพิ่มเติม</p>
+                        <span className="text-xs text-amber-500 ml-auto shrink-0">{job.mechanicReport.reportedAt}</span>
+                      </div>
+                      <p className="text-sm text-amber-800 leading-relaxed">{job.mechanicReport.note}</p>
+                      {job.mechanicReport.photos.length > 0 && (
+                        <div className="flex gap-2 flex-wrap">
+                          {job.mechanicReport.photos.map((p, i) => (
+                            <button
+                              key={i}
+                              onClick={() => { setMrLightboxIdx(i); setMrLightboxOpen(true) }}
+                              className="w-16 h-16 rounded-lg overflow-hidden border border-amber-200 p-0 bg-transparent cursor-pointer hover:opacity-80 transition-opacity"
+                            >
+                              <img src={p} alt="" className="w-full h-full object-cover" />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-stone-50 border border-stone-200 rounded-xl px-4 py-3.5 text-center">
+                      <p className="text-sm text-stone-400">ช่างยังไม่ได้รายงานปัญหาเพิ่มเติม</p>
+                    </div>
+                  )}
+
+                  {/* Additional quotation */}
+                  {job.mechanicReport && (
+                    <div className="bg-white border border-gray-100 rounded-xl p-4 flex flex-col gap-3 shadow-sm">
+                      <p className="text-xs text-gray-400 uppercase tracking-wide">ใบเสนอราคาเพิ่มเติม</p>
+
+                      {/* Added items list */}
+                      {addlItems.length > 0 && (
+                        <div className="flex flex-col gap-1.5">
+                          {addlItems.map((item, i) => (
+                            <div key={i} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-[#1E1E1E] truncate">{item.name}</p>
+                                <p className="text-xs text-gray-400">{item.qty} × {item.unitPrice.toLocaleString()} บาท</p>
+                              </div>
+                              <span className="text-sm font-semibold text-[#1E1E1E] shrink-0">
+                                {(item.qty * item.unitPrice).toLocaleString()} ฿
+                              </span>
+                              <button
+                                onClick={() => setAddlItems((prev) => prev.filter((_, j) => j !== i))}
+                                className="text-gray-300 hover:text-red-400 border-none bg-transparent cursor-pointer text-xs transition-colors shrink-0"
+                              >✕</button>
+                            </div>
+                          ))}
+                          <div className="flex items-center justify-between px-3 py-2 border-t border-gray-100 mt-1">
+                            <span className="text-xs text-gray-400">รวมทั้งหมด</span>
+                            <span className="text-sm font-bold text-[#1E1E1E]">
+                              {addlItems.reduce((s, it) => s + it.qty * it.unitPrice, 0).toLocaleString()} ฿
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Add item form */}
+                      {!addlQuotationSent && (
+                        <div className="flex flex-col gap-2">
+                          <input
+                            type="text"
+                            value={addlName}
+                            onChange={(e) => setAddlName(e.target.value)}
+                            placeholder="รายการ เช่น โซ่ขับเคลื่อน..."
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#F8981D] transition-colors"
+                          />
+                          <div className="flex gap-2">
+                            <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden h-9 shrink-0">
+                              <button onClick={() => setAddlQty((q) => Math.max(1, q - 1))}
+                                className="w-8 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50 bg-transparent border-none cursor-pointer font-bold transition-colors">−</button>
+                              <span className="w-7 text-center text-sm font-medium text-[#1E1E1E]">{addlQty}</span>
+                              <button onClick={() => setAddlQty((q) => q + 1)}
+                                className="w-8 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50 bg-transparent border-none cursor-pointer font-bold transition-colors">+</button>
+                            </div>
+                            <div className="relative flex-1">
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                value={addlPrice}
+                                onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setAddlPrice(v === '' ? '' : Number(v)) }}
+                                placeholder="ราคาต่อหน่วย"
+                                className="w-full border border-gray-200 rounded-xl pl-3 pr-8 py-2 text-sm outline-none focus:border-[#F8981D] transition-colors"
+                              />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">฿</span>
+                            </div>
+                            <button
+                              onClick={() => {
+                                if (!addlName.trim() || !addlPrice) return
+                                setAddlItems((prev) => [...prev, { name: addlName.trim(), qty: addlQty, unitPrice: Number(addlPrice) }])
+                                setAddlName('')
+                                setAddlQty(1)
+                                setAddlPrice(0)
+                              }}
+                              className="h-9 px-3 bg-[#44403C] hover:bg-black text-white text-sm rounded-xl border-none cursor-pointer transition-colors shrink-0"
+                            >
+                              เพิ่ม
+                            </button>
+                          </div>
+                          <button
+                            onClick={() => { if (addlItems.length > 0) setAddlQuotationSent(true) }}
+                            disabled={addlItems.length === 0}
+                            className="w-full bg-[#F8981D] hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium py-2.5 rounded-xl transition-colors border-none cursor-pointer"
+                          >
+                            ส่งใบเสนอราคาเพิ่มเติมให้ลูกค้า
+                          </button>
+                        </div>
+                      )}
+
+                      {addlQuotationSent && (
+                        <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3.5">
+                          <p className="text-green-700 text-sm font-medium">ส่งใบเสนอราคาเพิ่มเติมแล้ว</p>
+                          <p className="text-green-600 text-xs mt-0.5">รวม {addlItems.reduce((s, it) => s + it.qty * it.unitPrice, 0).toLocaleString()} ฿ · รอการยืนยันจากลูกค้า</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── รอตรวจ: waiting for foreman inspection ── */}
+              {job.status === 'รอตรวจ' && (
+                <div className="bg-[#44403C]/5 border border-[#44403C]/15 rounded-xl px-4 py-5 flex flex-col items-center gap-2 text-center">
+                  <div className="w-10 h-10 rounded-full bg-[#44403C]/10 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-[#44403C]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-semibold text-[#44403C]">ช่างซ่อมเสร็จแล้ว</p>
+                  <p className="text-xs text-stone-400">รอหัวหน้าช่างตรวจสอบงาน</p>
+                </div>
               )}
 
             </div>
