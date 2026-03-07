@@ -1,0 +1,54 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { PrismaModule } from './prisma/prisma.module';
+import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
+import { CustomersModule } from './customers/customers.module';
+import { MotorcyclesModule } from './motorcycles/motorcycles.module';
+import { JobsModule } from './jobs/jobs.module';
+import { AppointmentsModule } from './appointments/appointments.module';
+import { WarrantiesModule } from './warranties/warranties.module';
+import { LaborTimesModule } from './labor-times/labor-times.module';
+import { OutsourcesModule } from './outsources/outsources.module';
+import { JobChecklistsModule } from './job-checklists/job-checklists.module';
+import { PartsModule } from './parts/parts.module';
+import { PaymentsModule } from './payments/payments.module';
+import { QuotationsModule } from './quotations/quotations.module';
+import { PartRequisitionsModule } from './part-requisitions/part-requisitions.module';
+import { ReportsModule } from './reports/reports.module';
+import { ServiceCatalogModule } from './service-catalog/service-catalog.module';
+import { SuppliersModule } from './suppliers/suppliers.module';
+import { PurchaseOrdersModule } from './purchase-orders/purchase-orders.module';
+import { PurchaseReceivesModule } from './purchase-receives/purchase-receives.module';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    PrismaModule,
+    UsersModule,
+    AuthModule,
+    CustomersModule,
+    MotorcyclesModule,
+    JobsModule,
+    AppointmentsModule,
+    WarrantiesModule,
+    LaborTimesModule,
+    OutsourcesModule,
+    JobChecklistsModule,
+    PartsModule,
+    PaymentsModule,
+    QuotationsModule,
+    PartRequisitionsModule,
+    ReportsModule,
+    ServiceCatalogModule,
+    SuppliersModule,
+    PurchaseOrdersModule,
+    PurchaseReceivesModule,
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule { }
+

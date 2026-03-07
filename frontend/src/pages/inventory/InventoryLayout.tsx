@@ -1,0 +1,69 @@
+import { useLocation, Outlet } from 'react-router-dom'
+import AppHeader from '../../components/AppHeader'
+import Sidebar from '../../components/Sidebar'
+import type { NavItem } from '../../components/Sidebar'
+
+const navItems: NavItem[] = [
+  {
+    path: '/inventory/requests',
+    label: 'คำร้องขอเบิกอะไหล่',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+      </svg>
+    ),
+  },
+  {
+    path: '/inventory/parts',
+    label: 'รายการอะไหล่',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+      </svg>
+    ),
+  },
+  {
+    path: '/inventory/purchase-orders',
+    label: 'ใบสั่งซื้อ',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+      </svg>
+    ),
+  },
+  {
+    path: '/inventory/reports',
+    label: 'รายงานสต็อก',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      </svg>
+    ),
+  },
+]
+
+const pageTitles: Record<string, string> = {
+  '/inventory/requests': 'รายการคำร้องขอเบิกอะไหล่ทั้งหมด',
+  '/inventory/parts': 'รายการอะไหล่ทั้งหมด',
+  '/inventory/purchase-orders': 'ใบสั่งซื้อ',
+  '/inventory/reports': 'รายงานสต็อก',
+}
+
+export default function InventoryLayout() {
+  const location = useLocation()
+  const title = Object.entries(pageTitles).find(([path]) => location.pathname.startsWith(path))?.[1] ?? 'พนักงานคงคลัง'
+
+  return (
+    <div className="min-h-screen bg-[#1B1B1B] pb-4 pr-4 flex items-stretch font-[Kanit]">
+      <div className="flex-1 bg-[#1B1B1B] rounded-2xl flex flex-col overflow-hidden min-h-[calc(100vh-2rem)]">
+        <AppHeader title={title} />
+        <div className="flex flex-1 gap-0">
+          <Sidebar navItems={navItems} />
+          <div className="flex-1 bg-white rounded-xl overflow-auto">
+            <Outlet />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
