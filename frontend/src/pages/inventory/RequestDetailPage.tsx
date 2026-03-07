@@ -1,12 +1,25 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { mockRequests } from '../../data/requestsMockData'
+
+type ConfirmAction = 'approve' | 'reject' | null
+type ResultScreen = 'approved' | 'rejected' | null
 
 export default function RequestDetailPage() {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
     const request = mockRequests.find((r) => r.id === Number(id))
     const [rejectedItemIds, setRejectedItemIds] = useState<Set<number>>(new Set())
+    const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null)
+    const [resultScreen, setResultScreen] = useState<ResultScreen>(null)
+
+    // Auto-redirect after showing result screen
+    useEffect(() => {
+        if (resultScreen) {
+            const timer = setTimeout(() => navigate('/inventory/requests'), 3000)
+            return () => clearTimeout(timer)
+        }
+    }, [resultScreen, navigate])
 
     if (!request) {
         return (
@@ -22,6 +35,38 @@ export default function RequestDetailPage() {
         )
     }
 
+    // ---- Result Screens ----
+    if (resultScreen === 'rejected') {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-full gap-5 py-20">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                    <circle cx="12" cy="12" r="10" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 9l-6 6M9 9l6 6" />
+                </svg>
+                <div className="text-center">
+                    <p className="text-2xl font-semibold text-red-600">การขอเบิกถูกยกเลิกแล้ว</p>
+                    <p className="text-sm text-gray-400 mt-2">กำลังกลับสู่หน้าหลัก...</p>
+                </div>
+            </div>
+        )
+    }
+
+    if (resultScreen === 'approved') {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-full gap-5 py-20">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                    <circle cx="12" cy="12" r="10" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 12l3 3 5-6" />
+                </svg>
+                <div className="text-center">
+                    <p className="text-2xl font-semibold text-green-600">การขอเบิกสินค้าของท่านสำเร็จ</p>
+                    <p className="text-sm text-gray-400 mt-2">กำลังกลับสู่หน้าหลัก...</p>
+                </div>
+            </div>
+        )
+    }
+
+    // ---- Helpers ----
     const toggleReject = (itemId: number) => {
         setRejectedItemIds(prev => {
             const next = new Set(prev)
@@ -38,8 +83,58 @@ export default function RequestDetailPage() {
         .filter(item => !rejectedItemIds.has(item.id))
         .reduce((sum, item) => sum + item.quantity * item.pricePerUnit, 0)
 
+    const allRejected = rejectedItemIds.size === request.items.length
+
+    const handleAction = (action: 'approve' | 'reject') => {
+        setConfirmAction(action)
+    }
+
+    const handleConfirm = () => {
+        setConfirmAction(null)
+        setResultScreen(confirmAction === 'approve' ? 'approved' : 'rejected')
+    }
+
     return (
         <div className="p-6 min-h-full flex flex-col">
+            {/* Confirmation Dialog */}
+            {confirmAction && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4 flex flex-col items-center gap-5">
+                        <div className={`h-14 w-14 rounded-full flex items-center justify-center ${confirmAction === 'approve' ? 'bg-green-100' : 'bg-red-100'}`}>
+                            {confirmAction === 'approve' ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                                </svg>
+                            )}
+                        </div>
+                        <div className="text-center">
+                            <h2 className="text-lg font-semibold text-gray-800">ยืนยันการทำรายการนี้หรือไม่?</h2>
+                            <p className="text-sm text-gray-500 mt-1">
+                                {confirmAction === 'approve' ? 'คุณกำลังจะอนุมัติการเบิกสินค้า' : 'คุณกำลังจะไม่อนุมัติการเบิกสินค้า'}
+                            </p>
+                        </div>
+                        <div className="flex gap-3 w-full">
+                            <button
+                                onClick={() => setConfirmAction(null)}
+                                className="flex-1 py-2.5 rounded-lg border border-gray-300 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors"
+                            >
+                                ยกเลิก
+                            </button>
+                            <button
+                                onClick={handleConfirm}
+                                className={`flex-1 py-2.5 rounded-lg text-white text-sm font-medium transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_30%)] ${confirmAction === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
+                            >
+                                ใช่ ยืนยัน
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Top Navigation */}
             <div className="flex items-center gap-2 text-gray-500 mb-6 cursor-pointer hover:text-amber-600 w-fit transition-colors" onClick={() => navigate('/inventory/requests')}>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -167,19 +262,36 @@ export default function RequestDetailPage() {
             </div>
 
             {/* Bottom Actions */}
-            <div className="mt-auto flex justify-end gap-3 pt-4">
-                <button className="flex items-center gap-2 px-6 py-2.5 bg-[#dc2626] text-white font-medium rounded-lg hover:bg-red-700 transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
-                    ไม่อนุมัติการเบิกสินค้า
-                </button>
-                <button className="flex items-center gap-2 px-6 py-2.5 bg-[#16a34a] text-white font-medium rounded-lg hover:bg-green-700 transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    อนุมัติการเบิกสินค้า
-                </button>
+            <div className="mt-auto flex flex-col items-end gap-2 pt-4">
+                <div className="flex justify-end gap-3">
+                    <button
+                        onClick={() => handleAction('reject')}
+                        className="flex items-center gap-2 px-6 py-2.5 bg-[#dc2626] text-white font-medium rounded-lg hover:bg-red-700 transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                        ไม่อนุมัติการเบิกสินค้า
+                    </button>
+                    <button
+                        onClick={() => handleAction('approve')}
+                        disabled={allRejected}
+                        className={`flex items-center gap-2 px-6 py-2.5 font-medium rounded-lg transition-colors ${allRejected ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-[#16a34a] text-white hover:bg-green-700 [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]'}`}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        อนุมัติการเบิกสินค้า
+                    </button>
+                </div>
+                {allRejected && (
+                    <p className="text-xs text-red-500 flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                        จำเป็นต้องเลือกอย่างน้อยหนึ่งรายการจึงจะสามารถอนุมัติการเบิกสินค้าได้
+                    </p>
+                )}
             </div>
         </div>
     )
