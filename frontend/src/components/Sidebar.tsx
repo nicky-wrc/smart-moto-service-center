@@ -17,7 +17,7 @@ export default function Sidebar({ navItems }: SidebarProps) {
   const isActive = (path: string) => location.pathname.startsWith(path)
 
   return (
-    <div className="flex flex-col items-center gap-4 pt-4 w-16">
+    <div className="flex flex-col items-center gap-4 w-16">
       {navItems.map((item) => (
         <div key={item.path} className="relative group">
           <button

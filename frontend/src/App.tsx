@@ -8,9 +8,16 @@ import PartsPage from './pages/inventory/PartsPage'
 import PurchaseOrdersPage from './pages/inventory/PurchaseOrdersPage'
 import ReportsPage from './pages/inventory/ReportsPage'
 
+// Foreman (หัวหน้าช่าง)
+import ForemanLayout from './pages/foreman/ForemanLayout'
+import ForemanIndex from './pages/foreman'
+import DashboardPage from './pages/foreman/DashboardPage'
+import JobOrdersPage from './pages/foreman/JobOrdersPage'
+import JobDetailPage from './pages/foreman/JobDetailPage'
+import JobHistoryPage from './pages/foreman/JobHistoryPage'
+
 // Other roles (placeholder — layouts TBD)
 import MechanicPage from './pages/mechanic'
-import ForemanPage from './pages/foreman'
 import OwnerPage from './pages/owner'
 import AccountantPage from './pages/accountant'
 import ReceptionPage from './pages/reception'
@@ -19,7 +26,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route index element={<Navigate to="/inventory/requests" replace />} />
+        <Route index element={<Navigate to="/foreman/jobs" replace />} />
 
         {/* พนักงานคงคลัง */}
         <Route path="/inventory" element={<InventoryLayout />}>
@@ -30,9 +37,17 @@ export default function App() {
           <Route path="reports" element={<ReportsPage />} />
         </Route>
 
+        {/* หัวหน้าช่าง */}
+        <Route path="/foreman" element={<ForemanLayout />}>
+          <Route index element={<ForemanIndex />} />
+          <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="jobs" element={<JobOrdersPage />} />
+          <Route path="jobs/:id" element={<JobDetailPage />} />
+          <Route path="history" element={<JobHistoryPage />} />
+        </Route>
+
         {/* roles อื่น — layouts จะสร้างเพิ่มในภายหลัง */}
         <Route path="/reception/*" element={<ReceptionPage />} />
-        <Route path="/foreman/*" element={<ForemanPage />} />
         <Route path="/mechanic/*" element={<MechanicPage />} />
         <Route path="/accountant/*" element={<AccountantPage />} />
         <Route path="/owner/*" element={<OwnerPage />} />
