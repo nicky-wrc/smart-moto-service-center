@@ -8,10 +8,10 @@ export default function AppHeader({ title }: AppHeaderProps) {
   const [showUserMenu, setShowUserMenu] = useState(false)
 
   return (
-    <div className="flex items-center justify-between px-5 py-5">
+    <div className="flex items-center justify-between pl-7 pr-0 py-5">
       <div className="flex items-center gap-4">
         <span className="text-white font-bold text-2xl tracking-wide">SA</span>
-        <span className="text-white text-xl font-light">{title}</span>
+        <span className="text-white text-2xl font-light ml-3">{title}</span>
       </div>
       <div className="relative">
         <button

@@ -2,6 +2,9 @@
 @source "../src/**/*.{ts,tsx}";
 
 body {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
   font-family: 'Kanit', system-ui, -apple-system, sans-serif;
   background-color: #44403C;
   color: #1E1E1E;
