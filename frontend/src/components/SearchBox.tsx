@@ -2,9 +2,10 @@ interface SearchBoxProps {
     value: string
     onChange: (value: string) => void
     placeholder?: string
+    children?: React.ReactNode
 }
 
-export default function SearchBox({ value, onChange, placeholder = 'ค้นหา...' }: SearchBoxProps) {
+export default function SearchBox({ value, onChange, placeholder = 'ค้นหา...', children }: SearchBoxProps) {
     return (
         <div className="flex items-center" style={{ width: '30%' }}>
             <div className="relative flex-1">
@@ -22,14 +23,15 @@ export default function SearchBox({ value, onChange, placeholder = 'ค้นห
                 />
             </div>
             <button
-                onClick={() => { }}
-                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-r-lg transition-colors flex items-center gap-1.5 border border-amber-500 shrink-0"
+                type="submit"
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-r-lg transition-colors flex items-center gap-1.5 border border-amber-500 shrink-0 [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35m0 0A7 7 0 1 0 6.65 16.65 7 7 0 0 0 16.65 16.65z" />
                 </svg>
                 ค้นหา
             </button>
+            {children}
         </div>
     )
 }
