@@ -8,7 +8,7 @@ import { PaymentStatus, JobStatus, PaymentMethod } from '@prisma/client';
 
 @Injectable()
 export class PaymentsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async calculateBilling(jobId: number) {
     const job = await this.prisma.job.findUnique({
@@ -175,7 +175,7 @@ export class PaymentsService {
     });
   }
 
-  async processPayment(id: number) {
+  async processPayment(id: number, dto: { amountReceived: number }) {
     const payment = await this.prisma.payment.findUnique({
       where: { id },
     });
@@ -187,6 +187,13 @@ export class PaymentsService {
     if (payment.paymentStatus === PaymentStatus.PAID) {
       throw new BadRequestException('Payment already processed');
     }
+
+    const totalAmount = typeof payment.totalAmount === 'number' ? payment.totalAmount : Number(payment.totalAmount);
+    if (dto.amountReceived < totalAmount) {
+      throw new BadRequestException(`Amount received (${dto.amountReceived}) is less than total amount (${totalAmount})`);
+    }
+
+    const change = dto.amountReceived - totalAmount;
 
     const job = await this.prisma.job.findUnique({
       where: { id: payment.jobId },
@@ -204,6 +211,8 @@ export class PaymentsService {
       where: { id },
       data: {
         paymentStatus: PaymentStatus.PAID,
+        amountReceived: dto.amountReceived,
+        change,
         paidAt: new Date(),
       },
     });
@@ -221,10 +230,6 @@ export class PaymentsService {
       throw new NotFoundException(`Job with ID ${payment.jobId} not found`);
     }
 
-    const totalAmount =
-      typeof payment.totalAmount === 'number'
-        ? payment.totalAmount
-        : Number(payment.totalAmount);
     const pointsEarned = Math.floor(totalAmount / 100);
     await this.prisma.customer.update({
       where: { id: job.motorcycle.ownerId },
@@ -275,11 +280,11 @@ export class PaymentsService {
         },
         ...(filters?.dateFrom || filters?.dateTo
           ? {
-              createdAt: {
-                ...(filters?.dateFrom ? { gte: filters.dateFrom } : {}),
-                ...(filters?.dateTo ? { lte: filters.dateTo } : {}),
-              },
-            }
+            createdAt: {
+              ...(filters?.dateFrom ? { gte: filters.dateFrom } : {}),
+              ...(filters?.dateTo ? { lte: filters.dateTo } : {}),
+            },
+          }
           : {}),
       };
     }

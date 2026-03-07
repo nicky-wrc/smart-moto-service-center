@@ -4,13 +4,14 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { CreateCustomerDto } from './dto/create-customer.dto';
+import { CreateCustomerWithMotorcycleDto } from './dto/create-customer-motorcycle.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class CustomersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(createCustomerDto: CreateCustomerDto) {
     try {
@@ -25,6 +26,70 @@ export class CustomersService {
       }
       throw error;
     }
+  }
+
+  async createWithMotorcycle(dto: CreateCustomerWithMotorcycleDto) {
+    try {
+      // สร้างลูกค้าพร้อมพ่วงรถใน Transaction เดียว (Prisma Nested Writes)
+      return await this.prisma.customer.create({
+        data: {
+          phoneNumber: dto.phoneNumber,
+          title: dto.title,
+          firstName: dto.firstName,
+          lastName: dto.lastName,
+          address: dto.address,
+          taxId: dto.taxId,
+          motorcycles: {
+            create: {
+              vin: dto.motorcycle.vin || `AUTO-VIN-${Date.now()}`, // Prisma require unique VIN ถ้าไม่ได้ใส่มา
+              licensePlate: dto.motorcycle.licensePlate,
+              brand: dto.motorcycle.brand,
+              model: dto.motorcycle.model,
+              color: dto.motorcycle.color,
+              year: dto.motorcycle.year,
+              engineNo: dto.motorcycle.engineNo,
+              mileage: dto.motorcycle.mileage,
+            },
+          },
+        },
+        include: {
+          motorcycles: true,
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new ConflictException('เบอร์โทรศัพท์นี้หรือข้อมูลรถบางอย่างมีอยู่แล้วในระบบ');
+        }
+      }
+      throw error;
+    }
+  }
+
+  async search(query: string) {
+    if (!query) return [];
+
+    // ค้นหาโดย ชื่อ, นามสกุล, เบอร์โทร, หรือ ป้ายทะเบียนรถ
+    return this.prisma.customer.findMany({
+      where: {
+        OR: [
+          { firstName: { contains: query, mode: 'insensitive' } },
+          { lastName: { contains: query, mode: 'insensitive' } },
+          { phoneNumber: { contains: query, mode: 'insensitive' } },
+          {
+            motorcycles: {
+              some: {
+                licensePlate: { contains: query, mode: 'insensitive' },
+              },
+            },
+          },
+        ],
+      },
+      include: {
+        motorcycles: true,
+      },
+      take: 20, // Limit results
+    });
   }
 
   async findAll() {
