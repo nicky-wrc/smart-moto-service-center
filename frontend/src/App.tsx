@@ -15,6 +15,7 @@ import DashboardPage from './pages/foreman/DashboardPage'
 import JobOrdersPage from './pages/foreman/JobOrdersPage'
 import JobDetailPage from './pages/foreman/JobDetailPage'
 import JobHistoryPage from './pages/foreman/JobHistoryPage'
+import MechanicsPage from './pages/foreman/MechanicsPage'
 
 // Mechanic (ช่าง)
 import MechanicLayout from './pages/mechanic/MechanicLayout'
@@ -49,6 +50,7 @@ export default function App() {
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="jobs" element={<JobOrdersPage />} />
           <Route path="jobs/:id" element={<JobDetailPage />} />
+          <Route path="mechanics" element={<MechanicsPage />} />
           <Route path="history" element={<JobHistoryPage />} />
         </Route>
 

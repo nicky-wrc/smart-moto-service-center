@@ -22,7 +22,7 @@ const statusConfig = {
   'รอตรวจ':         { bg: 'bg-[#44403C]/10', text: 'text-[#44403C]' },
 }
 
-type ViewMode = 'list' | 'board'
+type ViewMode = 'table' | 'board'
 
 function getPageNumbers(current: number, total: number): (number | '...')[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
@@ -79,15 +79,15 @@ export default function JobOrdersPage() {
         {/* View toggle */}
         <div className="flex items-center bg-white border border-gray-200 rounded-full p-1 shrink-0">
           <button
-            onClick={() => setView('list')}
+            onClick={() => setView('table')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border-none ${
-              view === 'list' ? 'bg-[#1E1E1E] text-white' : 'bg-transparent text-gray-400 hover:text-gray-600'
+              view === 'table' ? 'bg-[#1E1E1E] text-white' : 'bg-transparent text-gray-400 hover:text-gray-600'
             }`}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
             </svg>
-            List
+            Table
           </button>
           <button
             onClick={() => setView('board')}
@@ -174,71 +174,101 @@ export default function JobOrdersPage() {
       )}
 
       {/* ── LIST VIEW ── */}
-      {view === 'list' && (
-        <>
-          <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
-            {visibleJobs.length === 0 && (
-              <p className="text-center text-sm text-gray-400 mt-10">ไม่มีรายการ</p>
-            )}
-            {visibleJobs.map((job) => {
-              const s = statusConfig[job.status]
-              return (
-                <div
-                  key={job.id}
-                  onClick={() => navigate(`/foreman/jobs/${job.id}`)}
-                  className="bg-white rounded-xl border border-gray-100 overflow-hidden cursor-pointer hover:shadow-sm transition-all"
-                >
-                  <div className="flex items-stretch">
-                    <div className="bg-[#1E1E1E] text-white text-sm font-medium px-4 py-2.5 flex items-center rounded-br-xl shrink-0">
-                      คำขอที่ {job.id}
+      {view === 'table' && (
+        <div className="flex-1 overflow-hidden flex flex-col px-5">
+          {/* Table header */}
+          <div className="rounded-2xl overflow-hidden">
+            <div className="shrink-0 px-5 bg-white border-b border-gray-100">
+              <div className="grid text-xs font-semibold text-gray-400 uppercase tracking-wider py-2.5" style={{ gridTemplateColumns: '56px 1fr 1fr 200px 120px 28px' }}>
+                <span>#</span>
+                <span>ลูกค้า / รถ</span>
+                <span>อาการ</span>
+                <span>สถานะ / แท็ก</span>
+                <span>วันที่รับ</span>
+                <span />
+              </div>
+            </div>
+
+            {/* Rows */}
+            <div className="flex-1 overflow-y-auto">
+              {visibleJobs.length === 0 && (
+                <p className="text-center text-sm text-gray-400 mt-16">ไม่มีรายการ</p>
+              )}
+              {visibleJobs.map((job, idx) => {
+                const s = statusConfig[job.status]
+                return (
+                  <div
+                    key={job.id}
+                    onClick={() => navigate(`/foreman/jobs/${job.id}`)}
+                    className={`grid items-center gap-x-4 px-5 py-3.5 cursor-pointer border-b border-gray-50 hover:bg-[#F8981D]/5 transition-colors group ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}`}
+                    style={{ gridTemplateColumns: '56px 1fr 1fr 200px 120px 28px' }}
+                  >
+                    {/* # */}
+                    <div>
+                      <span className="text-xs font-bold text-gray-300 group-hover:text-[#F8981D] transition-colors">#{job.id}</span>
                     </div>
-                    <div className="flex items-center gap-2 px-3 flex-1 flex-wrap min-w-0">
-                      <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${s.bg} ${s.text}`}>{job.status}</span>
-                      {job.tags.slice(0, 2).map((tag) => (
-                        <span key={tag} className="text-xs px-2.5 py-0.5 rounded-full bg-[#F8981D]/10 text-[#F8981D] border border-[#F8981D]/20">{tag}</span>
-                      ))}
-                      {job.mechanicReport && (
-                        <span className="flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200">
-                          <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+
+                    {/* Customer / Vehicle */}
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-[#1E1E1E] truncate">{job.customerName}</p>
+                      <p className="text-xs text-gray-400 mt-0.5 truncate">{job.brand} {job.model} · <span className="font-medium">{job.licensePlate}</span></p>
+                    </div>
+
+                    {/* Symptom */}
+                    <div className="min-w-0">
+                      {job.mechanicReport ? (
+                        <div className="flex items-start gap-1.5">
+                          <svg className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
                           </svg>
-                          มีปัญหาเพิ่มเติม
-                        </span>
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-amber-600 truncate">ช่างรายงานปัญหาเพิ่มเติม</p>
+                            <p className="text-xs text-gray-400 truncate">{job.symptom}</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500 truncate">{job.symptom}</p>
                       )}
                     </div>
-                    <div className="flex items-center pr-4 shrink-0">
-                      <span className="text-sm text-gray-400">{job.receivedAt}</span>
-                    </div>
-                  </div>
-                  <div className="px-4 pb-4 pt-3 flex flex-col gap-1.5">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-[#F8981D] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                      <span className="truncate">{job.receptionist} · {job.brand} {job.model}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-[#F8981D] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                      </svg>
-                      <span className="truncate">{job.licensePlate} · {job.province}</span>
-                    </div>
-                    <p className="text-sm text-gray-400 italic truncate">"{job.symptom}"</p>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
 
-          <div className="shrink-0 border-t border-gray-200 bg-white px-5 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span>แสดง</span>
-              <input
-                type="number" value={perPage} min={1}
-                onChange={(e) => { setPerPage(Math.max(1, Number(e.target.value))); setPage(1) }}
-                className="w-14 border border-gray-200 rounded-lg px-2 py-1 text-center text-sm outline-none focus:border-[#F8981D] transition-colors"
-              />
-              <span>{total === 0 ? '0' : `${start}–${end}`} จาก {total}</span>
+                    {/* Status / Tags */}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full whitespace-nowrap ${s.bg} ${s.text}`}>{job.status}</span>
+                      {job.tags.slice(0, 1).map((tag) => (
+                        <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-[#F8981D]/10 text-[#F8981D]">{tag}</span>
+                      ))}
+                    </div>
+
+                    {/* Date */}
+                    <div>
+                      <p className="text-xs text-gray-500">{job.receivedAt.split('  ')[0]}</p>
+                      <p className="text-xs text-gray-300 mt-0.5">{job.receivedAt.split('  ')[1]}</p>
+                    </div>
+
+                    {/* Arrow */}
+                    <div className="flex justify-end">
+                      <svg className="w-4 h-4 text-gray-200 group-hover:text-[#F8981D] transition-colors" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+          {/* Pagination */}
+          <div className="shrink-0 border-t border-gray-100 bg-white px-5 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <span>{total === 0 ? '0 รายการ' : `${start}–${end} จาก ${total} รายการ`}</span>
+              <span className="text-gray-200">·</span>
+              <span>แถวละ</span>
+              <select
+                value={perPage}
+                onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1) }}
+                className="border border-gray-200 rounded-lg px-2 py-1 text-sm outline-none focus:border-[#F8981D] transition-colors cursor-pointer bg-white"
+              >
+                {[10, 20, 50].map((n) => <option key={n} value={n}>{n}</option>)}
+              </select>
             </div>
             <div className="flex items-center gap-1">
               <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}
@@ -261,7 +291,7 @@ export default function JobOrdersPage() {
               </button>
             </div>
           </div>
-        </>
+        </div>
       )}
 
     </div>

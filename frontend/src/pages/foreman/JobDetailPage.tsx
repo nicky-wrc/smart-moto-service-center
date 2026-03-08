@@ -350,7 +350,7 @@ export default function JobDetailPage() {
   const [addlQuotationSent, setAddlQuotationSent] = useState(false)
 
   // Confirm modal
-  const [confirmAction, setConfirmAction] = useState<null | 'stockQuot' | 'deepQuot' | 'addlQuot' | 'quot' | 'qcPass' | 'qcFail'>(null)
+  const [confirmAction, setConfirmAction] = useState<null | 'qcPass' | 'qcFail'>(null)
 
   // Mechanic report photo lightbox
   const [mrLightboxOpen, setMrLightboxOpen] = useState(false)
@@ -521,7 +521,7 @@ export default function JobDetailPage() {
         <QuotationPreviewModal
           title="ใบประเมินราคา (ร่าง)"
           onClose={() => { setStockQuotPreview(false); setStockChecked(false) }}
-          onConfirm={() => setConfirmAction('stockQuot')}
+          onConfirm={() => { setQuotationSent(true); setStockQuotPreview(false) }}
           confirmLabel="ส่งใบประเมินราคา"
         >
           <div className="grid grid-cols-2 gap-3">
@@ -612,7 +612,7 @@ export default function JobDetailPage() {
         <QuotationPreviewModal
           title="ใบประเมินราคา — ตรวจเชิงลึก"
           onClose={() => setDeepQuotPreview(false)}
-          onConfirm={() => setConfirmAction('deepQuot')}
+          onConfirm={() => { setDeepSent(true); setDeepQuotPreview(false) }}
           confirmLabel="ส่งใบประเมินราคา"
         >
           <div className="grid grid-cols-2 gap-3">
@@ -690,7 +690,7 @@ export default function JobDetailPage() {
           title="ใบเสนอราคาเพิ่มเติม"
           subtitle={`อ้างอิงใบงาน #${job.id}`}
           onClose={() => setAddlQuotPreview(false)}
-          onConfirm={() => setConfirmAction('addlQuot')}
+          onConfirm={() => { setAddlQuotationSent(true); setAddlQuotPreview(false) }}
           confirmLabel="ส่งใบเสนอราคาเพิ่มเติม"
         >
           {/* Customer + Vehicle */}
@@ -819,7 +819,7 @@ export default function JobDetailPage() {
                 ยกเลิก
               </button>
               <button
-                onClick={() => setConfirmAction('quot')}
+                onClick={() => { setQuotSent(true); setQuotPreview(false); setShowQuot(false) }}
                 disabled={quotItems.length === 0 && !Number(laborCost)}
                 className="flex-1 py-4 text-sm font-semibold text-white bg-[#44403C] hover:bg-black disabled:opacity-40 disabled:cursor-not-allowed border-none cursor-pointer transition-colors rounded-br-2xl"
               >
@@ -831,42 +831,6 @@ export default function JobDetailPage() {
       )}
 
       {/* ─── Confirm Modals ─── */}
-      {confirmAction === 'stockQuot' && (
-        <ConfirmModal
-          title="ยืนยันส่งใบประเมินราคา?"
-          description="ระบบจะส่งใบประเมินราคาให้ลูกค้าเพื่อรอการอนุมัติ"
-          confirmLabel="ส่งเลย"
-          onCancel={() => setConfirmAction(null)}
-          onConfirm={() => { setQuotationSent(true); setStockQuotPreview(false); setConfirmAction(null) }}
-        />
-      )}
-      {confirmAction === 'deepQuot' && (
-        <ConfirmModal
-          title="ยืนยันส่งใบประเมินราคาตรวจเชิงลึก?"
-          description="ระบบจะส่งใบประเมินราคาค่าตรวจเชิงลึก 1,000 ฿ ให้ลูกค้าเพื่อรอการอนุมัติ"
-          confirmLabel="ส่งเลย"
-          onCancel={() => setConfirmAction(null)}
-          onConfirm={() => { setDeepSent(true); setDeepQuotPreview(false); setConfirmAction(null) }}
-        />
-      )}
-      {confirmAction === 'addlQuot' && (
-        <ConfirmModal
-          title="ยืนยันส่งใบเสนอราคาเพิ่มเติม?"
-          description="ระบบจะส่งใบเสนอราคาอะไหล่เพิ่มเติมให้ลูกค้าเพื่อรอการอนุมัติ"
-          confirmLabel="ส่งเลย"
-          onCancel={() => setConfirmAction(null)}
-          onConfirm={() => { setAddlQuotationSent(true); setAddlQuotPreview(false); setConfirmAction(null) }}
-        />
-      )}
-      {confirmAction === 'quot' && (
-        <ConfirmModal
-          title="ยืนยันส่งใบเสนอราคา?"
-          description="ระบบจะส่งใบเสนอราคาให้ลูกค้า ไม่สามารถแก้ไขได้หลังส่งแล้ว"
-          confirmLabel="ส่งเลย"
-          onCancel={() => setConfirmAction(null)}
-          onConfirm={() => { setQuotSent(true); setQuotPreview(false); setShowQuot(false); setConfirmAction(null) }}
-        />
-      )}
       {confirmAction === 'qcPass' && (
         <ConfirmModal
           title="ยืนยันผ่านการตรวจ?"
@@ -1008,13 +972,16 @@ export default function JobDetailPage() {
                       <button
                         key={tag}
                         onClick={() => toggleTag(tag)}
-                        className={`text-sm px-3 py-1.5 rounded-full border font-medium cursor-pointer transition-all ${
+                        className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border font-medium cursor-pointer transition-all ${
                           active
-                            ? 'bg-[#F8981D] text-white border-[#F8981D]'
-                            : 'bg-white text-gray-400 border-gray-200 hover:border-[#F8981D] hover:text-[#F8981D]'
+                            ? 'bg-[#F8981D] text-white border-[#F8981D] hover:bg-[#e08518]'
+                            : 'bg-white text-gray-400 border-dashed border-gray-300 hover:border-[#F8981D] hover:text-[#F8981D]'
                         }`}
                       >
                         {tag}
+                        <span className={`text-lg font-bold leading-none ${active ? 'opacity-75' : 'opacity-50'}`}>
+                          {active ? '×' : '+'}
+                        </span>
                       </button>
                     )
                   })}
