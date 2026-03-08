@@ -27,6 +27,7 @@ import MechanicPage from './pages/mechanic'
 import OwnerPage from './pages/owner'
 import ReceptionPage from './pages/reception'
 import Pendingpayment from './pages/accountant/Pendingpayment'
+import PendingpaymentDetail from './pages/accountant/PendingpaymentDetail'
 
 
 export default function App() {
@@ -54,11 +55,12 @@ export default function App() {
         </Route>
         
         {/* บัญชี */}
-        <Route path="/Accountant" element={<AccountantLayout />}>
+        <Route path="/accountant" element={<AccountantLayout />}>
           <Route index element={<AccountIndex />} />
-          <Route path="Historys" element={<Accountanthistorys />} />
-          <Route path="History" element={<Accountanthistory />} />
-          <Route path="Pendingpayment" element={<Pendingpayment />} />
+          <Route path="historys" element={<Accountanthistorys />} />
+          <Route path="history" element={<Accountanthistory />} />
+          <Route path="pendingpayment" element={<Pendingpayment />} />
+          <Route path="pendingpayment/:id" element={<PendingpaymentDetail />} />
         </Route>
         
 
