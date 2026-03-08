@@ -17,6 +17,12 @@ import JobDetailPage from './pages/foreman/JobDetailPage'
 import JobHistoryPage from './pages/foreman/JobHistoryPage'
 import MechanicsPage from './pages/foreman/MechanicsPage'
 
+// บัญชี
+import AccountIndex from './pages/accountant/'
+import AccountantLayout from './pages/accountant/AccountantLayout'
+import Accountanthistorys from './pages/accountant/Accountanthistorys'
+import Accountanthistory from './pages/accountant/Accountanthistory'
+
 // Mechanic (ช่าง)
 import MechanicLayout from './pages/mechanic/MechanicLayout'
 import MechanicIndex from './pages/mechanic'
@@ -26,8 +32,9 @@ import MechanicHistoryPage from './pages/mechanic/MechanicHistoryPage'
 
 // Other roles (placeholder — layouts TBD)
 import OwnerPage from './pages/owner'
-import AccountantPage from './pages/accountant'
 import ReceptionPage from './pages/reception'
+import Pendingpayment from './pages/accountant/Pendingpayment'
+
 
 export default function App() {
   return (
@@ -53,6 +60,15 @@ export default function App() {
           <Route path="mechanics" element={<MechanicsPage />} />
           <Route path="history" element={<JobHistoryPage />} />
         </Route>
+        
+        {/* บัญชี */}
+        <Route path="/Accountant" element={<AccountantLayout />}>
+          <Route index element={<AccountIndex />} />
+          <Route path="Historys" element={<Accountanthistorys />} />
+          <Route path="History" element={<Accountanthistory />} />
+          <Route path="Pendingpayment" element={<Pendingpayment />} />
+        </Route>
+        
 
         {/* ช่าง */}
         <Route path="/mechanic" element={<MechanicLayout />}>
@@ -64,6 +80,7 @@ export default function App() {
 
         {/* roles อื่น — layouts จะสร้างเพิ่มในภายหลัง */}
         <Route path="/reception/*" element={<ReceptionPage />} />
+        <Route path="/mechanic/*" element={<MechanicPage />} />
         <Route path="/accountant/*" element={<AccountantPage />} />
         <Route path="/owner/*" element={<OwnerPage />} />
       </Routes>
