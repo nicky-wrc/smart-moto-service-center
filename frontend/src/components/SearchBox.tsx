@@ -7,30 +7,19 @@ interface SearchBoxProps {
 
 export default function SearchBox({ value, onChange, placeholder = 'ค้นหา...', children }: SearchBoxProps) {
     return (
-        <div className="flex items-center" style={{ width: '30%' }}>
+        <div className="flex items-center gap-3 w-full md:w-[400px]">
             <div className="relative flex-1">
-                <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35m0 0A7 7 0 1 0 6.65 16.65 7 7 0 0 0 16.65 16.65z" />
-                    </svg>
-                </span>
                 <input
                     type="text"
-                    placeholder={placeholder}
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-l-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent placeholder-gray-400"
+                    placeholder={placeholder}
+                    className="w-full bg-white border border-gray-200 rounded-full pl-4 pr-10 py-2 text-sm outline-none focus:border-[#F8981D] transition-colors"
                 />
-            </div>
-            <button
-                type="submit"
-                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-r-lg transition-colors flex items-center gap-1.5 border border-amber-500 shrink-0 [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35m0 0A7 7 0 1 0 6.65 16.65 7 7 0 0 0 16.65 16.65z" />
+                <svg className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#F8981D]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
-                ค้นหา
-            </button>
+            </div>
             {children}
         </div>
     )

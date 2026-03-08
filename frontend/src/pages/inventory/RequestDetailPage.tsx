@@ -98,35 +98,86 @@ export default function RequestDetailPage() {
         <div className="p-6 min-h-full flex flex-col">
             {/* Confirmation Dialog */}
             {confirmAction && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4 flex flex-col items-center gap-5">
-                        <div className={`h-14 w-14 rounded-full flex items-center justify-center ${confirmAction === 'approve' ? 'bg-green-100' : 'bg-red-100'}`}>
-                            {confirmAction === 'approve' ? (
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                </svg>
-                            ) : (
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                                </svg>
-                            )}
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden">
+                        {/* Header */}
+                        <div className="px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
+                            <p className="text-xs font-semibold text-[#F8981D] uppercase tracking-widest mb-0.5">Smart Moto Service Center</p>
+                            <h2 className="text-base font-bold text-[#1E1E1E]">
+                                {confirmAction === 'approve' ? 'ยืนยันการอนุมัติเบิกสินค้า' : 'ยืนยันการไม่อนุมัติเบิกสินค้า'}
+                            </h2>
                         </div>
-                        <div className="text-center">
-                            <h2 className="text-lg font-semibold text-gray-800">ยืนยันการทำรายการนี้หรือไม่?</h2>
-                            <p className="text-sm text-gray-500 mt-1">
-                                {confirmAction === 'approve' ? 'คุณกำลังจะอนุมัติการเบิกสินค้า' : 'คุณกำลังจะไม่อนุมัติการเบิกสินค้า'}
-                            </p>
+
+                        {/* Content Area */}
+                        <div className="px-6 py-6 flex flex-col gap-6 overflow-y-auto">
+                            {/* Icon & Title */}
+                            <div className="flex flex-col items-center text-center gap-3">
+                                <div className={`h-16 w-16 rounded-full flex items-center justify-center ${confirmAction === 'approve' ? 'bg-[#e0f8e9]' : 'bg-[#fee2e2]'}`}>
+                                    {confirmAction === 'approve' ? (
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-[#00a650]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    ) : (
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-[#ef4444]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    )}
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-[#1a202c]">ยืนยันการทำรายการนี้หรือไม่?</h3>
+                                    <p className="text-sm text-gray-500 mt-1">
+                                        {confirmAction === 'approve' ? 'โปรดตรวจสอบรายละเอียดก่อนทำการยืนยัน' : 'โปรดตรวจสอบรายละเอียดก่อนทำการยกเลิก'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Items List Snapshot */}
+                            <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">รายการอะไหล่</p>
+                                <div className="flex flex-col gap-2.5">
+                                    {request.items.filter(item => confirmAction === 'approve' ? !rejectedItemIds.has(item.id) : true).length === 0 ? (
+                                        <p className="text-sm text-red-500 text-center py-2">ไม่มีรายการที่เลือก</p>
+                                    ) : (
+                                        request.items
+                                            .filter(item => confirmAction === 'approve' ? !rejectedItemIds.has(item.id) : true)
+                                            .map((item, idx) => (
+                                                <div key={item.id} className="flex items-start justify-between gap-3">
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm font-medium text-[#1E1E1E] truncate">{idx + 1}. {item.partName}</p>
+                                                        <p className="text-xs text-gray-500 mt-0.5">{item.quantity} × {item.pricePerUnit.toLocaleString()} ฿</p>
+                                                    </div>
+                                                    <span className="text-sm font-semibold text-[#1E1E1E] shrink-0">
+                                                        {(item.quantity * item.pricePerUnit).toLocaleString()} ฿
+                                                    </span>
+                                                </div>
+                                            ))
+                                    )}
+                                </div>
+
+                                <div className="border-t border-dashed border-gray-200 my-3"></div>
+
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm font-bold text-[#1E1E1E]">รวมทั้งหมด</span>
+                                    <span className={`text-lg font-black ${confirmAction === 'approve' ? 'text-[#00a650]' : 'text-[#ef4444]'}`}>
+                                        {request.items
+                                            .filter(item => confirmAction === 'approve' ? !rejectedItemIds.has(item.id) : true)
+                                            .reduce((sum, item) => sum + item.quantity * item.pricePerUnit, 0).toLocaleString()} ฿
+                                    </span>
+                                </div>
+                            </div>
                         </div>
-                        <div className="flex gap-3 w-full">
+
+                        {/* Buttons Footer (Image 2 Style) */}
+                        <div className="flex border-t border-gray-100 shrink-0">
                             <button
                                 onClick={() => setConfirmAction(null)}
-                                className="flex-1 py-2.5 rounded-lg border border-gray-300 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors"
+                                className="flex-1 py-4 text-sm text-gray-500 hover:bg-gray-50 font-medium transition-colors border-r border-gray-100"
                             >
                                 ยกเลิก
                             </button>
                             <button
                                 onClick={handleConfirm}
-                                className={`flex-1 py-2.5 rounded-lg text-white text-sm font-medium transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_30%)] ${confirmAction === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
+                                className="flex-1 py-4 text-sm font-semibold text-white bg-[#44403C] hover:bg-black border-none cursor-pointer transition-colors"
                             >
                                 ใช่ ยืนยัน
                             </button>
@@ -147,10 +198,7 @@ export default function RequestDetailPage() {
             <div className="flex flex-col gap-3 mb-6">
                 <div className="flex justify-between items-center">
                     <h1 className="text-xl font-medium text-gray-800">รายการคำร้องขอที่ {request.id}</h1>
-                    <span className="text-gray-500 text-sm flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
+                    <span className="text-gray-500 text-sm">
                         {request.requestedAt}
                     </span>
                 </div>
@@ -207,7 +255,7 @@ export default function RequestDetailPage() {
                         {request.items.map((item) => {
                             const isRejected = rejectedItemIds.has(item.id)
                             return (
-                                <tr key={item.id} className={`transition-colors ${isRejected ? 'bg-red-50/50 opacity-60' : 'hover:bg-gray-50'}`}>
+                                <tr key={item.id} className={`transition-colors ${isRejected ? 'bg-[#ffebee]' : 'hover:bg-gray-50'}`}>
                                     <td className="py-4 px-6 text-left">{item.partCode}</td>
                                     <td className="py-4 px-6 text-left">{item.partName}</td>
                                     <td className="py-4 px-6">{item.pricePerUnit}</td>
@@ -217,7 +265,7 @@ export default function RequestDetailPage() {
                                         <div className="flex items-center justify-center gap-4">
                                             <button
                                                 onClick={() => toggleReject(item.id)}
-                                                className={`flex items-center justify-center gap-1.5 w-32 py-1.5 text-xs font-medium text-white rounded transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] ${isRejected ? 'bg-teal-500 hover:bg-teal-600' : 'bg-[#f59e0b] hover:bg-amber-600'}`}
+                                                className={`flex items-center justify-center gap-1.5 w-32 py-1.5 text-xs font-medium text-white rounded transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] ${isRejected ? 'bg-[#5fbfb5] hover:bg-[#52a69d]' : 'bg-[#f59e0b] hover:bg-amber-600'}`}
                                             >
                                                 {isRejected ? (
                                                     <>
@@ -268,9 +316,6 @@ export default function RequestDetailPage() {
                         onClick={() => handleAction('reject')}
                         className="flex items-center gap-2 px-6 py-2.5 bg-[#dc2626] text-white font-medium rounded-lg hover:bg-red-700 transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                        </svg>
                         ไม่อนุมัติการเบิกสินค้า
                     </button>
                     <button
@@ -278,17 +323,11 @@ export default function RequestDetailPage() {
                         disabled={allRejected}
                         className={`flex items-center gap-2 px-6 py-2.5 font-medium rounded-lg transition-colors ${allRejected ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-[#16a34a] text-white hover:bg-green-700 [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]'}`}
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
                         อนุมัติการเบิกสินค้า
                     </button>
                 </div>
                 {allRejected && (
                     <p className="text-xs text-red-500 flex items-center gap-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
                         จำเป็นต้องเลือกอย่างน้อยหนึ่งรายการจึงจะสามารถอนุมัติการเบิกสินค้าได้
                     </p>
                 )}

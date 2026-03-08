@@ -1,6 +1,4 @@
-import { useLocation, Outlet } from 'react-router-dom'
-import AppHeader from '../../components/AppHeader'
-import Sidebar from '../../components/Sidebar'
+import AppLayout from '../../components/AppLayout'
 import type { NavItem } from '../../components/Sidebar'
 
 const navItems: NavItem[] = [
@@ -31,6 +29,15 @@ const navItems: NavItem[] = [
       </svg>
     ),
   },
+    {
+    path: '/inventory/history',
+    label: 'ประวัติการเบิก',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  },
   {
     path: '/inventory/reports',
     label: 'รายงานสต็อก',
@@ -45,25 +52,18 @@ const navItems: NavItem[] = [
 const pageTitles: Record<string, string> = {
   '/inventory/requests': 'รายการคำร้องขอเบิกอะไหล่',
   '/inventory/parts': 'รายการอะไหล่',
-  '/inventory/purchase-orders': 'ใบสั่งซื้อ',
+  '/inventory/purchase-orders': 'ใบสั่งซื้ออะไหล่',
+  '/inventory/history': 'ประวัติการคำขอเบิกอะไหล่',
   '/inventory/reports': 'รายงานสต็อก',
+
 }
 
 export default function InventoryLayout() {
-  const location = useLocation()
-  const title = Object.entries(pageTitles).find(([path]) => location.pathname.startsWith(path))?.[1] ?? 'พนักงานคงคลัง'
-
   return (
-    <div className="min-h-screen bg-[#44403C] pb-4 pr-4 flex items-stretch font-[Kanit]">
-      <div className="flex-1 bg-[#44403C] rounded-2xl flex flex-col overflow-hidden min-h-[calc(100vh-2rem)]">
-        <AppHeader title={title} />
-        <div className="flex flex-1 gap-0">
-          <Sidebar navItems={navItems} />
-          <div className="flex-1 bg-white rounded-xl overflow-auto">
-            <Outlet />
-          </div>
-        </div>
-      </div>
-    </div>
+    <AppLayout
+      navItems={navItems}
+      pageTitles={pageTitles}
+      defaultTitle="พนักงานคงคลัง"
+    />
   )
 }
