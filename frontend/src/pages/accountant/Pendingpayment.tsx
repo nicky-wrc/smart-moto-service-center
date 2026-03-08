@@ -90,7 +90,7 @@ function Pendingpayment() {
                 </div>
               </button>
               {openSearchField && (
-                <div className="absolute left-0 top-full mt-2 bg-white rounded-lg shadow-[0_0px_4px_rgba(0,0,0,0.2)] z-20 min-w-[120px]">
+                <div className="absolute left-0 top-full mt-2 bg-white rounded-lg shadow-[0_0px_4px_rgba(0,0,0,0.2)] z-20 min-w-30">
                   {searchFields.map(f => (
                     <button
                       key={f.value}
@@ -148,7 +148,7 @@ function Pendingpayment() {
 
         {/* Table */}
         <div className="w-full flex-1 mt-6 overflow-x-auto">
-          <table className="min-w-[722px] w-full text-sm text-black">
+          <table className="min-w-180.5 w-full text-sm text-black">
             <thead className="bg-[#F5F5F5] text-black">
               <tr>
                 <th className="px-6 py-5 text-left font-medium rounded-l-2xl">เลขใบงาน</th>
