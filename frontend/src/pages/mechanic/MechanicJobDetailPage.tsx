@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { mockMechanicJobs } from './mechanicJobs'
+import { ConfirmModal } from '../../components/ConfirmModal'
 
 type JobStatus = 'รอเริ่ม' | 'กำลังซ่อม' | 'รอตรวจ' | 'คืนของ' | 'เสร็จแล้ว'
 type Disposition = 'คืนลูกค้า' | 'ทิ้ง' | 'เก็บหลักฐาน'
 
-type ExtraItem  = { id: number; name: string; qty: number; unitPrice: number }
 type RemovedPart = { id: number; name: string; description: string; disposition: Disposition }
 
 const statusConfig: Record<JobStatus, { bg: string; text: string; dot: string }> = {
@@ -37,12 +37,10 @@ export default function MechanicJobDetailPage() {
   const [findingNote, setFindingNote]           = useState('')
   const [findingPhotos, setFindingPhotos]       = useState<string[]>([])
   const [notifiedForeman, setNotifiedForeman]   = useState(false)
+  const [editingReport, setEditingReport]       = useState(false)
+  const [savedNote, setSavedNote]               = useState('')
+  const [savedPhotos, setSavedPhotos]           = useState<string[]>([])
 
-  // Additional quotation
-  const [showQuotation, setShowQuotation]       = useState(false)
-  const [extraItems, setExtraItems]             = useState<ExtraItem[]>([])
-  const [newItem, setNewItem]                   = useState({ name: '', qty: 1, unitPrice: 0 })
-  const [quotationSent, setQuotationSent]       = useState(false)
 
   // Parts actual usage
   const [actualQtys, setActualQtys] = useState<Record<number, number>>(
@@ -56,6 +54,9 @@ export default function MechanicJobDetailPage() {
     ({ name: '', description: '', disposition: 'คืนลูกค้า' })
   const [addingRemoved, setAddingRemoved]       = useState(false)
 
+  // Confirm modal
+  const [confirmAction, setConfirmAction] = useState<null | 'notifyForeman' | 'returnParts' | 'submitInspect' | 'closeJob'>(null)
+
   if (!baseJob) return <div className="p-6 text-sm text-gray-400">ไม่พบใบงาน</div>
 
   const sc = statusConfig[status]
@@ -68,12 +69,6 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
     e.target.value = ''
   }
 
-  const addExtraItem = () => {
-    if (!newItem.name.trim()) return
-    setExtraItems((prev) => [...prev, { ...newItem, id: Date.now() }])
-    setNewItem({ name: '', qty: 1, unitPrice: 0 })
-  }
-
   const addRemovedPart = () => {
     if (!newRemoved.name.trim()) return
     setRemovedParts((prev) => [...prev, { ...newRemoved, id: Date.now() }])
@@ -81,10 +76,46 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
     setAddingRemoved(false)
   }
 
-  const totalExtra = extraItems.reduce((s, i) => s + i.qty * i.unitPrice, 0)
-
   return (
     <>
+      {/* ─── Confirm Modals ─── */}
+      {confirmAction === 'notifyForeman' && (
+        <ConfirmModal
+          title="ยืนยันแจ้งหัวหน้าช่าง?"
+          description="รายงานปัญหาที่พบจะถูกส่งให้หัวหน้าช่างรับทราบและดำเนินการต่อ"
+          confirmLabel="แจ้งเลย"
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={() => { setNotifiedForeman(true); setConfirmAction(null) }}
+        />
+      )}
+      {confirmAction === 'returnParts' && (
+        <ConfirmModal
+          title="ยืนยันคืนอะไหล่ส่วนที่เหลือ?"
+          description="หลังยืนยันแล้วจะไม่สามารถแก้ไขจำนวนอะไหล่ได้อีก"
+          confirmLabel="ยืนยันคืน"
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={() => { setPartsReturned(true); setConfirmAction(null) }}
+        />
+      )}
+      {confirmAction === 'submitInspect' && (
+        <ConfirmModal
+          title="ยืนยันส่งงานให้หัวหน้าตรวจ?"
+          description="หัวหน้าช่างจะได้รับแจ้งเพื่อตรวจสอบงาน ไม่สามารถแก้ไขงานได้อีกจนกว่าจะตรวจเสร็จ"
+          confirmLabel="ส่งตรวจ"
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={() => { setStatus('รอตรวจ'); setConfirmAction(null) }}
+        />
+      )}
+      {confirmAction === 'closeJob' && (
+        <ConfirmModal
+          title="ยืนยันปิดจบงาน?"
+          description="งานจะถูกบันทึกเป็นเสร็จสมบูรณ์ และไม่สามารถแก้ไขได้อีก"
+          confirmLabel="ปิดงาน"
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={() => { setStatus('เสร็จแล้ว'); setConfirmAction(null) }}
+        />
+      )}
+
       {/* Lightbox */}
       {lightboxSrc.length > 0 && (
         <div className="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center" onClick={() => setLightboxSrc([])}>
@@ -163,6 +194,19 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
                 </div>
               )}
 
+              {/* QC rejection note */}
+              {baseJob.qcRejectNote && (
+                <div className="bg-[#F8981D]/5 border border-[#F8981D]/30 rounded-xl px-4 py-3 flex items-start gap-3">
+                  <svg className="w-4 h-4 text-[#F8981D] mt-0.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  <div>
+                    <p className="text-xs font-semibold text-[#F8981D] uppercase tracking-wide mb-1">หัวหน้าช่างตีกลับ — ต้องแก้ไข</p>
+                    <p className="text-sm text-[#F8981D]/80 leading-relaxed">{baseJob.qcRejectNote}</p>
+                  </div>
+                </div>
+              )}
+
               {/* Original photos */}
               {baseJob.photos.length > 0 && (
                 <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm">
@@ -179,117 +223,99 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
               )}
 
               {/* ── Finding report (กำลังซ่อม only) ── */}
-              {(isWorking || notifiedForeman) && (
+              {isWorking && (
                 <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm flex flex-col gap-3">
-                  <p className="text-xs text-gray-400 uppercase tracking-wide">รายงานปัญหาที่พบเพิ่ม</p>
-
-                  <textarea
-                    value={findingNote}
-                    onChange={(e) => setFindingNote(e.target.value)}
-                    disabled={notifiedForeman}
-                    placeholder="บันทึกปัญหาหรือสิ่งที่พบระหว่างซ่อม..."
-                    rows={3}
-                    className="w-full border border-gray-100 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-700 resize-none outline-none focus:border-[#F8981D] transition-colors leading-relaxed disabled:opacity-60"
-                  />
-
-                  {/* Finding photos */}
-                  <div>
-                    <p className="text-xs text-gray-400 mb-2">รูปภาพประกอบ</p>
-                    <div className="flex gap-2 flex-wrap">
-                      {findingPhotos.map((p, i) => (
-                        <div key={i} className="relative group shrink-0">
-                          <button onClick={() => openLightbox(findingPhotos, i)}
-                            className="w-24 h-24 rounded-xl overflow-hidden border border-[#F8981D]/40 hover:border-[#F8981D] transition-colors p-0 cursor-pointer block">
-                            <img src={p} alt="" className="w-full h-full object-cover" />
-                          </button>
-                          {!notifiedForeman && (
-                            <button onClick={() => setFindingPhotos((prev) => prev.filter((_, idx) => idx !== i))}
-                              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
-                              ✕
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                      {!notifiedForeman && (
-                        <label className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-200 hover:border-[#F8981D] flex items-center justify-center cursor-pointer transition-colors shrink-0 group">
-                          <svg className="w-5 h-5 text-gray-300 group-hover:text-[#F8981D] transition-colors" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                          </svg>
-                          <input type="file" accept="image/*" multiple className="hidden" onChange={handleFindingPhotos} />
-                        </label>
-                      )}
-                    </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-gray-400 uppercase tracking-wide">รายงานปัญหาที่พบเพิ่ม</p>
+                    {notifiedForeman && !editingReport && (
+                      <button
+                        onClick={() => { setSavedNote(findingNote); setSavedPhotos(findingPhotos); setEditingReport(true) }}
+                        className="text-xs text-gray-400 hover:text-[#F8981D] bg-transparent border border-gray-200 hover:border-[#F8981D] rounded-lg px-2.5 py-1 cursor-pointer transition-colors"
+                      >
+                        แก้ไข
+                      </button>
+                    )}
                   </div>
 
-                  {/* Notify foreman */}
-                  {!notifiedForeman ? (
-                    <button
-                      onClick={() => { if (findingNote.trim()) setNotifiedForeman(true) }}
-                      disabled={!findingNote.trim()}
-                      className="w-full bg-[#44403C] hover:bg-black disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium py-2.5 rounded-xl transition-colors border-none cursor-pointer"
-                    >
-                      แจ้งหัวหน้าช่าง
-                    </button>
+                  {/* Locked view */}
+                  {notifiedForeman && !editingReport ? (
+                    <>
+                      <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 rounded-lg px-3 py-2.5 border border-gray-100">
+                        {findingNote || <span className="text-gray-400 italic">ไม่มีบันทึก</span>}
+                      </p>
+                      {findingPhotos.length > 0 && (
+                        <div className="flex gap-2 flex-wrap">
+                          {findingPhotos.map((p, i) => (
+                            <button key={i} onClick={() => openLightbox(findingPhotos, i)}
+                              className="w-20 h-20 rounded-xl overflow-hidden border border-[#F8981D]/40 hover:border-[#F8981D] transition-colors p-0 cursor-pointer shrink-0">
+                              <img src={p} alt="" className="w-full h-full object-cover" />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </>
                   ) : (
-                    <div className="bg-[#44403C]/5 border border-[#44403C]/15 rounded-xl px-4 py-2.5 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-[#44403C]" />
-                        <p className="text-sm font-medium text-[#44403C]">แจ้งหัวหน้าช่างแล้ว</p>
-                      </div>
-                      <button
-                        onClick={() => setShowQuotation((v) => !v)}
-                        className="text-xs text-[#F8981D] hover:underline bg-transparent border-none cursor-pointer"
-                      >
-                        {showQuotation ? 'ซ่อนใบเสนอราคา' : '+ สร้างใบเสนอราคาเพิ่ม'}
-                      </button>
-                    </div>
-                  )}
+                    /* Editable form */
+                    <>
+                      <textarea
+                        value={findingNote}
+                        onChange={(e) => setFindingNote(e.target.value)}
+                        placeholder="บันทึกปัญหาหรือสิ่งที่พบระหว่างซ่อม..."
+                        rows={3}
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white text-gray-700 resize-none outline-none focus:border-[#F8981D] transition-colors leading-relaxed"
+                        autoFocus={editingReport}
+                      />
 
-                  {/* Additional quotation */}
-                  {showQuotation && notifiedForeman && (
-                    <div className="border border-gray-200 rounded-xl overflow-hidden">
-                      <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-100">
-                        <p className="text-sm font-medium text-[#1E1E1E]">ใบเสนอราคาเพิ่มเติม</p>
-                      </div>
-                      <div className="p-4 flex flex-col gap-3">
-                        {extraItems.map((item) => (
-                          <div key={item.id} className="flex items-center justify-between gap-2 text-sm">
-                            <span className="text-[#1E1E1E] flex-1">{item.name} × {item.qty}</span>
-                            <span className="text-gray-500 shrink-0">{(item.qty * item.unitPrice).toLocaleString()} บาท</span>
-                            {!quotationSent && (
-                              <button onClick={() => setExtraItems((p) => p.filter((i) => i.id !== item.id))}
-                                className="text-gray-300 hover:text-red-400 bg-transparent border-none cursor-pointer text-xs shrink-0">✕</button>
-                            )}
-                          </div>
-                        ))}
-
-                        {!quotationSent && (
-                          <div className="flex gap-2 pt-1">
-                            <input value={newItem.name} onChange={(e) => setNewItem((p) => ({ ...p, name: e.target.value }))}
-                              placeholder="รายการ..." className="flex-1 border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs outline-none focus:border-[#F8981D] transition-colors" />
-                            <input type="number" value={newItem.qty} min={1} onChange={(e) => setNewItem((p) => ({ ...p, qty: Number(e.target.value) }))}
-                              className="w-12 border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-center outline-none focus:border-[#F8981D] transition-colors" />
-                            <input type="number" value={newItem.unitPrice} min={0} onChange={(e) => setNewItem((p) => ({ ...p, unitPrice: Number(e.target.value) }))}
-                              placeholder="ราคา" className="w-20 border border-gray-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-[#F8981D] transition-colors" />
-                            <button onClick={addExtraItem} className="px-3 py-1.5 bg-[#44403C] text-white text-xs rounded-lg border-none cursor-pointer hover:bg-black transition-colors shrink-0">+</button>
-                          </div>
-                        )}
-
-                        {extraItems.length > 0 && (
-                          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                            <span className="text-sm font-semibold text-[#1E1E1E]">รวม {totalExtra.toLocaleString()} บาท</span>
-                            {!quotationSent ? (
-                              <button onClick={() => setQuotationSent(true)}
-                                className="text-sm bg-[#F8981D] hover:bg-orange-500 text-white px-4 py-1.5 rounded-lg border-none cursor-pointer transition-colors font-medium">
-                                ส่งขออนุมัติลูกค้า
+                      <div>
+                        <p className="text-xs text-gray-400 mb-2">รูปภาพประกอบ</p>
+                        <div className="flex gap-2 flex-wrap">
+                          {findingPhotos.map((p, i) => (
+                            <div key={i} className="relative group shrink-0">
+                              <button onClick={() => openLightbox(findingPhotos, i)}
+                                className="w-20 h-20 rounded-xl overflow-hidden border border-[#F8981D]/40 hover:border-[#F8981D] transition-colors p-0 cursor-pointer block">
+                                <img src={p} alt="" className="w-full h-full object-cover" />
                               </button>
-                            ) : (
-                              <span className="text-xs font-medium text-[#F8981D] bg-[#F8981D]/10 px-2.5 py-1 rounded-full">รอลูกค้าอนุมัติ</span>
-                            )}
-                          </div>
-                        )}
+                              <button onClick={() => setFindingPhotos((prev) => prev.filter((_, idx) => idx !== i))}
+                                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                                ✕
+                              </button>
+                            </div>
+                          ))}
+                          <label className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-200 hover:border-[#F8981D] flex items-center justify-center cursor-pointer transition-colors shrink-0 group">
+                            <svg className="w-5 h-5 text-gray-300 group-hover:text-[#F8981D] transition-colors" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                            </svg>
+                            <input type="file" accept="image/*" multiple className="hidden" onChange={handleFindingPhotos} />
+                          </label>
+                        </div>
                       </div>
-                    </div>
+
+                      {editingReport ? (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => { setFindingNote(savedNote); setFindingPhotos(savedPhotos); setEditingReport(false) }}
+                            className="flex-1 py-2.5 text-sm text-gray-400 hover:text-gray-600 border border-gray-200 hover:border-gray-400 rounded-xl bg-transparent cursor-pointer transition-colors"
+                          >
+                            ยกเลิก
+                          </button>
+                          <button
+                            onClick={() => { if (findingNote.trim()) setEditingReport(false) }}
+                            disabled={!findingNote.trim()}
+                            className="flex-1 py-2.5 text-sm font-medium bg-[#44403C] hover:bg-black disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl border-none cursor-pointer transition-colors"
+                          >
+                            บันทึก
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => { if (findingNote.trim()) setConfirmAction('notifyForeman') }}
+                          disabled={!findingNote.trim()}
+                          className="w-full bg-[#44403C] hover:bg-black disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium py-2.5 rounded-xl transition-colors border-none cursor-pointer"
+                        >
+                          แจ้งหัวหน้าช่าง
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               )}
@@ -300,14 +326,14 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
             <div className="flex flex-col gap-3 overflow-y-auto">
 
               {/* Parts used */}
-              <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+              <div className={`rounded-xl border p-4 shadow-sm ${status === 'คืนของ' && !partsReturned ? 'bg-white border-[#F8981D]/40' : 'bg-white border-gray-100'}`}>
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-xs text-gray-400 uppercase tracking-wide">อะไหล่ที่เบิกมา</p>
                   {status === 'คืนของ' && !partsReturned && (
-                    <span className="text-xs text-gray-400">กรอกจำนวนที่ใช้จริง</span>
+                    <span className="text-xs font-medium text-[#F8981D]">กรอกจำนวนที่ใช้จริง</span>
                   )}
                 </div>
-                {status !== 'เสร็จแล้ว' && (
+                {!['คืนของ', 'เสร็จแล้ว'].includes(status) && (
                   <p className="text-xs text-gray-400 italic">จะสามารถบันทึกได้หลังหัวหน้าช่างตรวจผ่านแล้ว</p>
                 )}
                 {baseJob.parts.length === 0 ? (
@@ -317,24 +343,31 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
                     {baseJob.parts.map((p, i) => {
                       const actual = actualQtys[i] ?? p.qty
                       const unused = p.qty - actual
+                      const isActive = status === 'คืนของ' && !partsReturned
                       return (
-                        <div key={i} className={`bg-stone-50 rounded-xl px-3 py-2.5 ${status !== 'เสร็จแล้ว' ? 'opacity-40' : ''}`}>
+                        <div key={i} className={`rounded-xl px-3 py-2.5 transition-all ${
+                          !['คืนของ', 'เสร็จแล้ว'].includes(status)
+                            ? 'bg-stone-50 opacity-40'
+                            : isActive
+                              ? 'bg-[#F8981D]/5 border border-[#F8981D]/20'
+                              : 'bg-stone-50'
+                        }`}>
                           <div className="flex items-center justify-between">
                             <p className="text-sm font-medium text-[#1E1E1E]">{p.name}</p>
-                            {status === 'คืนของ' && !partsReturned ? (
-                              <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden h-7 shrink-0">
+                            {isActive ? (
+                              <div className="flex items-center border border-[#F8981D]/40 rounded-lg overflow-hidden h-7 shrink-0 bg-white">
                                 <button onClick={() => setActualQtys((prev) => ({ ...prev, [i]: Math.max(0, actual - 1) }))}
-                                  className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-100 bg-transparent border-none cursor-pointer font-bold text-sm transition-colors">−</button>
-                                <span className="text-xs font-semibold w-7 text-center">{actual}</span>
+                                  className="w-7 h-7 flex items-center justify-center text-[#F8981D] hover:bg-[#F8981D]/10 bg-transparent border-none cursor-pointer font-bold text-sm transition-colors">−</button>
+                                <span className="text-xs font-semibold w-7 text-center text-[#1E1E1E]">{actual}</span>
                                 <button onClick={() => setActualQtys((prev) => ({ ...prev, [i]: Math.min(p.qty, actual + 1) }))}
-                                  className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-100 bg-transparent border-none cursor-pointer font-bold text-sm transition-colors">+</button>
+                                  className="w-7 h-7 flex items-center justify-center text-[#F8981D] hover:bg-[#F8981D]/10 bg-transparent border-none cursor-pointer font-bold text-sm transition-colors">+</button>
                               </div>
                             ) : (
                               <span className="text-xs text-gray-400">{actual} {p.unit}</span>
                             )}
                           </div>
-                          {status === 'คืนของ' && unused > 0 && (
-                            <p className="text-xs text-[#F8981D] mt-1">คืน {unused} {p.unit}</p>
+                          {isActive && unused > 0 && (
+                            <p className="text-xs text-[#F8981D] font-medium mt-1">คืน {unused} {p.unit}</p>
                           )}
                         </div>
                       )
@@ -343,14 +376,14 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
                 )}
                 {status === 'คืนของ' && !partsReturned && baseJob.parts.length > 0 && (
                   <button
-                    onClick={() => setPartsReturned(true)}
-                    className="w-full mt-3 border border-[#44403C] text-[#44403C] hover:bg-[#44403C] hover:text-white text-sm font-medium py-2 rounded-xl transition-colors bg-transparent cursor-pointer"
+                    onClick={() => setConfirmAction('returnParts')}
+                    className="w-full mt-3 bg-[#F8981D] hover:bg-orange-500 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors border-none cursor-pointer"
                   >
                     ยืนยันคืนอะไหล่ส่วนที่เหลือ
                   </button>
                 )}
                 {partsReturned && (
-                  <div className="mt-3 flex items-center gap-2 text-xs text-[#44403C]">
+                  <div className="mt-3 flex items-center justify-end gap-2 text-xs text-[#44403C]">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
@@ -361,71 +394,104 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
 
               {/* Removed customer parts */}
               <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs text-gray-400 uppercase tracking-wide">อะไหล่เก่าที่ถอดออก</p>
-                  {status === 'คืนของ' && !addingRemoved && (
-                    <button onClick={() => setAddingRemoved(true)}
-                      className="text-xs text-[#F8981D] hover:underline bg-transparent border-none cursor-pointer">
-                      + เพิ่ม
-                    </button>
-                  )}
-                </div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">อะไหล่เก่าที่ถอดออก</p>
 
-                {status !== 'เสร็จแล้ว' && (
+                {!['คืนของ', 'เสร็จแล้ว'].includes(status) && (
                   <p className="text-xs text-gray-400 italic">จะสามารถบันทึกได้หลังหัวหน้าช่างตรวจผ่านแล้ว</p>
                 )}
-                {removedParts.length === 0 && !addingRemoved && status === 'คืนของ' && (
-                  <p className="text-sm text-gray-400">ยังไม่มีรายการ</p>
-                )}
 
-                <div className="flex flex-col gap-2">
-                  {removedParts.map((rp) => (
-                    <div key={rp.id} className="bg-stone-50 rounded-xl px-3 py-2.5">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-[#1E1E1E]">{rp.name}</p>
-                          {rp.description && <p className="text-xs text-gray-400 mt-0.5">{rp.description}</p>}
+                {/* Items list */}
+                {removedParts.length > 0 && (
+                  <div className="flex flex-col gap-2 mb-3">
+                    {removedParts.map((rp) => (
+                      <div key={rp.id} className="bg-stone-50 rounded-xl px-3 py-2.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-[#1E1E1E]">{rp.name}</p>
+                            {rp.description && <p className="text-xs text-gray-400 mt-0.5">{rp.description}</p>}
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${dispositionConfig[rp.disposition].bg} ${dispositionConfig[rp.disposition].text}`}>
+                              {rp.disposition}
+                            </span>
+                            {status === 'คืนของ' && (
+                              <button onClick={() => setRemovedParts((p) => p.filter((x) => x.id !== rp.id))}
+                                className="text-gray-300 hover:text-red-400 bg-transparent border-none cursor-pointer text-xs transition-colors">✕</button>
+                            )}
+                          </div>
                         </div>
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${dispositionConfig[rp.disposition].bg} ${dispositionConfig[rp.disposition].text}`}>
-                          {rp.disposition}
-                        </span>
                       </div>
-                    </div>
-                  ))}
-                </div>
-
-                {addingRemoved && (
-                  <div className="mt-2 flex flex-col gap-2 pt-2 border-t border-gray-100">
-                    <input value={newRemoved.name} onChange={(e) => setNewRemoved((p) => ({ ...p, name: e.target.value }))}
-                      placeholder="ชื่ออะไหล่ที่ถอดออก..."
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#F8981D] transition-colors" />
-                    <input value={newRemoved.description} onChange={(e) => setNewRemoved((p) => ({ ...p, description: e.target.value }))}
-                      placeholder="รายละเอียดเพิ่มเติม (ยี่ห้อ รุ่น สภาพ)..."
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#F8981D] transition-colors" />
-                    <div className="flex gap-1.5">
-                      {(['คืนลูกค้า', 'ทิ้ง', 'เก็บหลักฐาน'] as Disposition[]).map((d) => (
-                        <button key={d} onClick={() => setNewRemoved((p) => ({ ...p, disposition: d }))}
-                          className={`flex-1 text-xs py-1.5 rounded-lg border cursor-pointer transition-colors font-medium ${
-                            newRemoved.disposition === d
-                              ? 'bg-[#44403C] text-white border-[#44403C]'
-                              : 'bg-white text-gray-400 border-gray-200 hover:border-gray-400'
-                          }`}>
-                          {d}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => setAddingRemoved(false)}
-                        className="flex-1 text-sm py-2 rounded-xl border border-gray-200 text-gray-400 hover:border-gray-400 bg-transparent cursor-pointer transition-colors">
-                        ยกเลิก
-                      </button>
-                      <button onClick={addRemovedPart} disabled={!newRemoved.name.trim()}
-                        className="flex-1 text-sm py-2 rounded-xl bg-[#44403C] hover:bg-black disabled:opacity-40 text-white border-none cursor-pointer transition-colors font-medium">
-                        บันทึก
-                      </button>
-                    </div>
+                    ))}
                   </div>
                 )}
+
+                {/* Add form — dashed button style like foreman */}
+                {status === 'คืนของ' && (
+                  !addingRemoved ? (
+                    <button
+                      onClick={() => setAddingRemoved(true)}
+                      className="w-full flex items-center justify-between border-2 border-dashed border-gray-200 hover:border-[#44403C] rounded-xl px-4 py-3 bg-transparent cursor-pointer transition-colors group"
+                    >
+                      <span className="text-sm text-gray-400 group-hover:text-[#44403C] transition-colors">
+                        {removedParts.length > 0 ? `${removedParts.length} รายการ — เพิ่มอีก` : 'เพิ่มอะไหล่เก่าที่ถอดออก...'}
+                      </span>
+                      <svg className="w-4 h-4 text-gray-300 group-hover:text-[#44403C] transition-colors shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                    </button>
+                  ) : (
+                    <div className="border border-gray-200 rounded-xl overflow-hidden">
+                      <div className="p-3 flex flex-col gap-2">
+                        <input
+                          value={newRemoved.name}
+                          onChange={(e) => setNewRemoved((p) => ({ ...p, name: e.target.value }))}
+                          placeholder="ชื่ออะไหล่ที่ถอดออก..."
+                          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#44403C] transition-colors"
+                          autoFocus
+                        />
+                        <input
+                          value={newRemoved.description}
+                          onChange={(e) => setNewRemoved((p) => ({ ...p, description: e.target.value }))}
+                          placeholder="รายละเอียด (ยี่ห้อ รุ่น สภาพ)..."
+                          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#44403C] transition-colors"
+                        />
+                        <div className="flex gap-1.5">
+                          {(['คืนลูกค้า', 'ทิ้ง', 'เก็บหลักฐาน'] as Disposition[]).map((d) => (
+                            <button key={d} onClick={() => setNewRemoved((p) => ({ ...p, disposition: d }))}
+                              className={`flex-1 text-xs py-1.5 rounded-lg border cursor-pointer transition-colors font-medium ${
+                                newRemoved.disposition === d
+                                  ? 'bg-[#44403C] text-white border-[#44403C]'
+                                  : 'bg-white text-gray-400 border-gray-200 hover:border-gray-400'
+                              }`}>
+                              {d}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex border-t border-gray-100">
+                        <button
+                          onClick={() => { setAddingRemoved(false); setNewRemoved({ name: '', description: '', disposition: 'คืนลูกค้า' }) }}
+                          className="flex-1 py-2.5 text-sm text-gray-400 hover:text-gray-600 bg-transparent border-none cursor-pointer transition-colors border-r border-gray-100"
+                        >
+                          ยกเลิก
+                        </button>
+                        <button
+                          onClick={addRemovedPart}
+                          disabled={!newRemoved.name.trim()}
+                          className="flex-1 py-2.5 text-sm font-medium text-[#44403C] hover:bg-[#44403C] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed bg-transparent border-none cursor-pointer transition-colors"
+                        >
+                          บันทึก
+                        </button>
+                      </div>
+                    </div>
+                  )
+                )}
+
+                {/* Read-only when done — placeholder */}
+                {status === 'เสร็จแล้ว' && removedParts.length === 0 && (
+                  <p className="text-sm text-gray-400">ไม่มีรายการ</p>
+                )}
+
               </div>
 
               {/* Action */}
@@ -440,7 +506,7 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
                 )}
 
                 {status === 'กำลังซ่อม' && (
-                  <button onClick={() => setStatus('รอตรวจ')}
+                  <button onClick={() => setConfirmAction('submitInspect')}
                     className="w-full bg-[#44403C] hover:bg-black text-white text-sm font-semibold py-3 rounded-xl transition-colors border-none cursor-pointer">
                     ซ่อมเสร็จ — ส่งให้หัวหน้าตรวจ
                   </button>
@@ -462,7 +528,7 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
                       <p className="text-sm font-medium text-[#1E1E1E]">หัวหน้าช่างตรวจผ่านแล้ว</p>
                     </div>
                     <button
-                      onClick={() => { if (partsReturned) setStatus('เสร็จแล้ว') }}
+                      onClick={() => { if (partsReturned) setConfirmAction('closeJob') }}
                       disabled={!partsReturned}
                       className="w-full bg-[#F8981D] hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold py-3 rounded-xl transition-colors border-none cursor-pointer"
                     >
@@ -472,9 +538,9 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
                 )}
 
                 {status === 'เสร็จแล้ว' && (
-                  <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3.5 text-center">
-                    <p className="text-sm font-medium text-green-700">งานเสร็จสมบูรณ์</p>
-                    {baseJob.completedAt && <p className="text-xs text-green-600 mt-0.5">เสร็จเมื่อ {baseJob.completedAt}</p>}
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-center">
+                    <p className="text-sm font-medium text-[#44403C]">งานเสร็จสมบูรณ์</p>
+                    {baseJob.completedAt && <p className="text-xs text-gray-600 mt-0.5">เสร็จเมื่อ {baseJob.completedAt}</p>}
                   </div>
                 )}
               </div>
@@ -504,14 +570,6 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
                       <div className="w-2 h-2 rounded-full bg-stone-400 shrink-0" />
                       <div>
                         <p className="text-xs font-medium text-gray-600">แจ้งปัญหาเพิ่มหัวหน้าช่าง</p>
-                      </div>
-                    </div>
-                  )}
-                  {quotationSent && (
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full bg-[#F8981D] shrink-0" />
-                      <div>
-                        <p className="text-xs font-medium text-gray-600">ส่งใบเสนอราคาเพิ่ม</p>
                       </div>
                     </div>
                   )}

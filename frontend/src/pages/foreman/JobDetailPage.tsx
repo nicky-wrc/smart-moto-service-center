@@ -1,23 +1,24 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { mockJobs } from './jobs'
+import { QuotationA4Document } from '../../components/QuotationA4Document'
+import { QuotationPreviewModal } from '../../components/QuotationPreviewModal'
+import { ConfirmModal } from '../../components/ConfirmModal'
+import type { Part, SelectedPart } from './types'
 
 // ─── Parts Catalog ────────────────────────────────────────────────────────────
 
-type Part = { id: number; name: string; partNumber: string; stock: number; unit: string }
-type SelectedPart = { part: Part; qty: number }
-
 const mockPartsCatalog: Part[] = [
-  { id: 1,  name: 'ผ้าเบรกหน้า',          partNumber: 'BR-F-001',  stock: 8,  unit: 'ชุด' },
-  { id: 2,  name: 'ผ้าเบรกหลัง',          partNumber: 'BR-R-001',  stock: 5,  unit: 'ชุด' },
-  { id: 3,  name: 'น้ำมันเบรก DOT4',      partNumber: 'OL-B-004',  stock: 12, unit: 'ขวด' },
-  { id: 4,  name: 'หัวเทียน NGK CR7HSA',  partNumber: 'SP-NGK-01', stock: 0,  unit: 'หัว' },
-  { id: 5,  name: 'สายพานขับเคลื่อน',     partNumber: 'BL-DR-001', stock: 3,  unit: 'เส้น' },
-  { id: 6,  name: 'น้ำมันเครื่อง 10W-40', partNumber: 'OL-E-010',  stock: 20, unit: 'ลิตร' },
-  { id: 7,  name: 'ไส้กรองอากาศ',         partNumber: 'FL-AR-001', stock: 0,  unit: 'ชิ้น' },
-  { id: 8,  name: 'ไส้กรองน้ำมัน',        partNumber: 'FL-OL-001', stock: 7,  unit: 'ชิ้น' },
-  { id: 9,  name: 'โซ่ขับ',               partNumber: 'CH-DR-001', stock: 2,  unit: 'เส้น' },
-  { id: 10, name: 'แบตเตอรี่ 12V 5Ah',   partNumber: 'BT-12V-05', stock: 4,  unit: 'ก้อน' },
+  { id: 1,  name: 'ผ้าเบรกหน้า',          partNumber: 'BR-F-001',  stock: 8,  unit: 'ชุด',  unitPrice: 850  },
+  { id: 2,  name: 'ผ้าเบรกหลัง',          partNumber: 'BR-R-001',  stock: 5,  unit: 'ชุด',  unitPrice: 750  },
+  { id: 3,  name: 'น้ำมันเบรก DOT4',      partNumber: 'OL-B-004',  stock: 12, unit: 'ขวด', unitPrice: 180  },
+  { id: 4,  name: 'หัวเทียน NGK CR7HSA',  partNumber: 'SP-NGK-01', stock: 0,  unit: 'หัว',  unitPrice: 120  },
+  { id: 5,  name: 'สายพานขับเคลื่อน',     partNumber: 'BL-DR-001', stock: 3,  unit: 'เส้น', unitPrice: 1200 },
+  { id: 6,  name: 'น้ำมันเครื่อง 10W-40', partNumber: 'OL-E-010',  stock: 20, unit: 'ลิตร', unitPrice: 220  },
+  { id: 7,  name: 'ไส้กรองอากาศ',         partNumber: 'FL-AR-001', stock: 0,  unit: 'ชิ้น', unitPrice: 350  },
+  { id: 8,  name: 'ไส้กรองน้ำมัน',        partNumber: 'FL-OL-001', stock: 7,  unit: 'ชิ้น', unitPrice: 90   },
+  { id: 9,  name: 'โซ่ขับ',               partNumber: 'CH-DR-001', stock: 2,  unit: 'เส้น', unitPrice: 980  },
+  { id: 10, name: 'แบตเตอรี่ 12V 5Ah',   partNumber: 'BT-12V-05', stock: 4,  unit: 'ก้อน', unitPrice: 1800 },
 ]
 
 // visual style per part
@@ -221,7 +222,7 @@ function PartsModal({
 type JobType = '' | 'general' | 'deep'
 
 const jobTypeOptions = [
-  { value: 'general' as const, label: 'งานทั่วไป', desc: 'เลือกอะไหล่ที่ต้องใช้ แล้วออกใบเสนอราคา' },
+  { value: 'general' as const, label: 'งานทั่วไป', desc: 'เลือกอะไหล่ที่ต้องใช้ แล้วออกใบประเมินราคา' },
   { value: 'deep' as const,    label: 'ต้องตรวจเชิงลึก', desc: 'รื้อ/ผ่าเครื่องเพื่อระบุอาการก่อน' },
 ]
 
@@ -316,19 +317,40 @@ export default function JobDetailPage() {
   const [jobType, setJobType] = useState<JobType>('')
   const [selectedParts, setSelectedParts] = useState<SelectedPart[]>([])
   const [stockChecked, setStockChecked] = useState(false)
+  const [stockQuotPreview, setStockQuotPreview] = useState(false)
+  const [stockQuotFullView, setStockQuotFullView] = useState(false)
   const [quotationSent, setQuotationSent] = useState(false)
-  const [deepNote, setDeepNote] = useState('')
   const [deepSent, setDeepSent] = useState(false)
+  const [deepQuotPreview, setDeepQuotPreview] = useState(false)
+  const [deepQuotFullView, setDeepQuotFullView] = useState(false)
   const [estimatedDays, setEstimatedDays] = useState<number | ''>(1)
   const [estimatedUnit, setEstimatedUnit] = useState<'วัน' | 'เดือน'>('วัน')
 
+  // QC inspection (for รอตรวจ)
+  const [qcResult, setQcResult]       = useState<'' | 'pass' | 'fail'>('')
+  const [qcNote, setQcNote]           = useState('')
+  const [qcSubmitted, setQcSubmitted] = useState(false)
+
+  // Final quotation (after QC pass)
+  type QuotItem = { id: number; name: string; qty: number; unitPrice: number }
+  const [quotItems, setQuotItems]     = useState<QuotItem[]>([])
+  const [quotName, setQuotName]       = useState('')
+  const [quotQty, setQuotQty]         = useState(1)
+  const [quotPrice, setQuotPrice]     = useState<number | ''>(0)
+  const [laborCost, setLaborCost]     = useState<number | ''>(0)
+  const [quotSent, setQuotSent]       = useState(false)
+  const [showQuot, setShowQuot]       = useState(false)
+  const [quotPreview, setQuotPreview] = useState(false)
+
   // Additional quotation (for กำลังดำเนินงาน — mechanic found extra issues)
-  type AddlItem = { name: string; qty: number; unitPrice: number }
-  const [addlItems, setAddlItems] = useState<AddlItem[]>([])
-  const [addlName, setAddlName] = useState('')
-  const [addlQty, setAddlQty] = useState(1)
-  const [addlPrice, setAddlPrice] = useState<number | ''>(0)
+  const [addlSelectedParts, setAddlSelectedParts] = useState<SelectedPart[]>([])
+  const [addlPartsModalOpen, setAddlPartsModalOpen] = useState(false)
+  const [addlQuotPreview, setAddlQuotPreview] = useState(false)
+  const [addlQuotFullView, setAddlQuotFullView] = useState(false)
   const [addlQuotationSent, setAddlQuotationSent] = useState(false)
+
+  // Confirm modal
+  const [confirmAction, setConfirmAction] = useState<null | 'stockQuot' | 'deepQuot' | 'addlQuot' | 'quot' | 'qcPass' | 'qcFail'>(null)
 
   // Mechanic report photo lightbox
   const [mrLightboxOpen, setMrLightboxOpen] = useState(false)
@@ -349,12 +371,14 @@ export default function JobDetailPage() {
       return [...prev, { part, qty }]
     })
     setStockChecked(false)
+    setStockQuotPreview(false)
     setQuotationSent(false)
   }
 
   const removePart = (id: number) => {
     setSelectedParts((prev) => prev.filter((sp) => sp.part.id !== id))
     setStockChecked(false)
+    setStockQuotPreview(false)
     setQuotationSent(false)
   }
 
@@ -362,6 +386,7 @@ export default function JobDetailPage() {
     if (qty < 1) return
     setSelectedParts((prev) => prev.map((sp) => (sp.part.id === id ? { ...sp, qty } : sp)))
     setStockChecked(false)
+    setStockQuotPreview(false)
     setQuotationSent(false)
   }
 
@@ -369,9 +394,10 @@ export default function JobDetailPage() {
     setJobType(v)
     setSelectedParts([])
     setStockChecked(false)
+    setStockQuotPreview(false)
     setQuotationSent(false)
-    setDeepNote('')
     setDeepSent(false)
+    setDeepQuotPreview(false)
     setEstimatedDays(1)
     setEstimatedUnit('วัน')
   }
@@ -465,6 +491,399 @@ export default function JobDetailPage() {
             </div>
           )}
         </div>
+      )}
+
+      {/* ─── Shared A4 Document Views ─── */}
+      {stockQuotFullView && (
+        <QuotationA4Document
+          variant="general"
+          job={job}
+          onClose={() => setStockQuotFullView(false)}
+          foremanNote={foremanNote}
+          estimatedDays={estimatedDays}
+          estimatedUnit={estimatedUnit}
+          selectedParts={selectedParts}
+        />
+      )}
+      {deepQuotFullView && (
+        <QuotationA4Document
+          variant="deep"
+          job={job}
+          onClose={() => setDeepQuotFullView(false)}
+          foremanNote={foremanNote}
+          estimatedDays={estimatedDays}
+          estimatedUnit={estimatedUnit}
+        />
+      )}
+
+      {/* ─── General: Stock Check Preview Modal ─── */}
+      {stockQuotPreview && (
+        <QuotationPreviewModal
+          title="ใบประเมินราคา (ร่าง)"
+          onClose={() => { setStockQuotPreview(false); setStockChecked(false) }}
+          onConfirm={() => setConfirmAction('stockQuot')}
+          confirmLabel="ส่งใบประเมินราคา"
+        >
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-gray-50 rounded-xl p-3">
+              <p className="text-xs text-gray-400 mb-1">ลูกค้า</p>
+              <p className="text-sm font-semibold text-[#1E1E1E]">{job.customerName}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{job.customerPhone}</p>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-3">
+              <p className="text-xs text-gray-400 mb-1">รถ</p>
+              <p className="text-sm font-semibold text-[#1E1E1E]">{job.brand} {job.model}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{job.licensePlate} · {job.province}</p>
+            </div>
+          </div>
+
+          <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
+            <p className="text-xs text-amber-700 font-medium mb-1">ความเสียหาย / อาการที่พบ</p>
+            {foremanNote.trim() ? (
+              <>
+                <p className="text-sm text-[#1E1E1E] leading-relaxed">{foremanNote}</p>
+                <p className="text-xs text-amber-600/70 mt-1.5">อาการที่ลูกค้าแจ้ง: {job.symptom}</p>
+              </>
+            ) : (
+              <p className="text-sm text-[#1E1E1E] leading-relaxed">{job.symptom}</p>
+            )}
+          </div>
+
+          <div>
+            <p className="text-xs text-gray-400 mb-2">อะไหล่ที่ใช้ ({selectedParts.length} รายการ)</p>
+            <div className="flex flex-col gap-1.5">
+              {selectedParts.map((sp) => {
+                const enough = sp.part.stock >= sp.qty
+                return (
+                  <div key={sp.part.id} className="flex items-center justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-[#1E1E1E] truncate">{sp.part.name} <span className="text-gray-400 text-xs">× {sp.qty} {sp.part.unit}</span></p>
+                      <p className="text-xs text-gray-400">{(sp.qty * sp.part.unitPrice).toLocaleString()} ฿</p>
+                    </div>
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${enough ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                      {enough ? 'มีในสต็อก' : 'สั่งซื้อ'}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {(() => {
+            const total = selectedParts.reduce((s, sp) => s + sp.qty * sp.part.unitPrice, 0)
+            return (
+              <div className="flex items-center justify-between bg-stone-50 rounded-xl px-4 py-3">
+                <span className="text-sm font-bold text-[#1E1E1E]">รวมทั้งหมด</span>
+                <span className="text-lg font-black text-[#F8981D]">{total.toLocaleString()} ฿</span>
+              </div>
+            )
+          })()}
+
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100">
+            <div>
+              <p className="text-sm text-[#1E1E1E]">ระยะเวลาโดยประมาณ</p>
+              {selectedParts.some((sp) => sp.part.stock < sp.qty) && (
+                <p className="text-xs text-amber-600 mt-0.5">รวมระยะเวลารออะไหล่ด้วย</p>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden h-7">
+                <button onClick={() => setEstimatedDays((d) => Math.max(1, Number(d) - 1))} className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-50 bg-transparent border-none cursor-pointer font-bold transition-colors">−</button>
+                <input type="text" inputMode="numeric" value={estimatedDays} onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setEstimatedDays(v === '' ? '' : Math.max(1, Number(v))) }} className="w-8 h-7 text-xs font-semibold text-center text-[#1E1E1E] outline-none border-x border-gray-200 bg-white" />
+                <button onClick={() => setEstimatedDays((d) => Number(d) + 1)} className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-50 bg-transparent border-none cursor-pointer font-bold transition-colors">+</button>
+              </div>
+              <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden h-7">
+                {(['วัน', 'เดือน'] as const).map((u) => (
+                  <button key={u} onClick={() => setEstimatedUnit(u)} className={`px-2.5 h-7 text-xs font-medium border-none cursor-pointer transition-colors ${estimatedUnit === u ? 'bg-[#1E1E1E] text-white' : 'bg-white text-gray-400 hover:bg-gray-50'}`}>{u}</button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <button onClick={() => setStockQuotFullView(true)} className="w-full flex items-center justify-center gap-2 border border-gray-200 hover:border-[#F8981D] hover:text-[#F8981D] rounded-xl py-2.5 text-sm text-gray-500 bg-transparent cursor-pointer transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+            ดูเอกสารเต็ม (A4)
+          </button>
+        </QuotationPreviewModal>
+      )}
+
+      {/* ─── Deep Inspection: Preview Modal ─── */}
+      {deepQuotPreview && (
+        <QuotationPreviewModal
+          title="ใบประเมินราคา — ตรวจเชิงลึก"
+          onClose={() => setDeepQuotPreview(false)}
+          onConfirm={() => setConfirmAction('deepQuot')}
+          confirmLabel="ส่งใบประเมินราคา"
+        >
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-gray-50 rounded-xl p-3">
+              <p className="text-xs text-gray-400 mb-1">ลูกค้า</p>
+              <p className="text-sm font-semibold text-[#1E1E1E]">{job.customerName}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{job.customerPhone}</p>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-3">
+              <p className="text-xs text-gray-400 mb-1">รถ</p>
+              <p className="text-sm font-semibold text-[#1E1E1E]">{job.brand} {job.model}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{job.licensePlate} · {job.province}</p>
+            </div>
+          </div>
+
+          <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
+            <p className="text-xs text-amber-700 font-medium mb-1">ความเสียหาย / อาการที่พบ</p>
+            {foremanNote.trim() ? (
+              <>
+                <p className="text-sm text-[#1E1E1E] leading-relaxed">{foremanNote}</p>
+                <p className="text-xs text-amber-600/70 mt-1.5">อาการที่ลูกค้าแจ้ง: {job.symptom}</p>
+              </>
+            ) : (
+              <p className="text-sm text-[#1E1E1E] leading-relaxed">{job.symptom}</p>
+            )}
+          </div>
+
+          <div className="border border-gray-100 rounded-xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 bg-gray-50">
+              <span className="text-sm text-[#1E1E1E]">ค่าตรวจเชิงลึก (รื้อ/ผ่าเครื่อง)</span>
+              <span className="text-sm font-bold text-[#1E1E1E]">1,000 ฿</span>
+            </div>
+            <div className="flex items-center justify-between px-4 py-3 bg-stone-50">
+              <span className="text-sm font-bold text-[#1E1E1E]">รวมทั้งหมด</span>
+              <span className="text-lg font-black text-[#F8981D]">1,000 ฿</span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-2 pt-1 border-t border-gray-100">
+            <p className="text-sm text-[#1E1E1E]">ระยะเวลาตรวจโดยประมาณ</p>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden h-7">
+                <button onClick={() => setEstimatedDays((d) => Math.max(1, Number(d) - 1))} className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-50 bg-transparent border-none cursor-pointer font-bold transition-colors">−</button>
+                <input type="text" inputMode="numeric" value={estimatedDays} onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setEstimatedDays(v === '' ? '' : Math.max(1, Number(v))) }} className="w-8 h-7 text-xs font-semibold text-center text-[#1E1E1E] outline-none border-x border-gray-200 bg-white" />
+                <button onClick={() => setEstimatedDays((d) => Number(d) + 1)} className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-50 bg-transparent border-none cursor-pointer font-bold transition-colors">+</button>
+              </div>
+              <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden h-7">
+                {(['วัน', 'เดือน'] as const).map((u) => (
+                  <button key={u} onClick={() => setEstimatedUnit(u)} className={`px-2.5 h-7 text-xs font-medium border-none cursor-pointer transition-colors ${estimatedUnit === u ? 'bg-[#1E1E1E] text-white' : 'bg-white text-gray-400 hover:bg-gray-50'}`}>{u}</button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <button onClick={() => setDeepQuotFullView(true)} className="w-full flex items-center justify-center gap-2 border border-gray-200 hover:border-[#F8981D] hover:text-[#F8981D] rounded-xl py-2.5 text-sm text-gray-500 bg-transparent cursor-pointer transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+            ดูเอกสารเต็ม (A4)
+          </button>
+        </QuotationPreviewModal>
+      )}
+
+      {/* ─── Additional Quotation A4 Full View ─── */}
+      {addlQuotFullView && (
+        <QuotationA4Document
+          variant="additional"
+          job={job}
+          onClose={() => setAddlQuotFullView(false)}
+          addlSelectedParts={addlSelectedParts}
+        />
+      )}
+
+      {/* ─── Additional Quotation Preview Modal ─── */}
+      {addlQuotPreview && (
+        <QuotationPreviewModal
+          title="ใบเสนอราคาเพิ่มเติม"
+          subtitle={`อ้างอิงใบงาน #${job.id}`}
+          onClose={() => setAddlQuotPreview(false)}
+          onConfirm={() => setConfirmAction('addlQuot')}
+          confirmLabel="ส่งใบเสนอราคาเพิ่มเติม"
+        >
+          {/* Customer + Vehicle */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-gray-50 rounded-xl p-3">
+              <p className="text-xs text-gray-400 mb-1">ลูกค้า</p>
+              <p className="text-sm font-semibold text-[#1E1E1E]">{job.customerName}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{job.customerPhone}</p>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-3">
+              <p className="text-xs text-gray-400 mb-1">รถ</p>
+              <p className="text-sm font-semibold text-[#1E1E1E]">{job.brand} {job.model}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{job.licensePlate} · {job.province}</p>
+            </div>
+          </div>
+
+          {/* Reason */}
+          {job.mechanicReport && (
+            <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
+              <p className="text-xs text-amber-700 font-medium mb-1">สาเหตุ / ปัญหาที่พบเพิ่มเติม</p>
+              <p className="text-sm text-[#1E1E1E] leading-relaxed">{job.mechanicReport.note}</p>
+              <p className="text-xs text-amber-500 mt-1.5">รายงานโดยช่าง · {job.mechanicReport.reportedAt}</p>
+            </div>
+          )}
+
+          {/* Parts */}
+          <div>
+            <p className="text-xs text-gray-400 mb-2">อะไหล่เพิ่มเติม ({addlSelectedParts.length} รายการ)</p>
+            <div className="flex flex-col gap-1.5">
+              {addlSelectedParts.map((sp) => (
+                <div key={sp.part.id} className="flex items-center justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-[#1E1E1E] truncate">{sp.part.name} <span className="text-gray-400 text-xs">× {sp.qty} {sp.part.unit}</span></p>
+                    <p className="text-xs text-gray-400">{(sp.qty * sp.part.unitPrice).toLocaleString()} ฿</p>
+                  </div>
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${sp.part.stock >= sp.qty ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                    {sp.part.stock >= sp.qty ? 'มีในสต็อก' : 'สั่งซื้อ'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Total */}
+          <div className="flex items-center justify-between bg-stone-50 rounded-xl px-4 py-3">
+            <span className="text-sm font-bold text-[#1E1E1E]">รวมทั้งหมด</span>
+            <span className="text-lg font-black text-[#F8981D]">
+              {addlSelectedParts.reduce((s, sp) => s + sp.qty * sp.part.unitPrice, 0).toLocaleString()} ฿
+            </span>
+          </div>
+
+          {/* View full doc */}
+          <button onClick={() => setAddlQuotFullView(true)} className="w-full flex items-center justify-center gap-2 border border-gray-200 hover:border-[#F8981D] hover:text-[#F8981D] rounded-xl py-2.5 text-sm text-gray-500 bg-transparent cursor-pointer transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+            ดูเอกสารเต็ม (A4)
+          </button>
+        </QuotationPreviewModal>
+      )}
+
+      {/* ─── Quotation Preview Modal ─── */}
+      {quotPreview && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setQuotPreview(false)}>
+          <div
+            className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div className="px-6 pt-6 pb-4 border-b border-gray-100">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div>
+                  <p className="text-xs font-semibold text-[#F8981D] uppercase tracking-widest mb-1">Smart Moto Service Center</p>
+                  <h2 className="text-lg font-bold text-[#1E1E1E]">ใบเสนอราคา</h2>
+                </div>
+                <button onClick={() => setQuotPreview(false)} className="text-gray-300 hover:text-gray-500 bg-transparent border-none cursor-pointer text-xl leading-none mt-0.5">✕</button>
+              </div>
+              <div className="flex flex-col gap-0.5 text-sm text-gray-500">
+                <span><span className="font-medium text-[#1E1E1E]">ลูกค้า:</span> {job.customerName}</span>
+                <span><span className="font-medium text-[#1E1E1E]">รถ:</span> {job.brand} {job.model} · {job.licensePlate}</span>
+                <span><span className="font-medium text-[#1E1E1E]">วันที่:</span> {new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+              </div>
+            </div>
+
+            {/* Items */}
+            <div className="px-6 py-4 flex flex-col gap-2 flex-1">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">รายการ</p>
+              {quotItems.length === 0 && Number(laborCost) === 0 && (
+                <p className="text-sm text-gray-300 italic">ไม่มีรายการ</p>
+              )}
+              {quotItems.map((item, idx) => (
+                <div key={item.id} className="flex items-center gap-3">
+                  <span className="text-xs text-gray-300 w-5 shrink-0">{idx + 1}.</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-[#1E1E1E]">{item.name}</p>
+                    <p className="text-xs text-gray-400">{item.qty} × {item.unitPrice.toLocaleString()} ฿</p>
+                  </div>
+                  <span className="text-sm font-medium text-[#1E1E1E] shrink-0">{(item.qty * item.unitPrice).toLocaleString()} ฿</span>
+                </div>
+              ))}
+
+              {/* Divider */}
+              <div className="border-t border-dashed border-gray-200 my-1" />
+
+              {/* Labor */}
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-500">ค่าแรง</span>
+                <span className="text-sm text-[#1E1E1E] font-medium">{Number(laborCost).toLocaleString()} ฿</span>
+              </div>
+
+              {/* Total */}
+              <div className="flex items-center justify-between bg-stone-50 rounded-xl px-4 py-3 mt-1">
+                <span className="text-sm font-bold text-[#1E1E1E]">รวมทั้งหมด</span>
+                <span className="text-lg font-bold text-[#F8981D]">
+                  {(quotItems.reduce((s, i) => s + i.qty * i.unitPrice, 0) + Number(laborCost)).toLocaleString()} ฿
+                </span>
+              </div>
+
+              <p className="text-xs text-gray-300 text-center mt-2">ราคานี้ยังไม่รวมภาษีมูลค่าเพิ่ม</p>
+            </div>
+
+            {/* Footer */}
+            <div className="flex border-t border-gray-100 shrink-0">
+              <button
+                onClick={() => setQuotPreview(false)}
+                className="flex-1 py-4 text-sm text-gray-400 hover:text-gray-600 bg-transparent border-none border-r border-gray-100 cursor-pointer transition-colors font-medium"
+              >
+                ยกเลิก
+              </button>
+              <button
+                onClick={() => setConfirmAction('quot')}
+                disabled={quotItems.length === 0 && !Number(laborCost)}
+                className="flex-1 py-4 text-sm font-semibold text-white bg-[#44403C] hover:bg-black disabled:opacity-40 disabled:cursor-not-allowed border-none cursor-pointer transition-colors rounded-br-2xl"
+              >
+                ยืนยันส่งใบเสนอราคา
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Confirm Modals ─── */}
+      {confirmAction === 'stockQuot' && (
+        <ConfirmModal
+          title="ยืนยันส่งใบประเมินราคา?"
+          description="ระบบจะส่งใบประเมินราคาให้ลูกค้าเพื่อรอการอนุมัติ"
+          confirmLabel="ส่งเลย"
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={() => { setQuotationSent(true); setStockQuotPreview(false); setConfirmAction(null) }}
+        />
+      )}
+      {confirmAction === 'deepQuot' && (
+        <ConfirmModal
+          title="ยืนยันส่งใบประเมินราคาตรวจเชิงลึก?"
+          description="ระบบจะส่งใบประเมินราคาค่าตรวจเชิงลึก 1,000 ฿ ให้ลูกค้าเพื่อรอการอนุมัติ"
+          confirmLabel="ส่งเลย"
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={() => { setDeepSent(true); setDeepQuotPreview(false); setConfirmAction(null) }}
+        />
+      )}
+      {confirmAction === 'addlQuot' && (
+        <ConfirmModal
+          title="ยืนยันส่งใบเสนอราคาเพิ่มเติม?"
+          description="ระบบจะส่งใบเสนอราคาอะไหล่เพิ่มเติมให้ลูกค้าเพื่อรอการอนุมัติ"
+          confirmLabel="ส่งเลย"
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={() => { setAddlQuotationSent(true); setAddlQuotPreview(false); setConfirmAction(null) }}
+        />
+      )}
+      {confirmAction === 'quot' && (
+        <ConfirmModal
+          title="ยืนยันส่งใบเสนอราคา?"
+          description="ระบบจะส่งใบเสนอราคาให้ลูกค้า ไม่สามารถแก้ไขได้หลังส่งแล้ว"
+          confirmLabel="ส่งเลย"
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={() => { setQuotSent(true); setQuotPreview(false); setShowQuot(false); setConfirmAction(null) }}
+        />
+      )}
+      {confirmAction === 'qcPass' && (
+        <ConfirmModal
+          title="ยืนยันผ่านการตรวจ?"
+          description="งานจะถูกส่งต่อขั้นตอนทำความสะอาด และระบบจะออกใบเสนอราคาเรียกเก็บเงิน"
+          confirmLabel="ยืนยันผ่าน"
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={() => { setQcSubmitted(true); setConfirmAction(null) }}
+        />
+      )}
+      {confirmAction === 'qcFail' && (
+        <ConfirmModal
+          title="ยืนยันส่งกลับช่างแก้ไข?"
+          description="งานจะถูกส่งกลับให้ช่างแก้ไขตามหมายเหตุที่ระบุ"
+          confirmLabel="ส่งกลับ"
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={() => { setQcSubmitted(true); setConfirmAction(null) }}
+        />
       )}
 
       <div className="h-full overflow-hidden flex flex-col">
@@ -745,7 +1164,7 @@ export default function JobDetailPage() {
                   <div className="flex flex-col gap-3">
 
                     {/* Selected parts list */}
-                    {selectedParts.length > 0 && !stockChecked && (
+                    {selectedParts.length > 0 && !stockChecked && !quotationSent && (
                       <div className="flex flex-col gap-1.5">
                         {selectedParts.map((sp) => {
                           const enough = sp.part.stock >= sp.qty
@@ -784,7 +1203,7 @@ export default function JobDetailPage() {
                     )}
 
                     {/* Open parts modal */}
-                    {!stockChecked && (
+                    {!stockChecked && !quotationSent && (
                     <button
                       onClick={() => setPartsModalOpen(true)}
                       className="w-full flex items-center justify-between border-2 border-dashed border-gray-200 hover:border-[#F8981D] rounded-xl px-4 py-3 bg-transparent cursor-pointer transition-colors group"
@@ -801,92 +1220,29 @@ export default function JobDetailPage() {
                     )}
 
                     {/* Check stock */}
-                    {selectedParts.length > 0 && !stockChecked && (
+                    {selectedParts.length > 0 && !stockChecked && !quotationSent && (
                       <button
-                        onClick={() => setStockChecked(true)}
+                        onClick={() => { setStockChecked(true); setStockQuotPreview(true) }}
                         className="w-full bg-[#44403C] hover:bg-black text-white text-sm font-medium py-2.5 rounded-xl transition-colors border-none cursor-pointer"
                       >
                         ตรวจสอบสต็อก
                       </button>
                     )}
 
-                    {/* Quotation */}
-                    {stockChecked && !quotationSent && (
-                      <div className="border border-gray-200 rounded-xl overflow-hidden">
-                        <div className="bg-white px-4 py-3 flex items-center justify-between border-b border-gray-100">
-                          <div>
-                            <p className="text-sm font-medium text-[#1E1E1E]">ใบเสนอราคา</p>
-                            <p className="text-xs text-gray-400 mt-0.5">{job.brand} {job.model} · {job.customerName}</p>
-                          </div>
-                          <button
-                            onClick={() => setStockChecked(false)}
-                            className="text-gray-400 hover:text-[#1E1E1E] text-xs border border-gray-200 hover:border-gray-400 rounded-lg px-2.5 py-1 bg-transparent cursor-pointer transition-colors shrink-0"
-                          >
-                            แก้ไข
-                          </button>
-                        </div>
-                        <div className="p-4 flex flex-col gap-2">
-                          {selectedParts.map((sp) => {
-                            const enough = sp.part.stock >= sp.qty
-                            return (
-                              <div key={sp.part.id} className="flex items-center justify-between gap-2 text-sm">
-                                <span className="text-[#1E1E1E]">
-                                  {sp.part.name}
-                                  <span className="text-gray-400 ml-1">× {sp.qty} {sp.part.unit}</span>
-                                </span>
-                                <span className={`shrink-0 font-medium px-2 py-0.5 rounded-full ${
-                                  enough ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-                                }`}>
-                                  {enough ? 'มีในสต็อก' : 'ต้องสั่งซื้อ'}
-                                </span>
-                              </div>
-                            )
-                          })}
-                          {selectedParts.some((sp) => sp.part.stock < sp.qty) && (
-                            <p className="text-xs text-amber-600 mt-1 pt-2 border-t border-gray-100">
-                              * บางรายการต้องสั่งซื้อก่อน จะระบุระยะเวลารออะไหล่ให้ลูกค้าทราบ
-                            </p>
-                          )}
-                          <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100">
-                            <span className="text-xs text-[#1E1E1E]">ระยะเวลาโดยประมาณ</span>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden h-7">
-                                <button onClick={() => setEstimatedDays((d) => Math.max(1, Number(d) - 1))}
-                                  className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-50 bg-transparent border-none cursor-pointer font-bold transition-colors">−</button>
-                                <input
-                                  type="text"
-                                  inputMode="numeric"
-                                  value={estimatedDays}
-                                  onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setEstimatedDays(v === '' ? '' : Math.max(1, Number(v))) }}
-                                  className="w-8 h-7 text-xs font-semibold text-center text-[#1E1E1E] outline-none border-x border-gray-200 bg-white"
-                                />
-                                <button onClick={() => setEstimatedDays((d) => Number(d) + 1)}
-                                  className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-50 bg-transparent border-none cursor-pointer font-bold transition-colors">+</button>
-                              </div>
-                              <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden h-7">
-                                {(['วัน', 'เดือน'] as const).map((u) => (
-                                  <button key={u} onClick={() => setEstimatedUnit(u)}
-                                    className={`px-2.5 h-7 text-xs font-medium border-none cursor-pointer transition-colors ${estimatedUnit === u ? 'bg-[#1E1E1E] text-white' : 'bg-white text-gray-400 hover:bg-gray-50'}`}>
-                                    {u}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => setQuotationSent(true)}
-                            className="w-full bg-[#F8981D] hover:bg-orange-500 text-white text-sm font-medium py-2.5 rounded-xl transition-colors border-none cursor-pointer"
-                          >
-                            ส่งใบเสนอราคา
-                          </button>
-                        </div>
-                      </div>
-                    )}
 
                     {quotationSent && (
-                      <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3.5">
-                        <p className="text-green-700 text-sm font-medium">ส่งใบเสนอราคาแล้ว</p>
-                        <p className="text-green-600 text-xs mt-0.5">กำหนดแล้วเสร็จประมาณ {estimatedDays} {estimatedUnit} · รอการยืนยันจากลูกค้า</p>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2 px-1">
+                          <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
+                          <p className="text-green-700 text-sm font-medium">ส่งใบประเมินราคาแล้ว</p>
+                        </div>
+                        <button
+                          onClick={() => setStockQuotPreview(true)}
+                          className="w-full flex items-center justify-center gap-2 border border-gray-200 hover:border-[#F8981D] hover:text-[#F8981D] rounded-xl py-2.5 text-sm text-gray-500 bg-transparent cursor-pointer transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                          ดูใบประเมินราคา
+                        </button>
                       </div>
                     )}
                   </div>
@@ -896,54 +1252,30 @@ export default function JobDetailPage() {
                 {jobType === 'deep' && (
                   <div className="flex flex-col gap-3">
                     <p className="text-xs text-gray-500">
-                      ต้องรื้อ/ผ่าเครื่องก่อน ระบุรายละเอียดและค่าใช้จ่ายเบื้องต้นเพื่อแจ้งลูกค้าอนุมัติก่อนดำเนินการ
+                      ต้องรื้อ/ผ่าเครื่องก่อน ระบุรายละเอียดในหมายเหตุหัวหน้าช่าง (ซ้าย) แล้วส่งใบประเมินราคา 1,000 ฿ ให้ลูกค้าอนุมัติก่อนดำเนินการ
                     </p>
-                    <textarea
-                      value={deepNote}
-                      onChange={(e) => setDeepNote(e.target.value)}
-                      placeholder="บันทึกรายละเอียด เช่น จุดที่ต้องรื้อ หรือค่าประเมินเบื้องต้น..."
-                      rows={4}
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-xs bg-gray-50 outline-none focus:border-[#F8981D] transition-colors resize-none"
-                    />
                     {!deepSent ? (
                       <>
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs text-[#1E1E1E]">ระยะเวลาโดยประมาณ</span>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden h-7">
-                              <button onClick={() => setEstimatedDays((d) => Math.max(1, Number(d) - 1))}
-                                className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-50 bg-transparent border-none cursor-pointer font-bold transition-colors">−</button>
-                              <input
-                                type="text"
-                                inputMode="numeric"
-                                value={estimatedDays}
-                                onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setEstimatedDays(v === '' ? '' : Math.max(1, Number(v))) }}
-                                className="w-8 h-7 text-xs font-semibold text-center text-[#1E1E1E] outline-none border-x border-gray-200 bg-white"
-                              />
-                              <button onClick={() => setEstimatedDays((d) => Number(d) + 1)}
-                                className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-50 bg-transparent border-none cursor-pointer font-bold transition-colors">+</button>
-                            </div>
-                            <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden h-7">
-                              {(['วัน', 'เดือน'] as const).map((u) => (
-                                <button key={u} onClick={() => setEstimatedUnit(u)}
-                                  className={`px-2.5 h-7 text-xs font-medium border-none cursor-pointer transition-colors ${estimatedUnit === u ? 'bg-[#44403C] text-white' : 'bg-white text-gray-400 hover:bg-gray-50'}`}>
-                                  {u}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
                         <button
-                          onClick={() => setDeepSent(true)}
+                          onClick={() => setDeepQuotPreview(true)}
                           className="w-full bg-[#1E1E1E] hover:bg-black text-white text-sm font-medium py-2.5 rounded-xl transition-colors border-none cursor-pointer"
                         >
-                          บันทึกและแจ้งลูกค้า
+                          ดูและส่งใบประเมินราคา
                         </button>
                       </>
                     ) : (
-                      <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3.5">
-                        <p className="text-green-700 text-sm font-medium">แจ้งลูกค้าแล้ว</p>
-                        <p className="text-green-600 text-xs mt-0.5">กำหนดแล้วเสร็จประมาณ {estimatedDays} {estimatedUnit} · รอการยืนยันค่าตรวจจากลูกค้า</p>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2 px-1">
+                          <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
+                          <p className="text-green-700 text-sm font-medium">ส่งใบประเมินราคาแล้ว</p>
+                        </div>
+                        <button
+                          onClick={() => setDeepQuotPreview(true)}
+                          className="w-full flex items-center justify-center gap-2 border border-gray-200 hover:border-[#F8981D] hover:text-[#F8981D] rounded-xl py-2.5 text-sm text-gray-500 bg-transparent cursor-pointer transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                          ดูใบประเมินราคา
+                        </button>
                       </div>
                     )}
                   </div>
@@ -988,109 +1320,326 @@ export default function JobDetailPage() {
 
                   {/* Additional quotation */}
                   {job.mechanicReport && (
-                    <div className="bg-white border border-gray-100 rounded-xl p-4 flex flex-col gap-3 shadow-sm">
-                      <p className="text-xs text-gray-400 uppercase tracking-wide">ใบเสนอราคาเพิ่มเติม</p>
-
-                      {/* Added items list */}
-                      {addlItems.length > 0 && (
-                        <div className="flex flex-col gap-1.5">
-                          {addlItems.map((item, i) => (
-                            <div key={i} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-[#1E1E1E] truncate">{item.name}</p>
-                                <p className="text-xs text-gray-400">{item.qty} × {item.unitPrice.toLocaleString()} บาท</p>
-                              </div>
-                              <span className="text-sm font-semibold text-[#1E1E1E] shrink-0">
-                                {(item.qty * item.unitPrice).toLocaleString()} ฿
-                              </span>
-                              <button
-                                onClick={() => setAddlItems((prev) => prev.filter((_, j) => j !== i))}
-                                className="text-gray-300 hover:text-red-400 border-none bg-transparent cursor-pointer text-xs transition-colors shrink-0"
-                              >✕</button>
-                            </div>
-                          ))}
-                          <div className="flex items-center justify-between px-3 py-2 border-t border-gray-100 mt-1">
-                            <span className="text-xs text-gray-400">รวมทั้งหมด</span>
-                            <span className="text-sm font-bold text-[#1E1E1E]">
-                              {addlItems.reduce((s, it) => s + it.qty * it.unitPrice, 0).toLocaleString()} ฿
-                            </span>
-                          </div>
-                        </div>
+                    <>
+                      {addlPartsModalOpen && (
+                        <PartsModal
+                          selectedParts={addlSelectedParts}
+                          onAdd={(part, qty) => setAddlSelectedParts((prev) => prev.find((sp) => sp.part.id === part.id) ? prev : [...prev, { part, qty }])}
+                          onRemove={(id) => setAddlSelectedParts((prev) => prev.filter((sp) => sp.part.id !== id))}
+                          onClose={() => setAddlPartsModalOpen(false)}
+                        />
                       )}
+                      <div className="bg-white border border-gray-100 rounded-xl p-4 flex flex-col gap-3 shadow-sm">
+                        <p className="text-xs text-gray-400 uppercase tracking-wide">ใบเสนอราคาเพิ่มเติม</p>
 
-                      {/* Add item form */}
-                      {!addlQuotationSent && (
-                        <div className="flex flex-col gap-2">
-                          <input
-                            type="text"
-                            value={addlName}
-                            onChange={(e) => setAddlName(e.target.value)}
-                            placeholder="รายการ เช่น โซ่ขับเคลื่อน..."
-                            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#F8981D] transition-colors"
-                          />
-                          <div className="flex gap-2">
-                            <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden h-9 shrink-0">
-                              <button onClick={() => setAddlQty((q) => Math.max(1, q - 1))}
-                                className="w-8 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50 bg-transparent border-none cursor-pointer font-bold transition-colors">−</button>
-                              <span className="w-7 text-center text-sm font-medium text-[#1E1E1E]">{addlQty}</span>
-                              <button onClick={() => setAddlQty((q) => q + 1)}
-                                className="w-8 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50 bg-transparent border-none cursor-pointer font-bold transition-colors">+</button>
+                        {/* Selected parts */}
+                        {addlSelectedParts.length > 0 && (
+                          <div className="flex flex-col gap-1.5">
+                            {addlSelectedParts.map((sp) => (
+                              <div key={sp.part.id} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-[#1E1E1E] truncate">{sp.part.name}</p>
+                                  <p className="text-xs text-gray-400">{sp.part.partNumber}</p>
+                                </div>
+                                <div className="flex items-center gap-1 shrink-0">
+                                  <button
+                                    onClick={() => setAddlSelectedParts((prev) => prev.map((p) => p.part.id === sp.part.id ? { ...p, qty: Math.max(1, p.qty - 1) } : p))}
+                                    className="w-5 h-5 rounded border border-gray-200 hover:border-gray-300 text-gray-500 text-xs font-bold cursor-pointer bg-white flex items-center justify-center transition-colors"
+                                  >−</button>
+                                  <span className="text-xs font-medium w-5 text-center">{sp.qty}</span>
+                                  <button
+                                    onClick={() => setAddlSelectedParts((prev) => prev.map((p) => p.part.id === sp.part.id ? { ...p, qty: p.qty + 1 } : p))}
+                                    className="w-5 h-5 rounded border border-gray-200 hover:border-gray-300 text-gray-500 text-xs font-bold cursor-pointer bg-white flex items-center justify-center transition-colors"
+                                  >+</button>
+                                  <span className="text-xs text-gray-400 ml-0.5">{sp.part.unit}</span>
+                                </div>
+                                <span className="text-xs font-semibold text-[#1E1E1E] shrink-0 ml-1">
+                                  {(sp.qty * sp.part.unitPrice).toLocaleString()} ฿
+                                </span>
+                                <button
+                                  onClick={() => setAddlSelectedParts((prev) => prev.filter((p) => p.part.id !== sp.part.id))}
+                                  className="text-gray-300 hover:text-red-400 border-none bg-transparent cursor-pointer text-xs transition-colors shrink-0"
+                                >✕</button>
+                              </div>
+                            ))}
+                            <div className="flex items-center justify-between px-3 py-2 border-t border-gray-100">
+                              <span className="text-xs text-gray-400">รวมทั้งหมด</span>
+                              <span className="text-sm font-bold text-[#1E1E1E]">
+                                {addlSelectedParts.reduce((s, sp) => s + sp.qty * sp.part.unitPrice, 0).toLocaleString()} ฿
+                              </span>
                             </div>
-                            <div className="relative flex-1">
-                              <input
-                                type="text"
-                                inputMode="numeric"
-                                value={addlPrice}
-                                onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setAddlPrice(v === '' ? '' : Number(v)) }}
-                                placeholder="ราคาต่อหน่วย"
-                                className="w-full border border-gray-200 rounded-xl pl-3 pr-8 py-2 text-sm outline-none focus:border-[#F8981D] transition-colors"
-                              />
-                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">฿</span>
-                            </div>
+                          </div>
+                        )}
+
+                        {!addlQuotationSent && (
+                          <div className="flex flex-col gap-2">
                             <button
-                              onClick={() => {
-                                if (!addlName.trim() || !addlPrice) return
-                                setAddlItems((prev) => [...prev, { name: addlName.trim(), qty: addlQty, unitPrice: Number(addlPrice) }])
-                                setAddlName('')
-                                setAddlQty(1)
-                                setAddlPrice(0)
-                              }}
-                              className="h-9 px-3 bg-[#44403C] hover:bg-black text-white text-sm rounded-xl border-none cursor-pointer transition-colors shrink-0"
+                              onClick={() => setAddlPartsModalOpen(true)}
+                              className="w-full flex items-center justify-between border-2 border-dashed border-gray-200 hover:border-[#F8981D] rounded-xl px-4 py-3 bg-transparent cursor-pointer transition-colors group"
                             >
-                              เพิ่ม
+                              <span className="text-sm text-gray-400 group-hover:text-[#F8981D] transition-colors">
+                                {addlSelectedParts.length > 0
+                                  ? `เลือกแล้ว ${addlSelectedParts.length} รายการ — แก้ไข`
+                                  : 'เพิ่มอะไหล่ที่ต้องใช้เพิ่มเติม...'}
+                              </span>
+                              <svg className="w-4 h-4 text-gray-300 group-hover:text-[#F8981D] transition-colors shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => setAddlQuotPreview(true)}
+                              disabled={addlSelectedParts.length === 0}
+                              className="w-full bg-[#F8981D] hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium py-2.5 rounded-xl transition-colors border-none cursor-pointer"
+                            >
+                              ดูและส่งใบเสนอราคาเพิ่มเติม
                             </button>
                           </div>
-                          <button
-                            onClick={() => { if (addlItems.length > 0) setAddlQuotationSent(true) }}
-                            disabled={addlItems.length === 0}
-                            className="w-full bg-[#F8981D] hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium py-2.5 rounded-xl transition-colors border-none cursor-pointer"
-                          >
-                            ส่งใบเสนอราคาเพิ่มเติมให้ลูกค้า
-                          </button>
-                        </div>
-                      )}
+                        )}
 
-                      {addlQuotationSent && (
-                        <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3.5">
-                          <p className="text-green-700 text-sm font-medium">ส่งใบเสนอราคาเพิ่มเติมแล้ว</p>
-                          <p className="text-green-600 text-xs mt-0.5">รวม {addlItems.reduce((s, it) => s + it.qty * it.unitPrice, 0).toLocaleString()} ฿ · รอการยืนยันจากลูกค้า</p>
-                        </div>
-                      )}
-                    </div>
+                        {addlQuotationSent && (
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2 px-1">
+                              <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
+                              <p className="text-green-700 text-sm font-medium">ส่งใบเสนอราคาเพิ่มเติมแล้ว</p>
+                            </div>
+                            <button
+                              onClick={() => setAddlQuotPreview(true)}
+                              className="w-full flex items-center justify-center gap-2 border border-gray-200 hover:border-[#F8981D] hover:text-[#F8981D] rounded-xl py-2.5 text-sm text-gray-500 bg-transparent cursor-pointer transition-colors"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                              ดูใบเสนอราคาเพิ่มเติม
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </>
                   )}
                 </div>
               )}
 
-              {/* ── รอตรวจ: waiting for foreman inspection ── */}
+              {/* ── รอตรวจ: QC inspection ── */}
               {job.status === 'รอตรวจ' && (
-                <div className="bg-[#44403C]/5 border border-[#44403C]/15 rounded-xl px-4 py-5 flex flex-col items-center gap-2 text-center">
-                  <div className="w-10 h-10 rounded-full bg-[#44403C]/10 flex items-center justify-center">
-                    <svg className="w-5 h-5 text-[#44403C]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <p className="text-sm font-semibold text-[#44403C]">ช่างซ่อมเสร็จแล้ว</p>
-                  <p className="text-xs text-stone-400">รอหัวหน้าช่างตรวจสอบงาน</p>
+                <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm flex flex-col gap-3">
+                  <p className="text-xs text-gray-400 uppercase tracking-wide">ตรวจสอบงาน (QC)</p>
+
+                  {!qcSubmitted ? (
+                    <>
+                      {/* Pass / Fail selector */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => setQcResult('pass')}
+                          className={`flex items-center justify-center gap-2 py-3 rounded-xl border-2 text-sm font-semibold cursor-pointer transition-all ${
+                            qcResult === 'pass'
+                              ? 'border-[#44403C] bg-[#44403C]/5 text-[#44403C]'
+                              : 'border-gray-200 bg-white text-gray-400 hover:border-[#44403C]/40 hover:text-[#44403C]'
+                          }`}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                          ผ่าน
+                        </button>
+                        <button
+                          onClick={() => setQcResult('fail')}
+                          className={`flex items-center justify-center gap-2 py-3 rounded-xl border-2 text-sm font-semibold cursor-pointer transition-all ${
+                            qcResult === 'fail'
+                              ? 'border-[#F8981D] bg-[#F8981D]/5 text-[#F8981D]'
+                              : 'border-gray-200 bg-white text-gray-400 hover:border-[#F8981D]/40 hover:text-[#F8981D]'
+                          }`}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          ไม่ผ่าน
+                        </button>
+                      </div>
+
+                      {/* Note — required for fail, optional for pass */}
+                      {qcResult !== '' && (
+                        <textarea
+                          value={qcNote}
+                          onChange={(e) => setQcNote(e.target.value)}
+                          placeholder={qcResult === 'fail' ? 'ระบุสิ่งที่ต้องแก้ไข...' : 'หมายเหตุเพิ่มเติม (ถ้ามี)...'}
+                          rows={3}
+                          className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#F8981D] transition-colors resize-none"
+                        />
+                      )}
+
+                      {qcResult === 'pass' && (
+                        <button
+                          onClick={() => setConfirmAction('qcPass')}
+                          className="w-full bg-[#44403C] hover:bg-black text-white text-sm font-semibold py-2.5 rounded-xl border-none cursor-pointer transition-colors"
+                        >
+                          ยืนยัน — ส่งต่อขั้นตอนทำความสะอาด
+                        </button>
+                      )}
+
+                      {qcResult === 'fail' && (
+                        <button
+                          onClick={() => { if (qcNote.trim()) setConfirmAction('qcFail') }}
+                          disabled={!qcNote.trim()}
+                          className="w-full bg-[#F8981D] hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold py-2.5 rounded-xl border-none cursor-pointer transition-colors"
+                        >
+                          ส่งกลับช่างแก้ไข
+                        </button>
+                      )}
+                    </>
+                  ) : qcResult === 'pass' ? (
+                    <>
+                    <div className="bg-[#44403C]/5 border border-[#44403C]/20 rounded-xl px-4 py-3 flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-[#44403C]/10 flex items-center justify-center shrink-0">
+                        <svg className="w-4 h-4 text-[#44403C]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-[#44403C]">ผ่านการตรวจ</p>
+                        <p className="text-xs text-[#44403C]/60 mt-0.5">ส่งต่อขั้นตอนทำความสะอาดแล้ว</p>
+                      </div>
+                    </div>
+
+                    {/* Final quotation */}
+                    {!quotSent ? (
+                      <div className="flex flex-col gap-3">
+                        {/* Dashed trigger */}
+                        {!showQuot ? (
+                          <button
+                            onClick={() => setShowQuot(true)}
+                            className="w-full flex items-center justify-between border-2 border-dashed border-gray-200 hover:border-[#F8981D] rounded-xl px-4 py-3 bg-transparent cursor-pointer transition-colors group"
+                          >
+                            <span className="text-sm text-gray-400 group-hover:text-[#F8981D] transition-colors">
+                              {quotItems.length > 0 ? `${quotItems.length} รายการ — แก้ไข` : 'สร้างใบเสนอราคา...'}
+                            </span>
+                            <svg className="w-4 h-4 text-gray-300 group-hover:text-[#F8981D] transition-colors shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                            </svg>
+                          </button>
+                        ) : (
+                          <div className="border border-gray-200 rounded-xl overflow-hidden">
+                            {/* Header */}
+                            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+                              <div>
+                                <p className="text-sm font-semibold text-[#1E1E1E]">ใบเสนอราคา</p>
+                                <p className="text-xs text-gray-400 mt-0.5">{job.brand} {job.model} · {job.customerName}</p>
+                              </div>
+                              <button onClick={() => setShowQuot(false)} className="text-gray-400 hover:text-gray-600 bg-transparent border-none cursor-pointer text-lg leading-none">✕</button>
+                            </div>
+
+                            <div className="p-4 flex flex-col gap-3">
+                              {/* Items list */}
+                              {quotItems.length > 0 && (
+                                <div className="flex flex-col gap-1.5">
+                                  {quotItems.map((item) => (
+                                    <div key={item.id} className="flex items-center gap-2 bg-stone-50 rounded-lg px-3 py-2">
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-sm text-[#1E1E1E] truncate">{item.name}</p>
+                                        <p className="text-xs text-gray-400">{item.qty} × {item.unitPrice.toLocaleString()} ฿</p>
+                                      </div>
+                                      <span className="text-sm font-medium text-[#1E1E1E] shrink-0">{(item.qty * item.unitPrice).toLocaleString()} ฿</span>
+                                      <button onClick={() => setQuotItems((p) => p.filter((i) => i.id !== item.id))}
+                                        className="text-gray-300 hover:text-[#F8981D] bg-transparent border-none cursor-pointer text-xs shrink-0 transition-colors">✕</button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* Add item row */}
+                              <div className="flex gap-2">
+                                <input value={quotName} onChange={(e) => setQuotName(e.target.value)}
+                                  placeholder="รายการ / อะไหล่..."
+                                  className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#F8981D] transition-colors" />
+                                <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden h-9 shrink-0">
+                                  <button onClick={() => setQuotQty((q) => Math.max(1, q - 1))}
+                                    className="w-8 h-9 flex items-center justify-center text-gray-400 hover:bg-gray-50 bg-transparent border-none cursor-pointer font-bold transition-colors">−</button>
+                                  <span className="w-6 text-center text-sm font-medium text-[#1E1E1E]">{quotQty}</span>
+                                  <button onClick={() => setQuotQty((q) => q + 1)}
+                                    className="w-8 h-9 flex items-center justify-center text-gray-400 hover:bg-gray-50 bg-transparent border-none cursor-pointer font-bold transition-colors">+</button>
+                                </div>
+                                <div className="relative shrink-0">
+                                  <input type="text" inputMode="numeric" value={quotPrice}
+                                    onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setQuotPrice(v === '' ? '' : Number(v)) }}
+                                    placeholder="ราคา"
+                                    className="w-24 border border-gray-200 rounded-xl pl-3 pr-6 py-2 text-sm outline-none focus:border-[#F8981D] transition-colors" />
+                                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400">฿</span>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    if (!quotName.trim() || !quotPrice) return
+                                    setQuotItems((p) => [...p, { id: Date.now(), name: quotName.trim(), qty: quotQty, unitPrice: Number(quotPrice) }])
+                                    setQuotName(''); setQuotQty(1); setQuotPrice(0)
+                                  }}
+                                  className="h-9 px-3 bg-[#44403C] hover:bg-black text-white text-sm rounded-xl border-none cursor-pointer transition-colors shrink-0"
+                                >
+                                  เพิ่ม
+                                </button>
+                              </div>
+
+                              {/* Labor cost */}
+                              <div className="flex items-center justify-between gap-3 pt-2 border-t border-gray-100">
+                                <span className="text-sm text-[#1E1E1E] shrink-0">ค่าแรง</span>
+                                <div className="relative">
+                                  <input type="text" inputMode="numeric" value={laborCost}
+                                    onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setLaborCost(v === '' ? '' : Number(v)) }}
+                                    placeholder="0"
+                                    className="w-32 border border-gray-200 rounded-xl pl-3 pr-6 py-2 text-sm text-right outline-none focus:border-[#F8981D] transition-colors" />
+                                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400">฿</span>
+                                </div>
+                              </div>
+
+                              {/* Total */}
+                              {(quotItems.length > 0 || Number(laborCost) > 0) && (
+                                <div className="flex items-center justify-between px-3 py-2.5 bg-stone-50 rounded-xl">
+                                  <span className="text-sm font-semibold text-[#1E1E1E]">รวมทั้งหมด</span>
+                                  <span className="text-base font-bold text-[#1E1E1E]">
+                                    {(quotItems.reduce((s, i) => s + i.qty * i.unitPrice, 0) + Number(laborCost)).toLocaleString()} ฿
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Footer actions */}
+                            <div className="flex border-t border-gray-100">
+                              <button onClick={() => setShowQuot(false)}
+                                className="flex-1 py-3 text-sm text-gray-400 hover:text-gray-600 bg-transparent border-none border-r border-gray-100 cursor-pointer transition-colors">
+                                บันทึกร่าง
+                              </button>
+                              <button
+                                onClick={() => { setQuotPreview(true) }}
+                                className="flex-1 py-3 text-sm font-semibold text-white bg-[#F8981D] hover:bg-orange-500 border-none cursor-pointer transition-colors"
+                              >
+                                สร้างใบเสนอราคา
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="bg-[#44403C]/5 border border-[#44403C]/15 rounded-xl px-4 py-3.5 flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-[#44403C]">ส่งใบเสนอราคาแล้ว</p>
+                          <p className="text-xs text-[#44403C]/60 mt-0.5">
+                            รวม {(quotItems.reduce((s, i) => s + i.qty * i.unitPrice, 0) + Number(laborCost)).toLocaleString()} ฿ · รอลูกค้ายืนยัน
+                          </p>
+                        </div>
+                        <svg className="w-5 h-5 text-[#44403C]/40 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                    )}
+                    </>
+                  ) : (
+                    <div className="bg-[#F8981D]/5 border border-[#F8981D]/30 rounded-xl px-4 py-3.5 flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-[#F8981D]/10 flex items-center justify-center shrink-0 mt-0.5">
+                        <svg className="w-4 h-4 text-[#F8981D]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-[#F8981D]">ไม่ผ่าน — ส่งกลับช่างแก้ไขแล้ว</p>
+                        {qcNote && <p className="text-xs text-[#F8981D]/80 mt-1 leading-relaxed">{qcNote}</p>}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

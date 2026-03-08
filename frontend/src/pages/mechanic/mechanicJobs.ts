@@ -8,6 +8,7 @@ export type MechanicJob = {
   tags: string[]
   parts: { name: string; qty: number; unit: string }[]
   foremanNote: string
+  qcRejectNote?: string
   photos: string[]
   assignedAt: string
   status: 'รอเริ่ม' | 'กำลังซ่อม' | 'รอตรวจ' | 'คืนของ' | 'เสร็จแล้ว'
@@ -70,6 +71,22 @@ export const mockMechanicJobs: MechanicJob[] = [
     status: 'รอตรวจ',
     startedAt: '08/03/2026  09:15 น.',
     completedAt: '08/03/2026  10:30 น.',
+  },
+  {
+    id: 7,
+    brand: 'Honda', model: 'PCX 160', licensePlate: 'กก 999',
+    customerName: 'สมชาย ใจดี',
+    symptom: 'เครื่องสตาร์ทไม่ติด มีเสียงดังผิดปกติ',
+    tags: ['เครื่องยนต์'],
+    parts: [
+      { name: 'หัวเทียน NGK CR7HSA', qty: 1, unit: 'หัว' },
+    ],
+    foremanNote: '',
+    qcRejectNote: 'เสียงยังดังอยู่ที่บริเวณฝาครอบโซ่ราวลิ้น ให้ตรวจสอบเพิ่มเติม',
+    photos: ['https://placehold.co/400x300/e5e7eb/9ca3af?text=รูปรถ+1'],
+    assignedAt: '07/03/2026  09:30 น.',
+    status: 'กำลังซ่อม',
+    startedAt: '07/03/2026  10:00 น.',
   },
   {
     id: 10,
