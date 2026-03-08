@@ -54,12 +54,13 @@ export default function App() {
         </Route>
         
         {/* บัญชี */}
-        <Route path="/accountant" element={<AccountantLayout />}>
+        <Route path="/Accountant" element={<AccountantLayout />}>
           <Route index element={<AccountIndex />} />
-          <Route path="historys" element={<Accountanthistorys />} />
-          <Route path="history" element={<Accountanthistory />} />
-          <Route path="pendingpayment" element={<Pendingpayment />} />
+          <Route path="Historys" element={<Accountanthistorys />} />
+          <Route path="History" element={<Accountanthistory />} />
+          <Route path="Pendingpayment" element={<Pendingpayment />} />
         </Route>
+        
 
         {/* roles อื่น — layouts จะสร้างเพิ่มในภายหลัง */}
         <Route path="/reception/*" element={<ReceptionPage />} />
