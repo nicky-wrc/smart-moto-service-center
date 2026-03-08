@@ -22,7 +22,7 @@ export default function RequestsPage() {
       req.motorcycleModel.toLowerCase().includes(q) ||
       req.licensePlate.toLowerCase().includes(q) ||
       req.items.some((item) => item.partName.toLowerCase().includes(q)) ||
-      `คำร้องขอเบิก #${req.id}`.includes(q)
+      `คำร้องขอเบิกที่${req.id}`.includes(q)
     )
 
     const matchesRequester = !filterRequester || req.requester === filterRequester
@@ -49,7 +49,7 @@ export default function RequestsPage() {
   })
 
   return (
-    <div className="p-6">
+    <div className="p-6 bg-[#F5F5F5] min-h-full">
       {/* Search box & Filters Toggle */}
       <div className="mb-6 flex flex-col gap-4">
         <div className="flex w-full">
@@ -60,7 +60,7 @@ export default function RequestsPage() {
           >
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2 ml-3 text-sm font-medium rounded-lg border transition-colors ${showFilters ? 'bg-amber-500 text-white border-amber-500 shadow-inner' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:text-amber-600'}`}
+              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full border transition-colors ${showFilters ? 'bg-[#1E1E1E] text-white border-[#1E1E1E]' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:text-gray-900'}`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -142,18 +142,18 @@ export default function RequestsPage() {
           <div
             key={req.id}
             onClick={() => navigate(`/inventory/requests/${req.id}`)}
-            className="border border-amber-400 rounded-xl overflow-hidden shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+            className="bg-white rounded-xl border border-gray-100 overflow-hidden cursor-pointer hover:shadow-sm transition-all"
           >
             {/* Card header */}
-            <div className="flex items-center justify-between bg-[#2C2A27] px-4 py-2">
-              <span className="text-amber-400 font-semibold text-sm">คำร้องขอเบิก #{req.id}</span>
-              <span className="text-gray-300 text-xs flex items-center gap-1">
-                {/* Calendar icon */}
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                {req.requestedAt}
-              </span>
+            <div className="flex items-stretch">
+              <div className="bg-[#1E1E1E] text-white text-sm font-medium px-4 py-2.5 flex items-center rounded-br-xl shrink-0">
+                คำร้องขอเบิกที่ {req.id}
+              </div>
+              <div className="flex-1 flex justify-end items-center pr-4">
+                <span className="text-sm text-gray-400">
+                  {req.requestedAt}
+                </span>
+              </div>
             </div>
 
             {/* Card body */}
@@ -199,7 +199,7 @@ export default function RequestsPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
                 <span>
-                  <span className="text-gray-400">รายการค้าขอ : </span>
+                  <span className="text-gray-400">รายการคำขอ : </span>
                   {req.items.length} รายการ ({req.items.reduce((s, i) => s + i.quantity, 0)} ชิ้น)
                 </span>
               </div>

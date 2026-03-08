@@ -24,7 +24,7 @@ export const mockRequests: PartRequest[] = [
     requesterRole: 'หัวหน้าช่าง',
     motorcycleModel: 'Honda Wave 110i',
     licensePlate: 'กทม 1234 กทม',
-    requestedAt: '24 ตุลาคม 2023, 10:30 น.',
+    requestedAt: '24/10/2023 10:30 น.',
     items: [
       { id: 1, partCode: 'HW-001', partName: 'น้ำมันเครื่อง 0.8L', quantity: 2, unit: 'ขวด', pricePerUnit: 120 },
       { id: 2, partCode: 'HW-002', partName: 'ไส้กรองน้ำมัน', quantity: 1, unit: 'ชิ้น', pricePerUnit: 85 },
@@ -36,7 +36,7 @@ export const mockRequests: PartRequest[] = [
     requesterRole: 'หัวหน้าช่าง',
     motorcycleModel: 'Yamaha Finn',
     licensePlate: 'ฉช 5678 ฉะเชิงเทรา',
-    requestedAt: '24 ตุลาคม 2023, 14:15 น.',
+    requestedAt: '24/10/2023 14:15 น.',
     items: [
       { id: 1, partCode: 'YF-001', partName: 'สายพาน CVT', quantity: 1, unit: 'เส้น', pricePerUnit: 450 },
       { id: 2, partCode: 'YF-002', partName: 'ลูกรอกวาไรตี้', quantity: 6, unit: 'ชิ้น', pricePerUnit: 30 },
@@ -48,7 +48,7 @@ export const mockRequests: PartRequest[] = [
     requesterRole: 'หัวหน้าช่าง',
     motorcycleModel: 'Honda Click 160',
     licensePlate: 'กค 9999 นนทบุรี',
-    requestedAt: '23 ตุลาคม 2023, 09:00 น.',
+    requestedAt: '23/10/2023 09:00 น.',
     items: [
       { id: 1, partCode: 'HC-001', partName: 'แผ่นเบรกหน้า', quantity: 1, unit: 'ชุด', pricePerUnit: 350 },
       { id: 2, partCode: 'HC-002', partName: 'น้ำมันเบรก DOT4', quantity: 1, unit: 'ขวด', pricePerUnit: 150 },
@@ -62,7 +62,7 @@ export const mockRequests: PartRequest[] = [
     requesterRole: 'หัวหน้าช่าง',
     motorcycleModel: 'Honda PCX 160',
     licensePlate: 'ขก 1111 เชียงใหม่',
-    requestedAt: '22 ตุลาคม 2023, 11:45 น.',
+    requestedAt: '22/10/2023 11:45 น.',
     items: [
       { id: 1, partCode: 'PCX-001', partName: 'ไส้กรองอากาศ', quantity: 2, unit: 'ชิ้น', pricePerUnit: 180 },
       { id: 2, partCode: 'PCX-002', partName: 'สายคันเร่ง', quantity: 1, unit: 'เส้น', pricePerUnit: 220 },
@@ -78,7 +78,7 @@ export const mockRequests: PartRequest[] = [
     requesterRole: 'ช่าง',
     motorcycleModel: 'Yamaha NMAX 155',
     licensePlate: 'สก 2345 สกลนคร',
-    requestedAt: '21 ตุลาคม 2023, 13:00 น.',
+    requestedAt: '21/10/2023 13:00 น.',
     items: [
       { id: 1, partCode: 'NX-001', partName: 'น้ำมันเครื่อง YAMALUBE 0.8L', quantity: 1, unit: 'ขวด', pricePerUnit: 145 },
       { id: 2, partCode: 'NX-002', partName: 'ไส้กรองน้ำมัน', quantity: 1, unit: 'ชิ้น', pricePerUnit: 95 },
@@ -90,7 +90,7 @@ export const mockRequests: PartRequest[] = [
     requesterRole: 'หัวหน้าช่าง',
     motorcycleModel: 'Honda CB500F',
     licensePlate: 'กข 7890 กรุงเทพ',
-    requestedAt: '20 ตุลาคม 2023, 08:30 น.',
+    requestedAt: '20/10/2023 08:30 น.',
     items: [
       { id: 1, partCode: 'CB5-001', partName: 'โซ่ 530x104', quantity: 1, unit: 'เส้น', pricePerUnit: 1100 },
       { id: 2, partCode: 'CB5-002', partName: 'สเตอร์หน้า 15T', quantity: 1, unit: 'ชิ้น', pricePerUnit: 280 },

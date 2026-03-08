@@ -8,6 +8,7 @@ import RequestDetailPage from './pages/inventory/RequestDetailPage'
 import PartsPage from './pages/inventory/PartsPage'
 import PurchaseOrdersPage from './pages/inventory/PurchaseOrdersPage'
 import ReportsPage from './pages/inventory/ReportsPage'
+import HistoryPage from './pages/inventory/HistoryPage'
 
 // Foreman (หัวหน้าช่าง)
 import ForemanLayout from './pages/foreman/ForemanLayout'
@@ -43,6 +44,7 @@ export default function App() {
           <Route path="parts" element={<PartsPage />} />
           <Route path="purchase-orders" element={<PurchaseOrdersPage />} />
           <Route path="reports" element={<ReportsPage />} />
+          <Route path="history" element={<HistoryPage />} />
         </Route>
 
         {/* หัวหน้าช่าง */}
