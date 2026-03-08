@@ -32,8 +32,17 @@ import PaymentHistoryDetailPage from './pages/accountant/PaymentHistoryDetailPag
 import Pendingpayment from './pages/accountant/Pendingpayment'
 import PendingpaymentDetail from './pages/accountant/PendingpaymentDetail'
 
+// Owner (เจ้าของร้าน)
+import OwnerLayout from './pages/owner/OwnerLayout'
+import OwnerIndex from './pages/owner'
+import OwnerDashboardPage from './pages/owner/DashboardPage'
+import OwnerReportsPage from './pages/owner/ReportsPage'
+import OwnerEmployeesPage from './pages/owner/EmployeesPage'
+import OwnerStockPage from './pages/owner/StockPage'
+import OwnerPendingJobsPage from './pages/owner/PendingJobsPage'
+import OwnerPurchaseRequestsPage from './pages/owner/PurchaseRequestsPage'
+
 // Other roles (placeholder — layouts TBD)
-import OwnerPage from './pages/owner'
 import ReceptionPage from './pages/reception'
 
 export default function App() {
@@ -78,9 +87,19 @@ export default function App() {
           <Route path="pendingpayment/:id" element={<PendingpaymentDetail />} />
         </Route>
 
+        {/* เจ้าของร้าน */}
+        <Route path="/owner" element={<OwnerLayout />}>
+          <Route index element={<OwnerIndex />} />
+          <Route path="dashboard" element={<OwnerDashboardPage />} />
+          <Route path="reports" element={<OwnerReportsPage />} />
+          <Route path="employees" element={<OwnerEmployeesPage />} />
+          <Route path="stock" element={<OwnerStockPage />} />
+          <Route path="pending-jobs" element={<OwnerPendingJobsPage />} />
+          <Route path="purchase-requests" element={<OwnerPurchaseRequestsPage />} />
+        </Route>
+
         {/* roles อื่น — layouts จะสร้างเพิ่มในภายหลัง */}
         <Route path="/reception/*" element={<ReceptionPage />} />
-        <Route path="/owner/*" element={<OwnerPage />} />
       </Routes>
     </BrowserRouter>
   )
