@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { mockRequests } from '../../data/requestsMockData'
+import type { PartRequest } from '../../data/requestsMockData'
+import { useRequestHistory } from '../../contexts/RequestHistoryContext'
+import { partRequisitionService } from '../../services/partRequisitionService'
 
 type ConfirmAction = 'approve' | 'reject' | null
 type ResultScreen = 'approved' | 'rejected' | null
@@ -8,10 +10,36 @@ type ResultScreen = 'approved' | 'rejected' | null
 export default function RequestDetailPage() {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
-    const request = mockRequests.find((r) => r.id === Number(id))
+    const { addHistory } = useRequestHistory()
+
+    const [request, setRequest] = useState<PartRequest | null>(null)
+    const [isLoading, setIsLoading] = useState(true)
+    const [errorMsg, setErrorMsg] = useState('')
+
     const [rejectedItemIds, setRejectedItemIds] = useState<Set<number>>(new Set())
     const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null)
     const [resultScreen, setResultScreen] = useState<ResultScreen>(null)
+    const [isSubmitting, setIsSubmitting] = useState(false)
+
+    useEffect(() => {
+        let isMounted = true
+        const fetchRequest = async () => {
+            setIsLoading(true)
+            try {
+                const data = await partRequisitionService.getRequestById(Number(id))
+                if (isMounted) {
+                    if (data) setRequest(data)
+                    else setErrorMsg(`ไม่พบรายการคำร้องขอเบิกหมายเลข #${id}`)
+                }
+            } catch (err) {
+                if (isMounted) setErrorMsg('เกิดข้อผิดพลาดในการโหลดข้อมูล')
+            } finally {
+                if (isMounted) setIsLoading(false)
+            }
+        }
+        fetchRequest()
+        return () => { isMounted = false }
+    }, [id])
 
     // Auto-redirect after showing result screen
     useEffect(() => {
@@ -21,10 +49,18 @@ export default function RequestDetailPage() {
         }
     }, [resultScreen, navigate])
 
-    if (!request) {
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center min-h-[60vh]">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-500"></div>
+            </div>
+        )
+    }
+
+    if (!request || errorMsg) {
         return (
             <div className="p-6 text-center text-gray-400">
-                <p>ไม่พบรายการคำร้องขอเบิกหมายเลข #{id}</p>
+                <p>{errorMsg || `ไม่พบรายการคำร้องขอเบิกหมายเลข #${id}`}</p>
                 <button
                     onClick={() => navigate('/inventory/requests')}
                     className="mt-4 px-4 py-2 bg-amber-500 text-white rounded-lg text-sm hover:bg-amber-600 transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
@@ -45,7 +81,21 @@ export default function RequestDetailPage() {
                 </svg>
                 <div className="text-center">
                     <p className="text-2xl font-semibold text-red-600">การขอเบิกถูกยกเลิกแล้ว</p>
-                    <p className="text-sm text-gray-400 mt-2">กำลังกลับสู่หน้าหลัก...</p>
+                    <p className="text-sm text-gray-400 mt-2 mb-8">กำลังกลับสู่หน้าหลัก...</p>
+                    <div className="flex justify-center gap-4">
+                        <button
+                            onClick={() => navigate('/inventory/requests')}
+                            className="px-6 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                        >
+                            กลับไปยังหน้าหลัก
+                        </button>
+                        <button
+                            onClick={() => navigate('/inventory/history')}
+                            className="px-6 py-2.5 bg-[#1E1E1E] text-white font-medium rounded-lg hover:bg-black transition-colors"
+                        >
+                            ดูประวัติ
+                        </button>
+                    </div>
                 </div>
             </div>
         )
@@ -60,7 +110,21 @@ export default function RequestDetailPage() {
                 </svg>
                 <div className="text-center">
                     <p className="text-2xl font-semibold text-green-600">การขอเบิกสินค้าของท่านสำเร็จ</p>
-                    <p className="text-sm text-gray-400 mt-2">กำลังกลับสู่หน้าหลัก...</p>
+                    <p className="text-sm text-gray-400 mt-2 mb-8">กำลังกลับสู่หน้าหลัก...</p>
+                    <div className="flex justify-center gap-4">
+                        <button
+                            onClick={() => navigate('/inventory/requests')}
+                            className="px-6 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                        >
+                            กลับไปยังหน้าหลัก
+                        </button>
+                        <button
+                            onClick={() => navigate('/inventory/history')}
+                            className="px-6 py-2.5 bg-[#00a650] text-white font-medium rounded-lg hover:bg-[#008f45] transition-colors"
+                        >
+                            ดูประวัติ
+                        </button>
+                    </div>
                 </div>
             </div>
         )
@@ -89,9 +153,45 @@ export default function RequestDetailPage() {
         setConfirmAction(action)
     }
 
-    const handleConfirm = () => {
-        setConfirmAction(null)
-        setResultScreen(confirmAction === 'approve' ? 'approved' : 'rejected')
+    const handleConfirm = async () => {
+        if (!request) return
+        setIsSubmitting(true)
+
+        try {
+            if (confirmAction === 'approve') {
+                const itemsToApprove = request.items
+                    .filter(item => !rejectedItemIds.has(item.id))
+                    .map(item => ({ id: item.id, issuedQuantity: item.quantity }))
+
+                await partRequisitionService.approveRequest(request.id, itemsToApprove)
+            } else {
+                await partRequisitionService.rejectRequest(request.id)
+            }
+
+            // Still using Context visually to mock state changes
+            const now = new Date()
+            const pad = (n: number) => String(n).padStart(2, '0')
+            const approvedAt = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())} น.`
+            addHistory({
+                id: request.id,
+                requester: request.requester,
+                requesterRole: request.requesterRole,
+                motorcycleModel: request.motorcycleModel,
+                licensePlate: request.licensePlate,
+                requestedAt: request.requestedAt,
+                approvedAt,
+                status: confirmAction === 'approve' ? 'อนุมัติการเบิก' : 'ไม่อนุมัติการเบิก',
+                items: request.items,
+            })
+
+            setConfirmAction(null)
+            setResultScreen(confirmAction === 'approve' ? 'approved' : 'rejected')
+        } catch (error) {
+            console.error('Failed to process request:', error)
+            alert('เกิดข้อผิดพลาดในการทำรายการ โปรดลองอีกครั้ง')
+        } finally {
+            setIsSubmitting(false)
+        }
     }
 
     return (
@@ -177,9 +277,10 @@ export default function RequestDetailPage() {
                             </button>
                             <button
                                 onClick={handleConfirm}
-                                className="flex-1 py-4 text-sm font-semibold text-white bg-[#44403C] hover:bg-black border-none cursor-pointer transition-colors"
+                                disabled={isSubmitting}
+                                className={`flex-1 py-4 text-sm font-semibold text-white transition-colors border-none ${isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#44403C] hover:bg-black cursor-pointer'}`}
                             >
-                                ใช่ ยืนยัน
+                                {isSubmitting ? 'กำลังดำเนินการ...' : 'ใช่ ยืนยัน'}
                             </button>
                         </div>
                     </div>
