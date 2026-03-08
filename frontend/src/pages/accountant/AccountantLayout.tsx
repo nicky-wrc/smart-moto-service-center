@@ -5,8 +5,8 @@ import type { NavItem } from '../../components/Sidebar'
 
 const navItems: NavItem[] = [
   {
-    path: '/Accountant/Pendingpayment',
-    label: 'ประวัติการชำระเงิน',
+    path: '/accountant/pendingpayment',
+    label: 'รายการรอชำระ',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
@@ -14,7 +14,7 @@ const navItems: NavItem[] = [
     ),
   },
   {
-    path: '/Accountant/Historys',
+    path: '/accountant/historys',
     label: 'ประวัติการชำระเงิน',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -22,13 +22,11 @@ const navItems: NavItem[] = [
       </svg>
     ),
   },
-
 ]
 
 const pageTitles: Record<string, string> = {
-  '/Accountant/Pendingpayment': 'รายการรอชำระ',
-  '/Accountant/Historys': 'ประวัติการชำระเงิน',
-  
+  '/accountant/pendingpayment': 'รายการรอชำระ',
+  '/accountant/historys': 'ประวัติการชำระเงิน',
 }
 
 export default function AccountantLayout() {
@@ -41,7 +39,7 @@ export default function AccountantLayout() {
         <AppHeader title={title} />
         <div className="flex flex-1 gap-0 overflow-hidden">
           <Sidebar navItems={navItems} />
-          <div className="flex-1 bg-[#F5F5F5] rounded-xl overflow-hidden">
+          <div key={location.pathname} className="flex-1 bg-[#F5F5F5] rounded-xl overflow-hidden">
             <Outlet />
           </div>
         </div>

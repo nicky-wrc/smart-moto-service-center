@@ -1,20 +1,13 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 
-const testData = [
-  { id: "0000001", customer: "ธาดา รถ",       plate: "กข123",  total: 3500, status: "รอชำระ" },
-  { id: "0000002", customer: "สมชาย การ์ด",   plate: "ขค456",  total: 2100, status: "รอชำระ" },
-  { id: "0000003", customer: "สมชาย การ์ด",   plate: "ขค456",  total: 2100, status: "ชำระแล้ว" },
+const historyData = [
+  { id: "0000003", customer: "สมชาย การ์ด",   plate: "ขค456",  total: 2100, paidAt: "07/03/2026" },
+  { id: "0000004", customer: "วิภา รักสะอาด",  plate: "คง5678", total: 4500, paidAt: "07/03/2026" },
+  { id: "0000005", customer: "ประเสริฐ มั่นคง", plate: "จฉ9012", total: 1800, paidAt: "06/03/2026" },
+  { id: "0000006", customer: "นภา สุขสันต์",   plate: "ชซ3456", total: 7200, paidAt: "05/03/2026" },
+  { id: "0000007", customer: "ธนพล วิริยะ",    plate: "ญฐ7890", total: 3300, paidAt: "04/03/2026" },
 ]
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "รอชำระ":   return "bg-yellow-400"
-    case "ชำระแล้ว": return "bg-green-500"
-    case "ยกเลิก":   return "bg-red-500"
-    default:          return "bg-gray-400"
-  }
-}
 
 function getPageNumbers(current: number, total: number): (number | '...')[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
@@ -33,7 +26,7 @@ const searchFields = [
   { value: "plate",    label: "ทะเบียนรถ" },
 ]
 
-function Pendingpayment() {
+function PaymentHistoryPage() {
   const navigate = useNavigate()
   const [search, setSearch] = useState("")
   const [searchField, setSearchField] = useState("all")
@@ -43,7 +36,7 @@ function Pendingpayment() {
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(10)
 
-  const filteredData = testData.filter((item) => {
+  const filteredData = historyData.filter(item => {
     if (!search) return true
     if (searchField === "id")       return item.id.includes(search)
     if (searchField === "customer") return item.customer.includes(search)
@@ -149,13 +142,13 @@ function Pendingpayment() {
         {/* Table */}
         <div className="w-full flex-1 mt-6 overflow-x-auto">
           <table className="min-w-[722px] w-full text-sm text-black">
-            <thead className="bg-[#F5F5F5] text-black">
+            <thead className="bg-[#F5F5F5]">
               <tr>
                 <th className="px-6 py-5 text-left font-medium rounded-l-2xl">เลขใบงาน</th>
                 <th className="px-6 py-5 text-left font-medium">ชื่อลูกค้า</th>
                 <th className="px-6 py-5 text-left font-medium">ทะเบียนรถ</th>
                 <th className="px-6 py-5 text-left font-medium">ยอดรวม</th>
-                <th className="px-6 py-5 text-center font-medium">สถานะ</th>
+                <th className="px-6 py-5 text-left font-medium">วันที่ชำระ</th>
                 <th className="px-6 py-5 text-center font-medium rounded-r-2xl">จัดการ</th>
               </tr>
             </thead>
@@ -163,37 +156,24 @@ function Pendingpayment() {
               {visibleItems.length === 0 && (
                 <tr><td colSpan={6} className="text-center py-10 text-gray-400">ไม่มีรายการ</td></tr>
               )}
-              {visibleItems.map((item) => (
+              {visibleItems.map(item => (
                 <tr key={item.id} className="hover:bg-gray-50">
                   <td className="px-6 py-5">{item.id}</td>
                   <td className="px-6 py-5">{item.customer}</td>
                   <td className="px-6 py-5">{item.plate}</td>
-                  <td className="px-6 py-5">{item.total.toLocaleString()}</td>
+                  <td className="px-6 py-5">{item.total.toLocaleString()} ฿</td>
+                  <td className="px-6 py-5">{item.paidAt}</td>
                   <td className="px-6 py-5 text-center">
-                    <div className="flex items-center w-fit mx-auto gap-2">
-                      <span className={`w-2 h-2 rounded-full ${getStatusColor(item.status)}`}></span>
-                      {item.status}
-                    </div>
-                  </td>
-                  <td className="px-6 py-5 text-center">
-                    {item.status === "ชำระแล้ว" ? (
-                      <button onClick={() => navigate(`/accountant/pendingpayment/${item.id}`)}
-                        className="flex items-center gap-2 bg-[#7eccff] text-white text-xs px-4 py-2 rounded-md mx-auto cursor-pointer">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="size-4">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12s3.75-6 9.75-6 9.75 6 9.75 6-3.75 6-9.75 6-9.75-6-9.75-6Z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-                        </svg>
-                        ดูข้อมูล
-                      </button>
-                    ) : (
-                      <button onClick={() => navigate(`/accountant/pendingpayment/${item.id}`)}
-                        className="flex items-center gap-2 bg-green-600 text-white text-xs px-4 py-2 rounded-md mx-auto cursor-pointer">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="size-4">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z" />
-                        </svg>
-                        รับชำระ
-                      </button>
-                    )}
+                    <button
+                      onClick={() => navigate(`/accountant/historys/${item.id}`)}
+                      className="flex items-center gap-2 bg-[#7eccff] text-white text-xs px-4 py-2 rounded-md mx-auto cursor-pointer"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="size-4">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12s3.75-6 9.75-6 9.75 6 9.75 6-3.75 6-9.75 6-9.75-6-9.75-6Z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+                      </svg>
+                      ดูข้อมูล
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -242,4 +222,4 @@ function Pendingpayment() {
   )
 }
 
-export default Pendingpayment
+export default PaymentHistoryPage

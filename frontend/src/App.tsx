@@ -17,12 +17,6 @@ import JobDetailPage from './pages/foreman/JobDetailPage'
 import JobHistoryPage from './pages/foreman/JobHistoryPage'
 import MechanicsPage from './pages/foreman/MechanicsPage'
 
-// บัญชี
-import AccountIndex from './pages/accountant/'
-import AccountantLayout from './pages/accountant/AccountantLayout'
-import Accountanthistorys from './pages/accountant/Accountanthistorys'
-import Accountanthistory from './pages/accountant/Accountanthistory'
-
 // Mechanic (ช่าง)
 import MechanicLayout from './pages/mechanic/MechanicLayout'
 import MechanicIndex from './pages/mechanic'
@@ -30,11 +24,17 @@ import MechanicJobsPage from './pages/mechanic/MechanicJobsPage'
 import MechanicJobDetailPage from './pages/mechanic/MechanicJobDetailPage'
 import MechanicHistoryPage from './pages/mechanic/MechanicHistoryPage'
 
+// Accountant (บัญชี)
+import AccountantLayout from './pages/accountant/AccountantLayout'
+import AccountIndex from './pages/accountant'
+import PaymentHistoryPage from './pages/accountant/PaymentHistoryPage'
+import PaymentHistoryDetailPage from './pages/accountant/PaymentHistoryDetailPage'
+import Pendingpayment from './pages/accountant/Pendingpayment'
+import PendingpaymentDetail from './pages/accountant/PendingpaymentDetail'
+
 // Other roles (placeholder — layouts TBD)
 import OwnerPage from './pages/owner'
 import ReceptionPage from './pages/reception'
-import Pendingpayment from './pages/accountant/Pendingpayment'
-
 
 export default function App() {
   return (
@@ -60,15 +60,6 @@ export default function App() {
           <Route path="mechanics" element={<MechanicsPage />} />
           <Route path="history" element={<JobHistoryPage />} />
         </Route>
-        
-        {/* บัญชี */}
-        <Route path="/Accountant" element={<AccountantLayout />}>
-          <Route index element={<AccountIndex />} />
-          <Route path="Historys" element={<Accountanthistorys />} />
-          <Route path="History" element={<Accountanthistory />} />
-          <Route path="Pendingpayment" element={<Pendingpayment />} />
-        </Route>
-        
 
         {/* ช่าง */}
         <Route path="/mechanic" element={<MechanicLayout />}>
@@ -78,10 +69,17 @@ export default function App() {
           <Route path="history" element={<MechanicHistoryPage />} />
         </Route>
 
+        {/* บัญชี */}
+        <Route path="/accountant" element={<AccountantLayout />}>
+          <Route index element={<AccountIndex />} />
+          <Route path="historys" element={<PaymentHistoryPage />} />
+          <Route path="historys/:id" element={<PaymentHistoryDetailPage />} />
+          <Route path="pendingpayment" element={<Pendingpayment />} />
+          <Route path="pendingpayment/:id" element={<PendingpaymentDetail />} />
+        </Route>
+
         {/* roles อื่น — layouts จะสร้างเพิ่มในภายหลัง */}
         <Route path="/reception/*" element={<ReceptionPage />} />
-        <Route path="/mechanic/*" element={<MechanicPage />} />
-        <Route path="/accountant/*" element={<AccountantPage />} />
         <Route path="/owner/*" element={<OwnerPage />} />
       </Routes>
     </BrowserRouter>
