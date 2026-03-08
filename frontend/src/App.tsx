@@ -22,8 +22,14 @@ import AccountantLayout from './pages/accountant/AccountantLayout'
 import Accountanthistorys from './pages/accountant/Accountanthistorys'
 import Accountanthistory from './pages/accountant/Accountanthistory'
 
+// Mechanic (ช่าง)
+import MechanicLayout from './pages/mechanic/MechanicLayout'
+import MechanicIndex from './pages/mechanic'
+import MechanicJobsPage from './pages/mechanic/MechanicJobsPage'
+import MechanicJobDetailPage from './pages/mechanic/MechanicJobDetailPage'
+import MechanicHistoryPage from './pages/mechanic/MechanicHistoryPage'
+
 // Other roles (placeholder — layouts TBD)
-import MechanicPage from './pages/mechanic'
 import OwnerPage from './pages/owner'
 import ReceptionPage from './pages/reception'
 import Pendingpayment from './pages/accountant/Pendingpayment'
@@ -62,9 +68,18 @@ export default function App() {
         </Route>
         
 
+        {/* ช่าง */}
+        <Route path="/mechanic" element={<MechanicLayout />}>
+          <Route index element={<MechanicIndex />} />
+          <Route path="jobs" element={<MechanicJobsPage />} />
+          <Route path="jobs/:id" element={<MechanicJobDetailPage />} />
+          <Route path="history" element={<MechanicHistoryPage />} />
+        </Route>
+
         {/* roles อื่น — layouts จะสร้างเพิ่มในภายหลัง */}
         <Route path="/reception/*" element={<ReceptionPage />} />
         <Route path="/mechanic/*" element={<MechanicPage />} />
+        <Route path="/accountant/*" element={<AccountantPage />} />
         <Route path="/owner/*" element={<OwnerPage />} />
       </Routes>
     </BrowserRouter>
