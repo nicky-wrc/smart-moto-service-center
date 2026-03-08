@@ -54,7 +54,7 @@ export default function ForemanLayout() {
   const title = Object.entries(pageTitles).find(([path]) => location.pathname.startsWith(path))?.[1] ?? 'หัวหน้าช่าง'
 
   return (
-    <div className="h-screen overflow-hidden bg-[#44403C] pb-4 pr-4 flex items-stretch font-[Kanit]">
+    <div className="h-screen overflow-hidden bg-[#44403C] pb-6 pr-6 flex items-stretch font-[Kanit]">
       <div className="flex-1 bg-[#44403C] rounded-2xl flex flex-col overflow-hidden">
         <AppHeader title={title} />
         <div className="flex flex-1 gap-0 overflow-hidden">
