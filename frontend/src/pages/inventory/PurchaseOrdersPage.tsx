@@ -22,8 +22,9 @@ const StatusBadge = ({ status }: { status: POStatus }) => {
 export default function PurchaseOrdersPage() {
   const navigate = useNavigate()
 
-  // List Filters State
-  const [orders, setOrders] = useState(mockPurchaseOrders)
+  // Always initialize from the current state of mockPurchaseOrders
+  // to ensure changes made previously (like cancellations or additions) are reflected.
+  const [orders, setOrders] = useState([...mockPurchaseOrders])
   const [cancelModalOrderId, setCancelModalOrderId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [showListFilters, setShowListFilters] = useState(false)
@@ -217,35 +218,57 @@ export default function PurchaseOrdersPage() {
 
       {/* Cancel Confirmation Modal */}
       {cancelModalOrderId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in" onClick={() => setCancelModalOrderId(null)}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
-            <div className="flex flex-col items-center text-center gap-4 mb-6 mt-4">
-              <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">ยกเลิกออเดอร์</h3>
-                <p className="text-sm text-gray-500 px-4">คุณต้องการยกเลิกการสั่งซื้อนี้ใช่หรือไม่?<br />หลังจากการยกเลิกจะไม่สามารถกู้คืนได้</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setCancelModalOrderId(null)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col overflow-hidden animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
+              <p className="text-xs font-semibold text-[#F8981D] uppercase tracking-widest mb-0.5">Smart Moto Service Center</p>
+              <h2 className="text-base font-semibold text-[#1E1E1E]">
+                ยืนยันการยกเลิกคำขอสั่งซื้อ
+              </h2>
+            </div>
+
+            {/* Content Area */}
+            <div className="px-6 py-6 flex flex-col gap-6 overflow-y-auto">
+              <div className="flex flex-col items-center text-center gap-3">
+                <div className="h-16 w-16 rounded-full flex items-center justify-center bg-[#fee2e2]">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-[#ef4444]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-[#1a202c]">ยืนยันการทำรายการนี้หรือไม่?</h3>
+                  <p className="text-sm text-gray-500 mt-1 px-4">
+                    โปรดตรวจสอบรายละเอียดก่อนทำการยกเลิก<br />หลังจากการยกเลิกจะไม่สามารถกู้คืนได้
+                  </p>
+                </div>
               </div>
             </div>
 
-            <div className="flex gap-3 justify-center w-full">
+            {/* Buttons Footer (Image 2 Style) */}
+            <div className="flex border-t border-gray-100 shrink-0">
               <button
                 onClick={() => setCancelModalOrderId(null)}
-                className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors"
+                className="flex-1 py-4 text-sm text-gray-500 hover:bg-gray-50 font-medium transition-colors border-r border-gray-100"
               >
                 ยกเลิก
               </button>
               <button
                 onClick={() => {
+                  // Update the local state for immediate UI reflection
                   setOrders(prev => prev.map(o => o.id === cancelModalOrderId ? { ...o, status: 'cancelled' } : o))
+
+                  // Mutate the mock data source so it persists across page navigations
+                  const targetOrder = mockPurchaseOrders.find(o => o.id === cancelModalOrderId);
+                  if (targetOrder) {
+                    targetOrder.status = 'cancelled';
+                  }
+
                   setCancelModalOrderId(null)
                 }}
-                className="flex-1 px-4 py-2.5 bg-red-500 text-white font-medium rounded-xl hover:bg-red-600 transition-colors shadow-sm"
+                className="flex-1 py-4 text-sm font-semibold text-white transition-colors border-none bg-[#44403C] hover:bg-black cursor-pointer"
               >
-                ยืนยันการยกเลิกออเดอร์
+                ใช่ ยืนยัน
               </button>
             </div>
           </div>
