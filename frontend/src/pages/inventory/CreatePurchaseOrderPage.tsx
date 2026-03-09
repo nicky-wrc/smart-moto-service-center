@@ -296,8 +296,13 @@ export default function CreatePurchaseOrderPage() {
                         <p className="text-sm text-gray-500 mt-1">ระบุรายละเอียดการสั่งซื้อและเพิ่มรายการสินค้า</p>
                     </div>
                     <div className="text-right">
-                        <div className="text-sm text-gray-500">วันที่สร้างรายการ</div>
-                        <div className="font-semibold text-gray-800">{new Date().toLocaleDateString('th-TH')}</div>
+                        <div className="text-sm text-gray-500">
+                            {(() => {
+                                const now = new Date()
+                                const pad = (n: number) => String(n).padStart(2, '0')
+                                return `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())} น.`
+                            })()}
+                        </div>
                     </div>
                 </div>
             </div>

@@ -32,7 +32,7 @@ export class PartRequisitionsService {
         return req;
     }
 
-    async issueParts(id: number, userId: number, notes?: string) {
+    async issueParts(id: number, userId: number, dto: { notes?: string, issuedItems?: { id: number, issuedQuantity: number }[] }) {
         const req = await this.prisma.partRequisition.findUnique({
             where: { id },
             include: { items: { include: { part: true } } },
@@ -45,9 +45,10 @@ export class PartRequisitionsService {
 
         // Checking stock availability before transaction
         for (const item of req.items) {
-            if (item.part && item.part.stockQuantity < item.requestedQuantity) {
+            const requestedQty = dto.issuedItems?.find(i => i.id === item.id)?.issuedQuantity ?? item.requestedQuantity;
+            if (item.part && item.part.stockQuantity < requestedQty) {
                 throw new BadRequestException(
-                    `Insufficient stock for Part: ${item.part.name} (Available: ${item.part.stockQuantity}, Requested: ${item.requestedQuantity})`,
+                    `Insufficient stock for Part: ${item.part.name} (Available: ${item.part.stockQuantity}, Requested: ${requestedQty})`,
                 );
             }
         }
@@ -55,11 +56,12 @@ export class PartRequisitionsService {
         // DB Transaction: Update requisition status, deduct part stocks, and create log movement
         return this.prisma.$transaction(async (tx) => {
             for (const item of req.items) {
-                if (item.part) {
+                const issuedQty = dto.issuedItems?.find(i => i.id === item.id)?.issuedQuantity ?? item.requestedQuantity;
+                if (item.part && issuedQty > 0) {
                     // 1. Deduct Stock
                     await tx.part.update({
                         where: { id: item.partId as number },
-                        data: { stockQuantity: { decrement: item.requestedQuantity } },
+                        data: { stockQuantity: { decrement: issuedQty } },
                     });
 
                     // 2. Create Movement Log (OUT)
@@ -67,7 +69,7 @@ export class PartRequisitionsService {
                         data: {
                             partId: item.partId as number,
                             movementType: StockMovementType.OUT,
-                            quantity: item.requestedQuantity,
+                            quantity: issuedQty,
                             unitPrice: item.part.unitPrice,
                             reference: `REQ-${req.reqNo}`,
                             notes: 'ช่างเบิกอะไหล่ซ่อมรถ',
@@ -78,7 +80,12 @@ export class PartRequisitionsService {
                     // 3. Update Item Issued Quantity = Requested Quantity
                     await tx.partRequisitionItem.update({
                         where: { id: item.id },
-                        data: { issuedQuantity: item.requestedQuantity },
+                        data: { issuedQuantity: issuedQty },
+                    });
+                } else if (issuedQty === 0) {
+                    await tx.partRequisitionItem.update({
+                        where: { id: item.id },
+                        data: { issuedQuantity: 0 },
                     });
                 }
             }
@@ -89,10 +96,30 @@ export class PartRequisitionsService {
                 data: {
                     status: PartRequisitionStatus.ISSUED,
                     issuedAt: new Date(),
-                    notes: notes ? `${req.notes || ''}\n[Issue Note]: ${notes}` : req.notes,
+                    notes: dto.notes ? `${req.notes || ''}\n[Issue Note]: ${dto.notes}` : req.notes,
                 },
                 include: { items: true },
             });
+        });
+    }
+
+    async rejectRequest(id: number, userId: number, notes?: string) {
+        const req = await this.prisma.partRequisition.findUnique({
+            where: { id },
+        });
+
+        if (!req) throw new NotFoundException(`Part Requisition ${id} not found`);
+        if (req.status !== PartRequisitionStatus.PENDING) {
+            throw new BadRequestException(`Cannot reject requisition with status ${req.status}`);
+        }
+
+        return this.prisma.partRequisition.update({
+            where: { id },
+            data: {
+                status: PartRequisitionStatus.REJECTED,
+                notes: notes ? `${req.notes || ''}\n[Reject Note]: ${notes}` : req.notes,
+            },
+            include: { items: true },
         });
     }
 

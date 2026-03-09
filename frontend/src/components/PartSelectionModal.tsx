@@ -102,12 +102,9 @@ export default function PartSelectionModal({ isOpen, onClose, onSelectPart }: Pa
                         <select
                             value={selectedModel}
                             onChange={(e) => setSelectedModel(e.target.value)}
-                            className={`pl-8 pr-8 py-2.5 text-sm border rounded-xl appearance-none outline-none transition-colors cursor-pointer min-w-[180px] ${selectedModel
-                                ? 'border-amber-400 bg-amber-50 text-amber-700 font-medium'
-                                : 'border-gray-300 bg-white text-gray-600 hover:border-amber-300'
-                                }`}
+                            className="pl-8 pr-8 py-2.5 text-sm border border-gray-300 bg-white text-gray-600 rounded-xl appearance-none outline-none transition-colors cursor-pointer min-w-[180px] hover:border-gray-400"
                         >
-                            <option value="">\u0e40\u0e25\u0e37\u0e2d\u0e01\u0e23\u0e38\u0e48\u0e19\u0e23\u0e16 (\u0e17\u0e31\u0e49\u0e07\u0e2b\u0e21\u0e14)</option>
+                            <option value="">เลือกรุ่นรถ (ทั้งหมด)</option>
                             {motorcycleModels.map(model => (
                                 <option key={model} value={model}>{model}</option>
                             ))}
