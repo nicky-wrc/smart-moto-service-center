@@ -12,6 +12,7 @@ import CreatePurchaseOrderPage from './pages/inventory/CreatePurchaseOrderPage'
 import ReportsPage from './pages/inventory/ReportsPage'
 import HistoryPage from './pages/inventory/HistoryPage'
 import HistoryDetailPage from './pages/inventory/HistoryDetailPage'
+import PurchaseOrderDetailPage from './pages/inventory/PurchaseOrderDetailPage'
 
 // Foreman (หัวหน้าช่าง)
 import ForemanLayout from './pages/foreman/ForemanLayout'
@@ -48,6 +49,7 @@ export default function App() {
             <Route path="parts" element={<PartsPage />} />
             <Route path="purchase-orders" element={<PurchaseOrdersPage />} />
             <Route path="purchase-orders/create" element={<CreatePurchaseOrderPage />} />
+            <Route path="purchase-orders/:id" element={<PurchaseOrderDetailPage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="history" element={<HistoryPage />} />
             <Route path="history/:id" element={<HistoryDetailPage />} />

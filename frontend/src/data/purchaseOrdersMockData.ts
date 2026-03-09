@@ -1,6 +1,6 @@
 import type { PartItem } from './partsMockData'
 
-export type POStatus = 'draft' | 'pending' | 'approved' | 'rejected'
+export type POStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'cancelled'
 
 export interface PurchaseOrder {
     id: string
