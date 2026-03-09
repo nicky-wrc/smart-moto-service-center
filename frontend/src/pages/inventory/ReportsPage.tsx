@@ -122,11 +122,7 @@ export default function ReportsPage() {
     <div className="p-6 min-h-screen space-y-6 bg-gray-50">
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-800">รายงานสต็อกสินค้า</h1>
-          <p className="text-sm text-gray-400 mt-0.5">ภาพรวมระบบคลังอะไหล่มอเตอร์ไซค์</p>
-        </div>
-        <span className="text-xs bg-orange-50 text-orange-500 border border-orange-200 px-3 py-1.5 rounded-full font-medium">
+        <span className="text-xs bg-orange-50 text-orange-500 border border-orange-200 px-3 py-1.5 rounded-full font-medium ">
           อัปเดตล่าสุด: {new Date().toLocaleDateString('th-TH', { day: '2-digit', month: 'long', year: 'numeric' })}
         </span>
       </div>
@@ -171,7 +167,7 @@ export default function ReportsPage() {
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
             <div>
               <h2 className="font-semibold text-gray-800">อะไหล่ใกล้หมด</h2>
-              <p className="text-xs text-gray-400">คงเหลือ ≤ {LOW_STOCK_THRESHOLD} ชิ้น</p>
+              <p className="text-xs text-gray-400">คงเหลือน้อยกว่า {LOW_STOCK_THRESHOLD} ชิ้น</p>
             </div>
             <span className="text-xs bg-red-50 text-red-500 border border-red-100 px-2.5 py-1 rounded-full font-medium">
               {lowStockParts.length} รายการ
@@ -208,7 +204,7 @@ export default function ReportsPage() {
                             : 'bg-yellow-100 text-yellow-700'
                           }`}
                       >
-                        {part.quantity === 0 ? 'หมด' : part.quantity <= 5 ? 'วิกฤต' : 'ใกล้หมด'}
+                        {part.quantity === 0 ? 'หมด' : part.quantity <= 5 ? 'เหลือน้อยมาก' : 'ใกล้หมด'}
                       </span>
                     </td>
                   </tr>
@@ -229,7 +225,7 @@ export default function ReportsPage() {
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col gap-3">
           <div>
             <h2 className="font-semibold text-gray-800">อะไหล่ที่เบิกบ่อย</h2>
-            <p className="text-xs text-gray-400">Top 5 รายการที่ถูกเบิกมากที่สุด</p>
+            <p className="text-xs text-gray-400">5 รายการที่ถูกเบิกมากที่สุด</p>
           </div>
           <div className="flex flex-col gap-3 flex-1 justify-center">
             {topRequestedParts.map((p, i) => (
@@ -261,11 +257,11 @@ export default function ReportsPage() {
       {/* ── Row 3: Category Stock + PO Status + Recent Activity ── */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Category Distribution */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-full">
           <h2 className="font-semibold text-gray-800 mb-1">สัดส่วนสต็อกตามหมวดหมู่</h2>
           <p className="text-xs text-gray-400 mb-4">จำนวนชิ้นรวมแยกตามประเภทอะไหล่</p>
           {/* Simple horizontal stacked bar */}
-          <div className="flex h-4 rounded-full overflow-hidden gap-px mb-4">
+          <div className="w-full flex h-4 rounded-full overflow-hidden gap-px mb-4">
             {categories.map(([cat, qty], i) => (
               <div
                 key={cat}
@@ -277,7 +273,7 @@ export default function ReportsPage() {
               />
             ))}
           </div>
-          <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+          <div className="space-y-2 flex-1 overflow-y-auto pr-1">
             {categories.map(([cat, qty], i) => (
               <div key={cat} className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
@@ -300,13 +296,13 @@ export default function ReportsPage() {
         </div>
 
         {/* PO Status Summary */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-full">
           <h2 className="font-semibold text-gray-800 mb-1">สถานะใบสั่งซื้อ</h2>
           <p className="text-xs text-gray-400 mb-5">สรุปจำนวนใบสั่งซื้อตามสถานะ</p>
           <div className="space-y-3">
             {(
               [
-                { key: 'draft', label: 'ร่าง', color: 'bg-gray-300', textColor: 'text-gray-600' },
+                { key: 'draft', label: 'แบบร่าง', color: 'bg-gray-300', textColor: 'text-gray-600' },
                 { key: 'pending', label: 'รออนุมัติ', color: 'bg-yellow-400', textColor: 'text-yellow-700' },
                 { key: 'approved', label: 'อนุมัติแล้ว', color: 'bg-green-400', textColor: 'text-green-700' },
                 { key: 'rejected', label: 'ปฏิเสธ', color: 'bg-red-400', textColor: 'text-red-600' },
@@ -328,20 +324,13 @@ export default function ReportsPage() {
               )
             })}
           </div>
-          {/* Total */}
-          <div className="mt-5 pt-4 border-t border-gray-100 flex justify-between items-center">
-            <span className="text-sm text-gray-500">มูลค่ารวมทุกใบสั่งซื้อ</span>
-            <span className="font-semibold text-gray-800">
-              ฿{fmt(mockPurchaseOrders.reduce((s, p) => s + p.totalAmount, 0))}
-            </span>
-          </div>
         </div>
 
         {/* Recent Activity */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-full">
           <h2 className="font-semibold text-gray-800 mb-1">กิจกรรมล่าสุด</h2>
           <p className="text-xs text-gray-400 mb-4">รายการใบสั่งซื้อและเบิกอะไหล่ล่าสุด</p>
-          <div className="space-y-3">
+          <div className="space-y-3 flex-1 overflow-y-auto pr-1">
             {activities.map((a) => (
               <div key={a.id} className="flex items-start gap-3">
                 <div
@@ -378,7 +367,6 @@ export default function ReportsPage() {
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100">
           <h2 className="font-semibold text-gray-800">มูลค่าสต็อกตามหมวดหมู่</h2>
-          <p className="text-xs text-gray-400 mt-0.5">คำนวณจาก ราคาต่อหน่วย × จำนวนคงเหลือ</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -387,7 +375,6 @@ export default function ReportsPage() {
                 <th className="px-5 py-2.5 text-left font-medium">หมวดหมู่</th>
                 <th className="px-4 py-2.5 text-center font-medium">จำนวนรายการ</th>
                 <th className="px-4 py-2.5 text-center font-medium">ชิ้นรวม</th>
-                <th className="px-4 py-2.5 text-right font-medium">มูลค่ารวม</th>
                 <th className="px-5 py-2.5 text-center font-medium">สัดส่วน</th>
               </tr>
             </thead>
@@ -413,7 +400,6 @@ export default function ReportsPage() {
                       </td>
                       <td className="px-4 py-3 text-center text-gray-500">{data.items}</td>
                       <td className="px-4 py-3 text-center text-gray-500">{fmt(data.qty)} ชิ้น</td>
-                      <td className="px-4 py-3 text-right font-semibold text-gray-800">฿{fmt(data.value)}</td>
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-2">
                           <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -441,8 +427,7 @@ export default function ReportsPage() {
                 <td className="px-4 py-3 text-center text-gray-600 font-medium">
                   {fmt(mockParts.reduce((s, p) => s + p.quantity, 0))} ชิ้น
                 </td>
-                <td className="px-4 py-3 text-right font-semibold text-orange-600">฿{fmt(totalStockValue)}</td>
-                <td className="px-5 py-3 text-center text-gray-400 text-xs">100%</td>
+                <td className="px-5 py-3 text-center text-gray-400 text-xs"></td>
               </tr>
             </tfoot>
           </table>
