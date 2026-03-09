@@ -176,8 +176,8 @@ export default function JobOrdersPage() {
       {/* ── LIST VIEW ── */}
       {view === 'table' && (
         <div className="flex-1 overflow-hidden flex flex-col px-5">
-          {/* Table header */}
-          <div className="rounded-2xl overflow-hidden">
+          {/* Table header + rows */}
+          <div className="flex-1 overflow-hidden flex flex-col rounded-2xl">
             <div className="shrink-0 px-5 bg-white border-b border-gray-100">
               <div className="grid text-xs font-semibold text-gray-400 uppercase tracking-wider py-2.5" style={{ gridTemplateColumns: '56px 1fr 1fr 200px 120px 28px' }}>
                 <span>#</span>
@@ -190,7 +190,7 @@ export default function JobOrdersPage() {
             </div>
 
             {/* Rows */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto bg-white">
               {visibleJobs.length === 0 && (
                 <p className="text-center text-sm text-gray-400 mt-16">ไม่มีรายการ</p>
               )}
