@@ -183,7 +183,7 @@ export default function CreatePurchaseOrderPage() {
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
                         {/* Header */}
                         <div className="px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
-                            <p className="text-xs font-semibold text-[#F8981D] uppercase tracking-widest mb-0.5">Smart Moto Service Center</p>
+                            <p className="text-sm font-semibold text-[#F8981D] uppercase tracking-widest mb-0.5">Smart Moto Service Center</p>
                             <h2 className="text-base font-semibold text-[#1E1E1E]">
                                 {validationModal.isError ? 'ข้อมูลไม่ครบถ้วน' : 'ทำรายการสำเร็จ'}
                             </h2>
@@ -238,7 +238,7 @@ export default function CreatePurchaseOrderPage() {
                     <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col overflow-hidden animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
                         {/* Header */}
                         <div className="px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
-                            <p className="text-xs font-semibold text-[#F8981D] uppercase tracking-widest mb-0.5">Smart Moto Service Center</p>
+                            <p className="text-sm font-semibold text-[#F8981D] uppercase tracking-widest mb-0.5">Smart Moto Service Center</p>
                             <h2 className="text-base font-semibold text-[#1E1E1E]">
                                 ยืนยันการยกเลิก
                             </h2>
@@ -452,7 +452,7 @@ export default function CreatePurchaseOrderPage() {
                                                     </td>
                                                     <td className="py-3 px-4 border-r border-gray-100">
                                                         <div className="font-medium text-gray-800">{item.name}</div>
-                                                        <div className="text-xs text-gray-500 mt-0.5">{item.partCode}</div>
+                                                        <div className="text-sm text-gray-500 mt-0.5">{item.partCode}</div>
                                                     </td>
                                                     <td className="py-3 px-4 text-right text-gray-700 font-medium">
                                                         ฿{item.price.toLocaleString()}

@@ -148,11 +148,11 @@ export default function PartSelectionModal({ isOpen, onClose, onSelectPart }: Pa
                                             <h4 className="font-medium text-gray-800 group-hover:text-amber-700 transition-colors">{part.name}</h4>
                                             <div className="flex items-center gap-1.5 shrink-0">
                                                 {part.motorcycleModel && (
-                                                    <span className="text-xs font-medium px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-md">
+                                                    <span className="text-sm font-medium px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-md">
                                                         {part.motorcycleModel}
                                                     </span>
                                                 )}
-                                                <span className="text-xs font-medium px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md">
+                                                <span className="text-sm font-medium px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md">
                                                     {part.partCode}
                                                 </span>
                                             </div>

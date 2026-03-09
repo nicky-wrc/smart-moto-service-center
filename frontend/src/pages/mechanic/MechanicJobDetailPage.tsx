@@ -147,7 +147,7 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
           </button>
           <span className="text-white text-sm font-semibold">คำขอที่ {baseJob.id}</span>
           <div className="flex-1" />
-          <span className={`text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1.5 ${sc.bg} ${sc.text}`}>
+          <span className={`text-sm font-semibold px-3 py-1 rounded-full flex items-center gap-1.5 ${sc.bg} ${sc.text}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
             {status}
           </span>
@@ -163,11 +163,11 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
               {/* Customer + Vehicle */}
               <div className="grid grid-cols-2 gap-3 shrink-0">
                 <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm">
-                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-1.5">ลูกค้า</p>
+                  <p className="text-sm text-gray-400 uppercase tracking-wide mb-1.5">ลูกค้า</p>
                   <p className="font-semibold text-sm text-[#1E1E1E]">{baseJob.customerName}</p>
                 </div>
                 <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm">
-                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-1.5">รถ</p>
+                  <p className="text-sm text-gray-400 uppercase tracking-wide mb-1.5">รถ</p>
                   <p className="font-semibold text-sm text-[#1E1E1E]">{baseJob.brand} {baseJob.model}</p>
                   <p className="text-sm text-gray-500 mt-0.5">ทะเบียน {baseJob.licensePlate}</p>
                 </div>
@@ -175,12 +175,12 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
 
               {/* Symptom */}
               <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm">
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1.5">อาการที่แจ้ง</p>
+                <p className="text-sm text-gray-400 uppercase tracking-wide mb-1.5">อาการที่แจ้ง</p>
                 <p className="text-sm text-gray-700 leading-relaxed">{baseJob.symptom}</p>
                 {baseJob.tags.length > 0 && (
                   <div className="flex gap-1.5 flex-wrap mt-2.5">
                     {baseJob.tags.map((tag) => (
-                      <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-[#F8981D]/10 text-[#F8981D]">{tag}</span>
+                      <span key={tag} className="text-sm px-2 py-0.5 rounded-full bg-[#F8981D]/10 text-[#F8981D]">{tag}</span>
                     ))}
                   </div>
                 )}
@@ -189,7 +189,7 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
               {/* Foreman note */}
               {baseJob.foremanNote && (
                 <div className="bg-[#44403C]/5 border border-[#44403C]/15 rounded-xl px-4 py-3">
-                  <p className="text-xs text-[#44403C]/70 uppercase tracking-wide mb-1.5">หมายเหตุจากหัวหน้าช่าง</p>
+                  <p className="text-sm text-[#44403C]/70 uppercase tracking-wide mb-1.5">หมายเหตุจากหัวหน้าช่าง</p>
                   <p className="text-sm text-[#44403C]">{baseJob.foremanNote}</p>
                 </div>
               )}
@@ -201,7 +201,7 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                   <div>
-                    <p className="text-xs font-semibold text-[#F8981D] uppercase tracking-wide mb-1">หัวหน้าช่างตีกลับ — ต้องแก้ไข</p>
+                    <p className="text-sm font-semibold text-[#F8981D] uppercase tracking-wide mb-1">หัวหน้าช่างตีกลับ — ต้องแก้ไข</p>
                     <p className="text-sm text-[#F8981D]/80 leading-relaxed">{baseJob.qcRejectNote}</p>
                   </div>
                 </div>
@@ -210,7 +210,7 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
               {/* Original photos */}
               {baseJob.photos.length > 0 && (
                 <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm">
-                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">รูปภาพจากการรับรถ</p>
+                  <p className="text-sm text-gray-400 uppercase tracking-wide mb-2">รูปภาพจากการรับรถ</p>
                   <div className="flex gap-2 flex-wrap">
                     {baseJob.photos.map((p, i) => (
                       <button key={i} onClick={() => openLightbox(baseJob.photos, i)}
@@ -226,11 +226,11 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
               {isWorking && (
                 <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm flex flex-col gap-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs text-gray-400 uppercase tracking-wide">รายงานปัญหาที่พบเพิ่ม</p>
+                    <p className="text-sm text-gray-400 uppercase tracking-wide">รายงานปัญหาที่พบเพิ่ม</p>
                     {notifiedForeman && !editingReport && (
                       <button
                         onClick={() => { setSavedNote(findingNote); setSavedPhotos(findingPhotos); setEditingReport(true) }}
-                        className="text-xs text-gray-400 hover:text-[#F8981D] bg-transparent border border-gray-200 hover:border-[#F8981D] rounded-lg px-2.5 py-1 cursor-pointer transition-colors"
+                        className="text-sm text-gray-400 hover:text-[#F8981D] bg-transparent border border-gray-200 hover:border-[#F8981D] rounded-lg px-2.5 py-1 cursor-pointer transition-colors"
                       >
                         แก้ไข
                       </button>
@@ -267,7 +267,7 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
                       />
 
                       <div>
-                        <p className="text-xs text-gray-400 mb-2">รูปภาพประกอบ</p>
+                        <p className="text-sm text-gray-400 mb-2">รูปภาพประกอบ</p>
                         <div className="flex gap-2 flex-wrap">
                           {findingPhotos.map((p, i) => (
                             <div key={i} className="relative group shrink-0">
@@ -276,7 +276,7 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
                                 <img src={p} alt="" className="w-full h-full object-cover" />
                               </button>
                               <button onClick={() => setFindingPhotos((prev) => prev.filter((_, idx) => idx !== i))}
-                                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-sm flex items-center justify-center border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
                                 ✕
                               </button>
                             </div>
@@ -328,13 +328,13 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
               {/* Parts used */}
               <div className={`rounded-xl border p-4 shadow-sm ${status === 'คืนของ' && !partsReturned ? 'bg-white border-[#F8981D]/40' : 'bg-white border-gray-100'}`}>
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs text-gray-400 uppercase tracking-wide">อะไหล่ที่เบิกมา</p>
+                  <p className="text-sm text-gray-400 uppercase tracking-wide">อะไหล่ที่เบิกมา</p>
                   {status === 'คืนของ' && !partsReturned && (
-                    <span className="text-xs font-medium text-[#F8981D]">กรอกจำนวนที่ใช้จริง</span>
+                    <span className="text-sm font-medium text-[#F8981D]">กรอกจำนวนที่ใช้จริง</span>
                   )}
                 </div>
                 {!['คืนของ', 'เสร็จแล้ว'].includes(status) && (
-                  <p className="text-xs text-gray-400 italic">จะสามารถบันทึกได้หลังหัวหน้าช่างตรวจผ่านแล้ว</p>
+                  <p className="text-sm text-gray-400 italic">จะสามารถบันทึกได้หลังหัวหน้าช่างตรวจผ่านแล้ว</p>
                 )}
                 {baseJob.parts.length === 0 ? (
                   <p className="text-sm text-gray-400">ไม่มีอะไหล่</p>
@@ -358,16 +358,16 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
                               <div className="flex items-center border border-[#F8981D]/40 rounded-lg overflow-hidden h-7 shrink-0 bg-white">
                                 <button onClick={() => setActualQtys((prev) => ({ ...prev, [i]: Math.max(0, actual - 1) }))}
                                   className="w-7 h-7 flex items-center justify-center text-[#F8981D] hover:bg-[#F8981D]/10 bg-transparent border-none cursor-pointer font-bold text-sm transition-colors">−</button>
-                                <span className="text-xs font-semibold w-7 text-center text-[#1E1E1E]">{actual}</span>
+                                <span className="text-sm font-semibold w-7 text-center text-[#1E1E1E]">{actual}</span>
                                 <button onClick={() => setActualQtys((prev) => ({ ...prev, [i]: Math.min(p.qty, actual + 1) }))}
                                   className="w-7 h-7 flex items-center justify-center text-[#F8981D] hover:bg-[#F8981D]/10 bg-transparent border-none cursor-pointer font-bold text-sm transition-colors">+</button>
                               </div>
                             ) : (
-                              <span className="text-xs text-gray-400">{actual} {p.unit}</span>
+                              <span className="text-sm text-gray-400">{actual} {p.unit}</span>
                             )}
                           </div>
                           {isActive && unused > 0 && (
-                            <p className="text-xs text-[#F8981D] font-medium mt-1">คืน {unused} {p.unit}</p>
+                            <p className="text-sm text-[#F8981D] font-medium mt-1">คืน {unused} {p.unit}</p>
                           )}
                         </div>
                       )
@@ -383,7 +383,7 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
                   </button>
                 )}
                 {partsReturned && (
-                  <div className="mt-3 flex items-center justify-end gap-2 text-xs text-[#44403C]">
+                  <div className="mt-3 flex items-center justify-end gap-2 text-sm text-[#44403C]">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
@@ -394,10 +394,10 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
 
               {/* Removed customer parts */}
               <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">อะไหล่เก่าที่ถอดออก</p>
+                <p className="text-sm text-gray-400 uppercase tracking-wide mb-3">อะไหล่เก่าที่ถอดออก</p>
 
                 {!['คืนของ', 'เสร็จแล้ว'].includes(status) && (
-                  <p className="text-xs text-gray-400 italic">จะสามารถบันทึกได้หลังหัวหน้าช่างตรวจผ่านแล้ว</p>
+                  <p className="text-sm text-gray-400 italic">จะสามารถบันทึกได้หลังหัวหน้าช่างตรวจผ่านแล้ว</p>
                 )}
 
                 {/* Items list */}
@@ -408,15 +408,15 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <p className="text-sm font-medium text-[#1E1E1E]">{rp.name}</p>
-                            {rp.description && <p className="text-xs text-gray-400 mt-0.5">{rp.description}</p>}
+                            {rp.description && <p className="text-sm text-gray-400 mt-0.5">{rp.description}</p>}
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0">
-                            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${dispositionConfig[rp.disposition].bg} ${dispositionConfig[rp.disposition].text}`}>
+                            <span className={`text-sm font-medium px-2 py-0.5 rounded-full ${dispositionConfig[rp.disposition].bg} ${dispositionConfig[rp.disposition].text}`}>
                               {rp.disposition}
                             </span>
                             {status === 'คืนของ' && (
                               <button onClick={() => setRemovedParts((p) => p.filter((x) => x.id !== rp.id))}
-                                className="text-gray-300 hover:text-red-400 bg-transparent border-none cursor-pointer text-xs transition-colors">✕</button>
+                                className="text-gray-300 hover:text-red-400 bg-transparent border-none cursor-pointer text-sm transition-colors">✕</button>
                             )}
                           </div>
                         </div>
@@ -458,7 +458,7 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
                         <div className="flex gap-1.5">
                           {(['คืนลูกค้า', 'ทิ้ง', 'เก็บหลักฐาน'] as Disposition[]).map((d) => (
                             <button key={d} onClick={() => setNewRemoved((p) => ({ ...p, disposition: d }))}
-                              className={`flex-1 text-xs py-1.5 rounded-lg border cursor-pointer transition-colors font-medium ${
+                              className={`flex-1 text-sm py-1.5 rounded-lg border cursor-pointer transition-colors font-medium ${
                                 newRemoved.disposition === d
                                   ? 'bg-[#44403C] text-white border-[#44403C]'
                                   : 'bg-white text-gray-400 border-gray-200 hover:border-gray-400'
@@ -496,7 +496,7 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
 
               {/* Action */}
               <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm flex flex-col gap-2.5">
-                <p className="text-xs text-gray-400 uppercase tracking-wide">การดำเนินงาน</p>
+                <p className="text-sm text-gray-400 uppercase tracking-wide">การดำเนินงาน</p>
 
                 {status === 'รอเริ่ม' && (
                   <button onClick={() => setStatus('กำลังซ่อม')}
@@ -515,7 +515,7 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
                 {status === 'รอตรวจ' && (
                   <div className="bg-[#44403C]/5 border border-[#44403C]/15 rounded-xl px-4 py-3.5 text-center">
                     <p className="text-sm font-medium text-[#44403C]">รอหัวหน้าช่างตรวจ</p>
-                    <p className="text-xs text-[#44403C]/60 mt-0.5">งานถูกส่งเพื่อตรวจสอบแล้ว</p>
+                    <p className="text-sm text-[#44403C]/60 mt-0.5">งานถูกส่งเพื่อตรวจสอบแล้ว</p>
                   </div>
                 )}
 
@@ -540,28 +540,28 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
                 {status === 'เสร็จแล้ว' && (
                   <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-center">
                     <p className="text-sm font-medium text-[#44403C]">งานเสร็จสมบูรณ์</p>
-                    {baseJob.completedAt && <p className="text-xs text-gray-600 mt-0.5">เสร็จเมื่อ {baseJob.completedAt}</p>}
+                    {baseJob.completedAt && <p className="text-sm text-gray-600 mt-0.5">เสร็จเมื่อ {baseJob.completedAt}</p>}
                   </div>
                 )}
               </div>
 
               {/* Timeline */}
               <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">ไทม์ไลน์</p>
+                <p className="text-sm text-gray-400 uppercase tracking-wide mb-3">ไทม์ไลน์</p>
                 <div className="flex flex-col gap-2.5">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full bg-[#F8981D] shrink-0" />
                     <div>
-                      <p className="text-xs font-medium text-gray-600">ได้รับมอบหมาย</p>
-                      <p className="text-xs text-gray-400">{baseJob.assignedAt}</p>
+                      <p className="text-sm font-medium text-gray-600">ได้รับมอบหมาย</p>
+                      <p className="text-sm text-gray-400">{baseJob.assignedAt}</p>
                     </div>
                   </div>
                   {baseJob.startedAt && (
                     <div className="flex items-center gap-3">
                       <div className="w-2 h-2 rounded-full bg-[#44403C] shrink-0" />
                       <div>
-                        <p className="text-xs font-medium text-gray-600">เริ่มซ่อม</p>
-                        <p className="text-xs text-gray-400">{baseJob.startedAt}</p>
+                        <p className="text-sm font-medium text-gray-600">เริ่มซ่อม</p>
+                        <p className="text-sm text-gray-400">{baseJob.startedAt}</p>
                       </div>
                     </div>
                   )}
@@ -569,7 +569,7 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
                     <div className="flex items-center gap-3">
                       <div className="w-2 h-2 rounded-full bg-stone-400 shrink-0" />
                       <div>
-                        <p className="text-xs font-medium text-gray-600">แจ้งปัญหาเพิ่มหัวหน้าช่าง</p>
+                        <p className="text-sm font-medium text-gray-600">แจ้งปัญหาเพิ่มหัวหน้าช่าง</p>
                       </div>
                     </div>
                   )}
@@ -577,8 +577,8 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
                     <div className="flex items-center gap-3">
                       <div className="w-2 h-2 rounded-full bg-green-400 shrink-0" />
                       <div>
-                        <p className="text-xs font-medium text-gray-600">เสร็จแล้ว</p>
-                        <p className="text-xs text-gray-400">{baseJob.completedAt}</p>
+                        <p className="text-sm font-medium text-gray-600">เสร็จแล้ว</p>
+                        <p className="text-sm text-gray-400">{baseJob.completedAt}</p>
                       </div>
                     </div>
                   )}

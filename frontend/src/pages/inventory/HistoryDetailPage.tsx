@@ -79,7 +79,7 @@ export default function HistoryDetailPage() {
                 <div className="flex justify-between items-center">
                     <div className="flex items-center gap-3">
                         <h1 className="text-xl font-medium text-gray-800">รายการคำร้องขอที่ {request.id}</h1>
-                        <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${isApproved ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                        <span className={`px-2.5 py-1 text-sm font-medium rounded-full ${isApproved ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                             {request.status}
                         </span>
                     </div>

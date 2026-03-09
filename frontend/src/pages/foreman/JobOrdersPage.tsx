@@ -80,7 +80,7 @@ export default function JobOrdersPage() {
         <div className="flex items-center bg-white border border-gray-200 rounded-full p-1 shrink-0">
           <button
             onClick={() => setView('list')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border-none ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer border-none ${
               view === 'list' ? 'bg-[#1E1E1E] text-white' : 'bg-transparent text-gray-400 hover:text-gray-600'
             }`}
           >
@@ -91,7 +91,7 @@ export default function JobOrdersPage() {
           </button>
           <button
             onClick={() => setView('board')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border-none ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer border-none ${
               view === 'board' ? 'bg-[#1E1E1E] text-white' : 'bg-transparent text-gray-400 hover:text-gray-600'
             }`}
           >
@@ -117,7 +117,7 @@ export default function JobOrdersPage() {
                       <span className={`w-2 h-2 rounded-full shrink-0 ${col.dot}`} />
                       <span className="text-sm font-semibold text-[#1E1E1E]">{col.label}</span>
                     </div>
-                    <span className="text-xs font-semibold text-gray-400 bg-white/70 px-2 py-0.5 rounded-full">
+                    <span className="text-sm font-semibold text-gray-400 bg-white/70 px-2 py-0.5 rounded-full">
                       {colJobs.length}
                     </span>
                   </div>
@@ -125,7 +125,7 @@ export default function JobOrdersPage() {
                   {/* Cards */}
                   <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2.5">
                     {colJobs.length === 0 && (
-                      <p className="text-center text-xs text-gray-300 mt-6">ไม่มีรายการ</p>
+                      <p className="text-center text-sm text-gray-300 mt-6">ไม่มีรายการ</p>
                     )}
                     {colJobs.map((job) => (
                       <div
@@ -136,16 +136,16 @@ export default function JobOrdersPage() {
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs text-gray-400 font-medium">คำขอที่ {job.id}</span>
-                          <span className="text-xs text-gray-300">{job.receivedAt.split('  ')[1]}</span>
+                          <span className="text-sm text-gray-400 font-medium">คำขอที่ {job.id}</span>
+                          <span className="text-sm text-gray-300">{job.receivedAt.split('  ')[1]}</span>
                         </div>
                         <p className="text-sm font-semibold text-[#1E1E1E] leading-snug">{job.brand} {job.model}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">{job.customerName} · {job.licensePlate}</p>
-                        <p className="text-xs text-gray-400 italic mt-1.5 line-clamp-2">"{job.symptom}"</p>
+                        <p className="text-sm text-gray-400 mt-0.5">{job.customerName} · {job.licensePlate}</p>
+                        <p className="text-sm text-gray-400 italic mt-1.5 line-clamp-2">"{job.symptom}"</p>
                         {job.tags.length > 0 && (
                           <div className="flex gap-1.5 flex-wrap mt-2.5">
                             {job.tags.slice(0, 2).map((tag) => (
-                              <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-[#F8981D]/10 text-[#F8981D]">
+                              <span key={tag} className="text-sm px-2 py-0.5 rounded-full bg-[#F8981D]/10 text-[#F8981D]">
                                 {tag}
                               </span>
                             ))}
@@ -156,12 +156,12 @@ export default function JobOrdersPage() {
                             <svg className="w-3 h-3 text-amber-500 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
                             </svg>
-                            <span className="text-xs font-medium text-amber-600">ช่างรายงานปัญหาเพิ่มเติม</span>
+                            <span className="text-sm font-medium text-amber-600">ช่างรายงานปัญหาเพิ่มเติม</span>
                           </div>
                         )}
                         <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-gray-50">
-                          <span className="text-xs text-gray-400">{job.receptionist}</span>
-                          <span className="text-xs text-gray-300">{job.photos.length} รูป</span>
+                          <span className="text-sm text-gray-400">{job.receptionist}</span>
+                          <span className="text-sm text-gray-300">{job.photos.length} รูป</span>
                         </div>
                       </div>
                     ))}
@@ -193,12 +193,12 @@ export default function JobOrdersPage() {
                       คำขอที่ {job.id}
                     </div>
                     <div className="flex items-center gap-2 px-3 flex-1 flex-wrap min-w-0">
-                      <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${s.bg} ${s.text}`}>{job.status}</span>
+                      <span className={`text-sm font-medium px-2.5 py-0.5 rounded-full ${s.bg} ${s.text}`}>{job.status}</span>
                       {job.tags.slice(0, 2).map((tag) => (
-                        <span key={tag} className="text-xs px-2.5 py-0.5 rounded-full bg-[#F8981D]/10 text-[#F8981D] border border-[#F8981D]/20">{tag}</span>
+                        <span key={tag} className="text-sm px-2.5 py-0.5 rounded-full bg-[#F8981D]/10 text-[#F8981D] border border-[#F8981D]/20">{tag}</span>
                       ))}
                       {job.mechanicReport && (
-                        <span className="flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200">
+                        <span className="flex items-center gap-1 text-sm font-medium px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200">
                           <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
                           </svg>

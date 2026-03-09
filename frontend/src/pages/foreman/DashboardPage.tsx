@@ -77,7 +77,7 @@ export default function DashboardPage() {
               <p className="text-sm text-gray-400">{s.label}</p>
               <div className="flex items-end gap-1.5 mt-1">
                 <span className="text-3xl font-bold text-[#1E1E1E] leading-none">{s.value}</span>
-                <span className="text-xs text-gray-400 mb-0.5">{s.sub}</span>
+                <span className="text-sm text-gray-400 mb-0.5">{s.sub}</span>
               </div>
             </div>
           </div>
@@ -93,7 +93,7 @@ export default function DashboardPage() {
             <p className="text-sm font-semibold text-[#1E1E1E]">งานที่ต้องดูแลวันนี้</p>
             <button
               onClick={() => navigate('/foreman/jobs')}
-              className="text-xs text-gray-400 hover:text-[#F8981D] transition-colors bg-transparent border-none cursor-pointer"
+              className="text-sm text-gray-400 hover:text-[#F8981D] transition-colors bg-transparent border-none cursor-pointer"
             >
               ดูทั้งหมด →
             </button>
@@ -107,18 +107,18 @@ export default function DashboardPage() {
                   onClick={() => navigate(`/foreman/jobs/${job.id}`)}
                   className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-[#44403C] text-white text-xs font-semibold flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-[#44403C] text-white text-sm font-semibold flex items-center justify-center shrink-0">
                     {job.id}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-[#1E1E1E] truncate">{job.brand} {job.model}</p>
-                    <p className="text-xs text-gray-400 truncate">{job.customerName} · {job.licensePlate}</p>
+                    <p className="text-sm text-gray-400 truncate">{job.customerName} · {job.licensePlate}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${s.bg} ${s.text}`}>
+                    <span className={`text-sm font-medium px-2 py-0.5 rounded-full ${s.bg} ${s.text}`}>
                       {job.status}
                     </span>
-                    <span className="text-xs text-gray-300">{job.receivedAt.split(' ')[1]}</span>
+                    <span className="text-sm text-gray-300">{job.receivedAt.split(' ')[1]}</span>
                   </div>
                 </div>
               )
@@ -149,10 +149,10 @@ export default function DashboardPage() {
                         }}
                       />
                     </div>
-                    <span className="text-xs text-stone-400 shrink-0">{m.jobs} งาน</span>
+                    <span className="text-sm text-stone-400 shrink-0">{m.jobs} งาน</span>
                   </div>
                 </div>
-                <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${
+                <span className={`text-sm font-medium px-2 py-0.5 rounded-full shrink-0 ${
                   m.jobs === 0 ? 'bg-stone-100 text-stone-500' :
                   m.jobs >= 3 ? 'bg-[#44403C]/10 text-[#44403C]' : 'bg-[#F8981D]/15 text-[#F8981D]'
                 }`}>

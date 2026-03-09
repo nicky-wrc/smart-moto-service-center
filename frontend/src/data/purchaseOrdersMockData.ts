@@ -129,5 +129,247 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
             }
         ],
         managerMessage: 'งบประมาณเดือนนี้เต็มแล้ว ให้ขอเบิกเดือนหน้า'
-    }
+    },
+    {
+        id: 'PO-20260228-001',
+        supplierId: 2,
+        supplierName: 'ยามาฮ่า พาร์ท เซ็นเตอร์',
+        createdAt: '2026-02-28',
+        deliveryDate: '2026-03-05',
+        totalAmount: 7200,
+        status: 'approved',
+        items: [
+            {
+                id: 3,
+                partCode: 'PT-003',
+                name: 'โซ่ขับเคลื่อน 428H',
+                category: 'Drivetrain',
+                location: 'B2-05',
+                quantity: 10,
+                price: 360,
+                imageUrl: 'https://placehold.co/100x100/e2e8f0/94a3b8.png?text=Chain',
+                orderQuantity: 20
+            }
+        ]
+    },
+    {
+        id: 'PO-20260225-002',
+        supplierId: 3,
+        supplierName: 'ซูซูกิ อะไหล่ยนต์',
+        createdAt: '2026-02-25',
+        deliveryDate: '2026-03-02',
+        totalAmount: 3600,
+        status: 'cancelled',
+        items: [
+            {
+                id: 7,
+                partCode: 'PT-007',
+                name: 'น้ำมันเครื่อง 10W-40 (1L)',
+                category: 'Lubricants',
+                location: 'D1-01',
+                quantity: 48,
+                price: 180,
+                imageUrl: 'https://placehold.co/100x100/e2e8f0/94a3b8.png?text=Oil',
+                orderQuantity: 20
+            }
+        ]
+    },
+    {
+        id: 'PO-20260220-004',
+        supplierId: 1,
+        supplierName: 'บริษัท ฮอนด้า มอเตอร์ จำกัด',
+        createdAt: '2026-02-20',
+        deliveryDate: '2026-02-27',
+        totalAmount: 9900,
+        status: 'approved',
+        items: [
+            {
+                id: 8,
+                partCode: 'PT-008',
+                name: 'ไส้กรองน้ำมันเครื่อง',
+                category: 'Engine',
+                location: 'B1-09',
+                quantity: 22,
+                price: 90,
+                imageUrl: 'https://placehold.co/100x100/e2e8f0/94a3b8.png?text=Oil+Filter',
+                orderQuantity: 110
+            }
+        ]
+    },
+    {
+        id: 'PO-20260215-005',
+        supplierId: 2,
+        supplierName: 'ยามาฮ่า พาร์ท เซ็นเตอร์',
+        createdAt: '2026-02-15',
+        deliveryDate: '2026-02-22',
+        totalAmount: 14500,
+        status: 'pending',
+        items: [
+            {
+                id: 9,
+                partCode: 'PT-009',
+                name: 'สายไฟชุดเมนด้านหน้า',
+                category: 'Electrical',
+                location: 'A4-05',
+                quantity: 5,
+                price: 2900,
+                imageUrl: 'https://placehold.co/100x100/e2e8f0/94a3b8.png?text=Wiring',
+                orderQuantity: 5
+            }
+        ]
+    },
+    {
+        id: 'PO-20260210-006',
+        supplierId: 3,
+        supplierName: 'ซูซูกิ อะไหล่ยนต์',
+        createdAt: '2026-02-10',
+        deliveryDate: '2026-02-17',
+        totalAmount: 5400,
+        status: 'draft',
+        items: [
+            {
+                id: 10,
+                partCode: 'PT-010',
+                name: 'ผ้าเบรคหลัง (Rear Brake Pad)',
+                category: 'Brakes',
+                location: 'C1-13',
+                quantity: 9,
+                price: 300,
+                imageUrl: 'https://placehold.co/100x100/e2e8f0/94a3b8.png?text=Rear+Brake',
+                orderQuantity: 18
+            }
+        ]
+    },
+    {
+        id: 'PO-20260205-007',
+        supplierId: 1,
+        supplierName: 'บริษัท ฮอนด้า มอเตอร์ จำกัด',
+        createdAt: '2026-02-05',
+        deliveryDate: '2026-02-12',
+        totalAmount: 22000,
+        status: 'approved',
+        items: [
+            {
+                id: 11,
+                partCode: 'PT-011',
+                name: 'คลัตช์ชุด (Clutch Kit)',
+                category: 'Drivetrain',
+                location: 'B2-10',
+                quantity: 4,
+                price: 2200,
+                imageUrl: 'https://placehold.co/100x100/e2e8f0/94a3b8.png?text=Clutch',
+                orderQuantity: 10
+            }
+        ]
+    },
+        {
+        id: 'PO-20260205-007',
+        supplierId: 1,
+        supplierName: 'บริษัท ฮอนด้า มอเตอร์ จำกัด',
+        createdAt: '2026-02-05',
+        deliveryDate: '2026-02-12',
+        totalAmount: 22000,
+        status: 'approved',
+        items: [
+            {
+                id: 12,
+                partCode: 'PT-011',
+                name: 'คลัตช์ชุด (Clutch Kit)',
+                category: 'Drivetrain',
+                location: 'B2-10',
+                quantity: 4,
+                price: 2200,
+                imageUrl: 'https://placehold.co/100x100/e2e8f0/94a3b8.png?text=Clutch',
+                orderQuantity: 10
+            }
+        ]
+    },
+        {
+        id: 'PO-20260205-007',
+        supplierId: 1,
+        supplierName: 'บริษัท ฮอนด้า มอเตอร์ จำกัด',
+        createdAt: '2026-02-05',
+        deliveryDate: '2026-02-12',
+        totalAmount: 22000,
+        status: 'approved',
+        items: [
+            {
+                id: 13,
+                partCode: 'PT-011',
+                name: 'คลัตช์ชุด (Clutch Kit)',
+                category: 'Drivetrain',
+                location: 'B2-10',
+                quantity: 4,
+                price: 2200,
+                imageUrl: 'https://placehold.co/100x100/e2e8f0/94a3b8.png?text=Clutch',
+                orderQuantity: 10
+            }
+        ]
+    },
+        {
+        id: 'PO-20260205-007',
+        supplierId: 1,
+        supplierName: 'บริษัท ฮอนด้า มอเตอร์ จำกัด',
+        createdAt: '2026-02-05',
+        deliveryDate: '2026-02-12',
+        totalAmount: 22000,
+        status: 'approved',
+        items: [
+            {
+                id: 14,
+                partCode: 'PT-011',
+                name: 'คลัตช์ชุด (Clutch Kit)',
+                category: 'Drivetrain',
+                location: 'B2-10',
+                quantity: 4,
+                price: 2200,
+                imageUrl: 'https://placehold.co/100x100/e2e8f0/94a3b8.png?text=Clutch',
+                orderQuantity: 10
+            }
+        ]
+    },
+        {
+        id: 'PO-20260205-007',
+        supplierId: 1,
+        supplierName: 'บริษัท ฮอนด้า มอเตอร์ จำกัด',
+        createdAt: '2026-02-05',
+        deliveryDate: '2026-02-12',
+        totalAmount: 22000,
+        status: 'approved',
+        items: [
+            {
+                id: 15,
+                partCode: 'PT-011',
+                name: 'คลัตช์ชุด (Clutch Kit)',
+                category: 'Drivetrain',
+                location: 'B2-10',
+                quantity: 4,
+                price: 2200,
+                imageUrl: 'https://placehold.co/100x100/e2e8f0/94a3b8.png?text=Clutch',
+                orderQuantity: 10
+            }
+        ]
+    },
+        {
+        id: 'PO-20260205-007',
+        supplierId: 1,
+        supplierName: 'บริษัท ฮอนด้า มอเตอร์ จำกัด',
+        createdAt: '2026-02-05',
+        deliveryDate: '2026-02-12',
+        totalAmount: 22000,
+        status: 'approved',
+        items: [
+            {
+                id: 16,
+                partCode: 'PT-011',
+                name: 'คลัตช์ชุด (Clutch Kit)',
+                category: 'Drivetrain',
+                location: 'B2-10',
+                quantity: 4,
+                price: 2200,
+                imageUrl: 'https://placehold.co/100x100/e2e8f0/94a3b8.png?text=Clutch',
+                orderQuantity: 10
+            }
+        ]
+    },
 ]
