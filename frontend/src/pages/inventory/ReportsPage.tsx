@@ -119,7 +119,7 @@ const CAT_COLORS = [
 
 export default function ReportsPage() {
   return (
-    <div className="p-6 min-h-screen space-y-6 bg-gray-50">
+    <div className="px-6 py-4 min-h-screen space-y-4 bg-gray-50">
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <span className="text-sm bg-orange-50 text-orange-500 border border-orange-200 px-3 py-1.5 rounded-full font-medium ">
@@ -160,277 +160,211 @@ export default function ReportsPage() {
         />
       </div>
 
-      {/* ── Row 2: Low-stock table + Top Requested ── */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        {/* Low-stock table */}
-        <div className="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-            <div>
-              <h2 className="font-semibold text-gray-800">อะไหล่ใกล้หมด</h2>
-              <p className="text-sm text-gray-400">คงเหลือน้อยกว่า {LOW_STOCK_THRESHOLD} ชิ้น</p>
-            </div>
-            <span className="text-sm bg-red-50 text-red-500 border border-red-100 px-2.5 py-1 rounded-full font-medium">
-              {lowStockParts.length} รายการ
-            </span>
-          </div>
-          <div className="overflow-x-auto overflow-y-auto max-h-[300px]">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50 text-gray-500 text-sm">
-                  <th className="px-5 py-2.5 text-left font-medium">รหัส</th>
-                  <th className="px-4 py-2.5 text-left font-medium">ชื่ออะไหล่</th>
-                  <th className="px-4 py-2.5 text-left font-medium">หมวดหมู่</th>
-                  <th className="px-4 py-2.5 text-center font-medium">คงเหลือ</th>
-                  <th className="px-4 py-2.5 text-center font-medium">สถานะ</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {lowStockParts.map((part) => (
-                  <tr key={part.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-3 text-gray-500 font-mono text-sm">{part.partCode}</td>
-                    <td className="px-4 py-3 font-medium text-gray-700 max-w-[180px] truncate">{part.name}</td>
-                    <td className="px-4 py-3 text-gray-500">{part.category}</td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`font-semibold ${part.quantity === 0 ? 'text-red-600' : part.quantity <= 5 ? 'text-orange-500' : 'text-yellow-600'}`}>
-                        {part.quantity}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span
-                        className={`inline-block px-2.5 py-0.5 rounded-full text-sm font-medium ${part.quantity === 0
-                          ? 'bg-red-100 text-red-600'
-                          : part.quantity <= 5
-                            ? 'bg-orange-100 text-orange-600'
-                            : 'bg-yellow-100 text-yellow-700'
-                          }`}
-                      >
-                        {part.quantity === 0 ? 'หมด' : part.quantity <= 5 ? 'เหลือน้อยมาก' : 'ใกล้หมด'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-                {lowStockParts.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="px-5 py-8 text-center text-gray-400 text-sm">
-                      ✅ อะไหล่ทุกรายการมีสต็อกเพียงพอ
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Top Requested Parts */}
-        <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col gap-3">
-          <div>
-            <h2 className="font-semibold text-gray-800">อะไหล่ที่เบิกบ่อย</h2>
-            <p className="text-sm text-gray-400">5 รายการที่ถูกเบิกมากที่สุด</p>
-          </div>
-          <div className="flex flex-col gap-3 flex-1 justify-center">
-            {topRequestedParts.map((p, i) => (
-              <div key={p.code} className="flex items-center gap-3">
-                <span className="w-5 h-5 rounded-full bg-orange-50 text-orange-500 text-sm font-semibold flex items-center justify-center flex-shrink-0">
-                  {i + 1}
+      {/* ── Scrollable Dashboard Content ── */}
+      <div className="overflow-y-auto pr-3 pb-4" style={{ maxHeight: 'calc(100vh - 260px)' }}>
+        <div className="flex flex-col gap-4">
+          {/* ── Row 2: Low-stock table + Top Requested ── */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+            {/* Low-stock table */}
+            <div className="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                <div>
+                  <h2 className="font-semibold text-gray-800">อะไหล่ใกล้หมด</h2>
+                  <p className="text-sm text-gray-400">คงเหลือน้อยกว่า {LOW_STOCK_THRESHOLD} ชิ้น</p>
+                </div>
+                <span className="text-sm bg-red-50 text-red-500 border border-red-100 px-2.5 py-1 rounded-full font-medium">
+                  {lowStockParts.length} รายการ
                 </span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium text-gray-700 truncate max-w-[130px]">{p.name}</span>
-                    <span className="text-sm text-gray-400 flex-shrink-0 ml-2">{p.count} ชิ้น</span>
-                  </div>
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-2 rounded-full transition-all duration-700"
-                      style={{
-                        width: `${(p.count / maxRequested) * 100}%`,
-                        background: `linear-gradient(90deg, #F8981D, #f97316)`,
-                      }}
-                    />
-                  </div>
-                </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Row 3: Category Stock + PO Status + Recent Activity ── */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {/* Category Distribution */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-full">
-          <h2 className="font-semibold text-gray-800 mb-1">สัดส่วนสต็อกตามหมวดหมู่</h2>
-          <p className="text-sm text-gray-400 mb-4">จำนวนชิ้นรวมแยกตามประเภทอะไหล่</p>
-          {/* Simple horizontal stacked bar */}
-          <div className="w-full flex h-4 rounded-full overflow-hidden gap-px mb-4">
-            {categories.map(([cat, qty], i) => (
-              <div
-                key={cat}
-                title={`${cat}: ${qty}`}
-                style={{
-                  width: `${(qty / totalCategoryQty) * 100}%`,
-                  backgroundColor: CAT_COLORS[i % CAT_COLORS.length],
-                }}
-              />
-            ))}
-          </div>
-          <div className="space-y-2 flex-1 overflow-y-auto pr-1 max-h-[300px]">
-            {categories.map(([cat, qty], i) => (
-              <div key={cat} className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span
-                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: CAT_COLORS[i % CAT_COLORS.length] }}
-                  />
-                  <span className="text-sm text-gray-600 truncate">{cat}</span>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-sm font-semibold text-gray-800">{qty}</span>
-                  <span className="text-sm text-gray-400">ชิ้น</span>
-                  <span className="text-sm text-gray-400 w-9 text-right">
-                    {((qty / totalCategoryQty) * 100).toFixed(0)}%
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* PO Status Summary */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-full">
-          <h2 className="font-semibold text-gray-800 mb-1">สถานะใบสั่งซื้อ</h2>
-          <p className="text-sm text-gray-400 mb-5">สรุปจำนวนใบสั่งซื้อตามสถานะ</p>
-          <div className="space-y-3">
-            {(
-              [
-                { key: 'draft', label: 'แบบร่าง', color: 'bg-gray-300', textColor: 'text-gray-600' },
-                { key: 'pending', label: 'รออนุมัติ', color: 'bg-yellow-400', textColor: 'text-yellow-700' },
-                { key: 'approved', label: 'อนุมัติแล้ว', color: 'bg-green-400', textColor: 'text-green-700' },
-                { key: 'rejected', label: 'ปฏิเสธ', color: 'bg-red-400', textColor: 'text-red-600' },
-                { key: 'cancelled', label: 'ยกเลิก', color: 'bg-red-200', textColor: 'text-red-400' },
-              ] as const
-            ).map(({ key, label, color, textColor }) => {
-              const count = poStatusCount[key]
-              const pct = mockPurchaseOrders.length > 0 ? (count / mockPurchaseOrders.length) * 100 : 0
-              return (
-                <div key={key}>
-                  <div className="flex justify-between mb-1">
-                    <span className={`text-sm font-medium ${textColor}`}>{label}</span>
-                    <span className="text-sm text-gray-500">{count} ใบ</span>
-                  </div>
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div className={`h-2 rounded-full ${color}`} style={{ width: `${pct}%` }} />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-full">
-          <h2 className="font-semibold text-gray-800 mb-1">กิจกรรมล่าสุด</h2>
-          <p className="text-sm text-gray-400 mb-4">รายการใบสั่งซื้อและเบิกอะไหล่ล่าสุด</p>
-          <div className="space-y-3 flex-1 overflow-y-auto pr-1">
-            {activities.map((a) => (
-              <div key={a.id} className="flex items-start gap-3">
-                <div
-                  className={`mt-0.5 w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${a.type === 'po' ? 'bg-blue-50' : 'bg-orange-50'
-                    }`}
-                >
-                  {a.type === 'po' ? (
-                    <svg className="w-3.5 h-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                  ) : (
-                    <svg className="w-3.5 h-3.5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                    </svg>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-medium text-gray-700">{a.label}</span>
-                    <span className={`text-sm px-1.5 py-0.5 rounded-full font-medium ${a.badgeColor}`}>{a.badge}</span>
-                  </div>
-                  <div className="flex justify-between mt-0.5">
-                    <span className="text-sm text-gray-400 truncate">{a.sub}</span>
-                    <span className="text-sm text-gray-400 flex-shrink-0 ml-2">{a.date}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Row 4: Stock value per category table ── */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-800">มูลค่าสต็อกตามหมวดหมู่</h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50 text-gray-500 text-sm">
-                <th className="px-5 py-2.5 text-left font-medium">หมวดหมู่</th>
-                <th className="px-4 py-2.5 text-center font-medium">จำนวนรายการ</th>
-                <th className="px-4 py-2.5 text-center font-medium">ชิ้นรวม</th>
-                <th className="px-5 py-2.5 text-center font-medium">สัดส่วน</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {(() => {
-                const catValueMap: Record<string, { items: number; qty: number; value: number }> = {}
-                mockParts.forEach((p) => {
-                  if (!catValueMap[p.category]) catValueMap[p.category] = { items: 0, qty: 0, value: 0 }
-                  catValueMap[p.category].items += 1
-                  catValueMap[p.category].qty += p.quantity
-                  catValueMap[p.category].value += p.quantity * p.price
-                })
-                return Object.entries(catValueMap)
-                  .sort((a, b) => b[1].value - a[1].value)
-                  .map(([cat, data], i) => (
-                    <tr key={cat} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-5 py-3 font-medium text-gray-700 flex items-center gap-2">
-                        <span
-                          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: CAT_COLORS[i % CAT_COLORS.length] }}
-                        />
-                        {cat}
-                      </td>
-                      <td className="px-4 py-3 text-center text-gray-500">{data.items}</td>
-                      <td className="px-4 py-3 text-center text-gray-500">{fmt(data.qty)} ชิ้น</td>
-                      <td className="px-5 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                            <div
-                              className="h-1.5 rounded-full"
-                              style={{
-                                width: `${(data.value / totalStockValue) * 100}%`,
-                                backgroundColor: CAT_COLORS[i % CAT_COLORS.length],
-                              }}
-                            />
-                          </div>
-                          <span className="text-sm text-gray-400 w-9 text-right">
-                            {((data.value / totalStockValue) * 100).toFixed(1)}%
-                          </span>
-                        </div>
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-gray-50 z-10">
+                    <tr className="bg-gray-50 text-gray-500 text-sm">
+                      <th className="px-5 py-2.5 text-left font-medium">รหัส</th>
+                      <th className="px-4 py-2.5 text-left font-medium">ชื่ออะไหล่</th>
+                      <th className="px-4 py-2.5 text-left font-medium">หมวดหมู่</th>
+                      <th className="px-4 py-2.5 text-center font-medium">คงเหลือ</th>
+                      <th className="px-4 py-2.5 text-center font-medium">สถานะ</th>
                     </tr>
-                  ))
-              })()}
-            </tbody>
-            <tfoot>
-              <tr className="bg-orange-50 border-t border-orange-100">
-                <td className="px-5 py-3 font-semibold text-gray-800">รวมทั้งหมด</td>
-                <td className="px-4 py-3 text-center text-gray-600 font-medium">{totalItems} รายการ</td>
-                <td className="px-4 py-3 text-center text-gray-600 font-medium">
-                  {fmt(mockParts.reduce((s, p) => s + p.quantity, 0))} ชิ้น
-                </td>
-                <td className="px-5 py-3 text-center text-gray-400 text-sm"></td>
-              </tr>
-            </tfoot>
-          </table>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {lowStockParts.map((part) => (
+                      <tr key={part.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-5 py-3 text-gray-500 font-mono text-sm">{part.partCode}</td>
+                        <td className="px-4 py-3 font-medium text-gray-700 max-w-[180px] truncate">{part.name}</td>
+                        <td className="px-4 py-3 text-gray-500">{part.category}</td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`font-semibold ${part.quantity === 0 ? 'text-red-600' : part.quantity <= 5 ? 'text-orange-500' : 'text-yellow-600'}`}>
+                            {part.quantity}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span
+                            className={`inline-block px-2.5 py-0.5 rounded-full text-sm font-medium ${part.quantity === 0
+                              ? 'bg-red-100 text-red-600'
+                              : part.quantity <= 5
+                                ? 'bg-orange-100 text-orange-600'
+                                : 'bg-yellow-100 text-yellow-700'
+                              }`}
+                          >
+                            {part.quantity === 0 ? 'หมด' : part.quantity <= 5 ? 'เหลือน้อยมาก' : 'ใกล้หมด'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                    {lowStockParts.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="px-5 py-8 text-center text-gray-400 text-sm">
+                          ✅ อะไหล่ทุกรายการมีสต็อกเพียงพอ
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Top Requested Parts */}
+            <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col gap-3">
+              <div>
+                <h2 className="font-semibold text-gray-800">อะไหล่ที่เบิกบ่อย</h2>
+                <p className="text-sm text-gray-400">5 รายการที่ถูกเบิกมากที่สุด</p>
+              </div>
+              <div className="flex flex-col gap-3 flex-1">
+                {topRequestedParts.map((p, i) => (
+                  <div key={p.code} className="flex items-center gap-3">
+                    <span className="w-5 h-5 rounded-full bg-orange-50 text-orange-500 text-sm font-semibold flex items-center justify-center flex-shrink-0">
+                      {i + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm font-medium text-gray-700 truncate max-w-[130px]">{p.name}</span>
+                        <span className="text-sm text-gray-400 flex-shrink-0 ml-2">{p.count} ชิ้น</span>
+                      </div>
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-2 rounded-full transition-all duration-700"
+                          style={{
+                            width: `${(p.count / maxRequested) * 100}%`,
+                            background: `linear-gradient(90deg, #F8981D, #f97316)`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ── Row 3: Category Stock + PO Status + Recent Activity ── */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            {/* Category Distribution */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-full">
+              <h2 className="font-semibold text-gray-800 mb-1">สัดส่วนสต็อกตามหมวดหมู่</h2>
+              <p className="text-sm text-gray-400 mb-4">จำนวนชิ้นรวมแยกตามประเภทอะไหล่</p>
+              {/* Simple horizontal stacked bar */}
+              <div className="w-full flex h-4 rounded-full overflow-hidden gap-px mb-4">
+                {categories.map(([cat, qty], i) => (
+                  <div
+                    key={cat}
+                    title={`${cat}: ${qty}`}
+                    style={{
+                      width: `${(qty / totalCategoryQty) * 100}%`,
+                      backgroundColor: CAT_COLORS[i % CAT_COLORS.length],
+                    }}
+                  />
+                ))}
+              </div>
+              <div className="space-y-2 flex-1">
+                {categories.map(([cat, qty], i) => (
+                  <div key={cat} className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span
+                        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: CAT_COLORS[i % CAT_COLORS.length] }}
+                      />
+                      <span className="text-sm text-gray-600 truncate">{cat}</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="text-sm font-semibold text-gray-800">{qty}</span>
+                      <span className="text-sm text-gray-400">ชิ้น</span>
+                      <span className="text-sm text-gray-400 w-9 text-right">
+                        {((qty / totalCategoryQty) * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* PO Status Summary */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-full">
+              <h2 className="font-semibold text-gray-800 mb-1">สถานะใบสั่งซื้อ</h2>
+              <p className="text-sm text-gray-400 mb-5">สรุปจำนวนใบสั่งซื้อตามสถานะ</p>
+              <div className="space-y-3">
+                {(
+                  [
+                    { key: 'draft', label: 'แบบร่าง', color: 'bg-gray-300', textColor: 'text-gray-600' },
+                    { key: 'pending', label: 'รออนุมัติ', color: 'bg-yellow-400', textColor: 'text-yellow-700' },
+                    { key: 'approved', label: 'อนุมัติแล้ว', color: 'bg-green-400', textColor: 'text-green-700' },
+                    { key: 'rejected', label: 'ปฏิเสธ', color: 'bg-red-400', textColor: 'text-red-600' },
+                    { key: 'cancelled', label: 'ยกเลิก', color: 'bg-red-200', textColor: 'text-red-400' },
+                  ] as const
+                ).map(({ key, label, color, textColor }) => {
+                  const count = poStatusCount[key]
+                  const pct = mockPurchaseOrders.length > 0 ? (count / mockPurchaseOrders.length) * 100 : 0
+                  return (
+                    <div key={key}>
+                      <div className="flex justify-between mb-1">
+                        <span className={`text-sm font-medium ${textColor}`}>{label}</span>
+                        <span className="text-sm text-gray-500">{count} ใบ</span>
+                      </div>
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className={`h-2 rounded-full ${color}`} style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Recent Activity */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-full">
+              <h2 className="font-semibold text-gray-800 mb-1">กิจกรรมล่าสุด</h2>
+              <p className="text-sm text-gray-400 mb-4">รายการใบสั่งซื้อและเบิกอะไหล่ล่าสุด</p>
+              <div className="space-y-3 flex-1">
+                {activities.map((a) => (
+                  <div key={a.id} className="flex items-start gap-3">
+                    <div
+                      className={`mt-0.5 w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${a.type === 'po' ? 'bg-blue-50' : 'bg-orange-50'
+                        }`}
+                    >
+                      {a.type === 'po' ? (
+                        <svg className="w-3.5 h-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                      ) : (
+                        <svg className="w-3.5 h-3.5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-medium text-gray-700">{a.label}</span>
+                        <span className={`text-sm px-1.5 py-0.5 rounded-full font-medium ${a.badgeColor}`}>{a.badge}</span>
+                      </div>
+                      <div className="flex justify-between mt-0.5">
+                        <span className="text-sm text-gray-400 truncate">{a.sub}</span>
+                        <span className="text-sm text-gray-400 flex-shrink-0 ml-2">{a.date}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

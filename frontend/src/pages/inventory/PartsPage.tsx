@@ -13,7 +13,7 @@ export default function PartsPage() {
   const [errorMsg, setErrorMsg] = useState('')
 
   // Pagination
-  const limit = 8
+  const limit = 20
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalDocs, setTotalDocs] = useState(0)
@@ -173,116 +173,133 @@ export default function PartsPage() {
           <p className="text-sm font-medium">ไม่พบรายการอะไหล่ที่ค้นหา</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
-          {parts.map((item) => (
-            <div key={item.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 group flex flex-col">
-              {/* Image Container */}
-              <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
-                <img
-                  src={item.imageUrl}
-                  alt={item.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = 'https://placehold.co/400x300/e2e8f0/94a3b8.png?text=No+Image'
-                  }}
-                />
-                {/* Low stock badge wrapper */}
-                <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
-                  <span className="bg-[#1E1E1E]/80 backdrop-blur-sm text-white text-sm font-semibold px-2.5 py-1 rounded-md shadow-sm">
-                    {item.partCode}
-                  </span>
-                  {item.quantity < 10 && (
-                    <span className="bg-red-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-md shadow-sm animate-pulse border border-red-400">
-                      LOW STOCK
+        <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 220px)' }}>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8 pb-4">
+            {parts.map((item) => (
+              <div key={item.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 group flex flex-col">
+                {/* Image Container */}
+                <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
+                  <img
+                    src={item.imageUrl}
+                    alt={item.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://placehold.co/400x300/e2e8f0/94a3b8.png?text=No+Image'
+                    }}
+                  />
+                  {/* Low stock badge wrapper */}
+                  <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
+                    <span className="bg-[#1E1E1E]/80 backdrop-blur-sm text-white text-sm font-semibold px-2.5 py-1 rounded-md shadow-sm">
+                      {item.partCode}
                     </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Details Container */}
-              <div className="p-4 flex flex-col flex-1">
-                <div className="mb-3 flex-1">
-                  <h3 className="text-[15px] font-medium text-gray-800 line-clamp-2 leading-snug mb-1 group-hover:text-amber-600 transition-colors">
-                    {item.name}
-                  </h3>
-                  <p className="text-sm text-amber-600 font-medium">
-                    {item.category}
-                  </p>
-                </div>
-
-                <div className="space-y-2.5">
-                  {/* Location */}
-                  <div className="flex items-center gap-1.5 text-sm text-gray-500 bg-gray-50/80 px-2 py-1.5 rounded-md border border-gray-100">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span className="font-medium truncate block" title={item.location}>
-                      ตำแหน่ง: {item.location}
-                    </span>
-                  </div>
-
-                  {/* Footer line with quantity and price */}
-                  <div className="flex items-end justify-between pt-1">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">คงเหลือ</span>
-                      <div className="flex items-baseline gap-1">
-                        <span className={`text-xl font-bold leading-none ${item.quantity < 10 ? 'text-red-500' : 'text-gray-800'}`}>
-                          {item.quantity}
-                        </span>
-                        <span className="text-sm text-gray-500 font-medium pb-0.5">ชิ้น</span>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end">
-                      <span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">ราคา/หน่วย</span>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-sm font-semibold text-gray-800 leading-none">
-                          ฿{item.price.toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
+                    {item.quantity === 0 ? (
+                      <span className="bg-gray-100 text-gray-500 text-[11px] font-bold px-2 py-0.5 rounded-md shadow-sm border border-gray-200">
+                        หมด
+                      </span>
+                    ) : item.quantity < 5 ? (
+                      <span className="bg-red-50 text-red-600 text-[11px] font-bold px-2 py-0.5 rounded-md shadow-sm animate-pulse border border-red-200">
+                        เหลือน้อยมาก
+                      </span>
+                    ) : item.quantity < 10 ? (
+                      <span className="bg-amber-50 text-amber-600 text-[11px] font-bold px-2 py-0.5 rounded-md shadow-sm border border-amber-200">
+                        ใกล้หมด
+                      </span>
+                    ) : null}
                   </div>
                 </div>
+
+                {/* Details Container */}
+                <div className="p-4 flex flex-col flex-1">
+                  <div className="mb-3 flex-1">
+                    <h3 className="text-[15px] font-medium text-gray-800 line-clamp-2 leading-snug mb-1 group-hover:text-amber-600 transition-colors">
+                      {item.name}
+                    </h3>
+                    <p className="text-sm text-amber-600 font-medium">
+                      {item.category}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {/* Location */}
+                    <div className="flex items-center gap-1.5 text-sm text-gray-500 bg-gray-50/80 px-2 py-1.5 rounded-md border border-gray-100">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span className="font-medium truncate block" title={item.location}>
+                        ตำแหน่ง: {item.location}
+                      </span>
+                    </div>
+
+                    {/* Footer line with quantity and price */}
+                    <div className="flex items-end justify-between pt-1">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">คงเหลือ</span>
+                        <div className="flex items-baseline gap-1">
+                          <span className={`text-xl font-bold leading-none ${item.quantity < 10 ? 'text-red-500' : 'text-gray-800'}`}>
+                            {item.quantity}
+                          </span>
+                          <span className="text-sm text-gray-500 font-medium pb-0.5">ชิ้น</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">ราคา/หน่วย</span>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-sm font-semibold text-gray-800 leading-none">
+                            ฿{item.price.toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 
       {/* Pagination Controls */}
-      {!isLoading && totalPages > 1 && (
-        <div className="mt-auto pt-4 pb-6 flex justify-center items-center gap-2">
-          <button
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            className="p-2 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:text-amber-600 disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-gray-600 transition-colors disabled:cursor-not-allowed shadow-sm"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-
-          <div className="flex items-center gap-1.5 px-3">
-            {Array.from({ length: totalPages }).map((_, i) => (
+      {!isLoading && (
+        <div className="mt-auto pt-4 pb-6 flex flex-col justify-center items-center gap-3">
+          <span className="text-sm text-gray-500 font-medium">
+            หน้า {currentPage} จาก {totalPages} ({totalDocs} รายการ)
+          </span>
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2">
               <button
-                key={i + 1}
-                onClick={() => setCurrentPage(i + 1)}
-                className={`min-w-[32px] h-[32px] flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${i + 1 === currentPage ? 'bg-amber-500 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:text-amber-600 disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-gray-600 transition-colors disabled:cursor-not-allowed shadow-sm"
               >
-                {i + 1}
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
               </button>
-            ))}
-          </div>
 
-          <button
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
-            className="p-2 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:text-amber-600 disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-gray-600 transition-colors disabled:cursor-not-allowed shadow-sm"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
+              <div className="flex items-center gap-1.5 px-3">
+                {Array.from({ length: totalPages }).map((_, i) => (
+                  <button
+                    key={i + 1}
+                    onClick={() => setCurrentPage(i + 1)}
+                    className={`min-w-[32px] h-[32px] flex items-center justify-center rounded-full text-sm font-medium transition-colors ${i + 1 === currentPage ? 'bg-amber-500 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:text-amber-600 disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-gray-600 transition-colors disabled:cursor-not-allowed shadow-sm"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

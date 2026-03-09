@@ -208,5 +208,60 @@ export const mockParts: PartItem[] = [
         price: 90,
         imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Spark+Plug+Cap",
         motorcycleModel: "ทุกรุ่น"
-    }
+    },
+        {
+        id: 19,
+        partCode: "SPK-018",
+        name: "ปลั๊กหัวเทียนแต่ง",
+        category: "ระบบไฟ",
+        location: "A2-05",
+        quantity: 22,
+        price: 90,
+        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Spark+Plug+Cap",
+        motorcycleModel: "ทุกรุ่น"
+    },
+    {
+        id: 20,
+        partCode: "SPK-018",
+        name: "ปลั๊กหัวเทียนแต่ง",
+        category: "ระบบไฟ",
+        location: "A2-05",
+        quantity: 22,
+        price: 90,
+        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Spark+Plug+Cap",
+        motorcycleModel: "ทุกรุ่น"
+    },
+        {
+        id: 21,
+        partCode: "SPK-018",
+        name: "ปลั๊กหัวเทียนแต่ง",
+        category: "ระบบไฟ",
+        location: "A2-05",
+        quantity: 22,
+        price: 90,
+        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Spark+Plug+Cap",
+        motorcycleModel: "ทุกรุ่น"
+    },
+        {
+        id: 22,
+        partCode: "SPK-018",
+        name: "ปลั๊กหัวเทียนแต่ง",
+        category: "ระบบไฟ",
+        location: "A2-05",
+        quantity: 22,
+        price: 90,
+        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Spark+Plug+Cap",
+        motorcycleModel: "ทุกรุ่น"
+    },
+        {
+        id: 23, 
+        partCode: "SPK-018",
+        name: "ปลั๊กหัวเทียนแต่ง",
+        category: "ระบบไฟ",
+        location: "A2-05",
+        quantity: 22,
+        price: 90,
+        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Spark+Plug+Cap",
+        motorcycleModel: "ทุกรุ่น"
+    },
 ]
