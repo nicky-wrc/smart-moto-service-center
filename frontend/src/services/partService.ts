@@ -12,6 +12,7 @@ export interface GetPartsParams {
     category?: string
     location?: string
     lowStock?: boolean
+    motorcycleModel?: string
 }
 
 export interface PaginatedPartsResponse {
@@ -48,7 +49,8 @@ export const partService = {
             search = '',
             category = '',
             location = '',
-            lowStock = false
+            lowStock = false,
+            motorcycleModel = ''
         } = params
 
         return new Promise((resolve) => {
@@ -70,6 +72,10 @@ export const partService = {
 
                 if (lowStock) {
                     filtered = filtered.filter(p => p.quantity < 10)
+                }
+
+                if (motorcycleModel) {
+                    filtered = filtered.filter(p => p.motorcycleModel === motorcycleModel || p.motorcycleModel === 'ทุกรุ่น')
                 }
 
                 const totalDocs = filtered.length
