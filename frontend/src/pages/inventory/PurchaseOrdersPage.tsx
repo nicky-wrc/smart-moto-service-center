@@ -148,7 +148,7 @@ export default function PurchaseOrdersPage() {
                   <th className="py-4 px-6 font-medium">วันที่ต้องการของ</th>
                   <th className="py-4 px-6 text-right font-medium">ยอดรวม</th>
                   <th className="py-4 px-6 font-medium">สถานะ</th>
-                  <th className="py-4 px-6 font-medium text-center">จัดการ</th>
+                  <th className="py-4 px-6 font-medium text-left">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-gray-700">
@@ -163,7 +163,7 @@ export default function PurchaseOrdersPage() {
                       <StatusBadge status={order.status} />
                     </td>
                     <td className="py-4 px-6">
-                      <div className="flex items-center justify-center gap-2">
+                      <div className="flex items-center justify-start gap-2">
                         {/* View Button (Always visible) */}
                         <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#255B91] hover:bg-blue-800 text-white rounded transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
