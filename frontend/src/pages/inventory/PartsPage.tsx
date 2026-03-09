@@ -106,7 +106,7 @@ export default function PartsPage() {
 
             <div className="relative z-30 grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">หมวดหมู่</label>
+                <label className="block text-sm font-medium text-gray-500 mb-1">หมวดหมู่</label>
                 <select
                   value={filterCategory}
                   onChange={(e) => setFilterCategory(e.target.value)}
@@ -119,7 +119,7 @@ export default function PartsPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">ตำแหน่งที่ตั้ง</label>
+                <label className="block text-sm font-medium text-gray-500 mb-1">ตำแหน่งที่ตั้ง</label>
                 <select
                   value={filterLocation}
                   onChange={(e) => setFilterLocation(e.target.value)}
@@ -188,7 +188,7 @@ export default function PartsPage() {
                 />
                 {/* Low stock badge wrapper */}
                 <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
-                  <span className="bg-[#1E1E1E]/80 backdrop-blur-sm text-white text-xs font-semibold px-2.5 py-1 rounded-md shadow-sm">
+                  <span className="bg-[#1E1E1E]/80 backdrop-blur-sm text-white text-sm font-semibold px-2.5 py-1 rounded-md shadow-sm">
                     {item.partCode}
                   </span>
                   {item.quantity < 10 && (
@@ -205,14 +205,14 @@ export default function PartsPage() {
                   <h3 className="text-[15px] font-medium text-gray-800 line-clamp-2 leading-snug mb-1 group-hover:text-amber-600 transition-colors">
                     {item.name}
                   </h3>
-                  <p className="text-xs text-amber-600 font-medium">
+                  <p className="text-sm text-amber-600 font-medium">
                     {item.category}
                   </p>
                 </div>
 
                 <div className="space-y-2.5">
                   {/* Location */}
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 bg-gray-50/80 px-2 py-1.5 rounded-md border border-gray-100">
+                  <div className="flex items-center gap-1.5 text-sm text-gray-500 bg-gray-50/80 px-2 py-1.5 rounded-md border border-gray-100">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -230,7 +230,7 @@ export default function PartsPage() {
                         <span className={`text-xl font-bold leading-none ${item.quantity < 10 ? 'text-red-500' : 'text-gray-800'}`}>
                           {item.quantity}
                         </span>
-                        <span className="text-xs text-gray-500 font-medium pb-0.5">ชิ้น</span>
+                        <span className="text-sm text-gray-500 font-medium pb-0.5">ชิ้น</span>
                       </div>
                     </div>
                     <div className="flex flex-col items-end">

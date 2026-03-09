@@ -122,7 +122,7 @@ export default function ReportsPage() {
     <div className="p-6 min-h-screen space-y-6 bg-gray-50">
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
-        <span className="text-xs bg-orange-50 text-orange-500 border border-orange-200 px-3 py-1.5 rounded-full font-medium ">
+        <span className="text-sm bg-orange-50 text-orange-500 border border-orange-200 px-3 py-1.5 rounded-full font-medium ">
           อัปเดตล่าสุด: {new Date().toLocaleDateString('th-TH', { day: '2-digit', month: 'long', year: 'numeric' })}
         </span>
       </div>
@@ -167,16 +167,16 @@ export default function ReportsPage() {
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
             <div>
               <h2 className="font-semibold text-gray-800">อะไหล่ใกล้หมด</h2>
-              <p className="text-xs text-gray-400">คงเหลือน้อยกว่า {LOW_STOCK_THRESHOLD} ชิ้น</p>
+              <p className="text-sm text-gray-400">คงเหลือน้อยกว่า {LOW_STOCK_THRESHOLD} ชิ้น</p>
             </div>
-            <span className="text-xs bg-red-50 text-red-500 border border-red-100 px-2.5 py-1 rounded-full font-medium">
+            <span className="text-sm bg-red-50 text-red-500 border border-red-100 px-2.5 py-1 rounded-full font-medium">
               {lowStockParts.length} รายการ
             </span>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto overflow-y-auto max-h-[300px]">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 text-gray-500 text-xs">
+                <tr className="bg-gray-50 text-gray-500 text-sm">
                   <th className="px-5 py-2.5 text-left font-medium">รหัส</th>
                   <th className="px-4 py-2.5 text-left font-medium">ชื่ออะไหล่</th>
                   <th className="px-4 py-2.5 text-left font-medium">หมวดหมู่</th>
@@ -187,7 +187,7 @@ export default function ReportsPage() {
               <tbody className="divide-y divide-gray-50">
                 {lowStockParts.map((part) => (
                   <tr key={part.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-3 text-gray-500 font-mono text-xs">{part.partCode}</td>
+                    <td className="px-5 py-3 text-gray-500 font-mono text-sm">{part.partCode}</td>
                     <td className="px-4 py-3 font-medium text-gray-700 max-w-[180px] truncate">{part.name}</td>
                     <td className="px-4 py-3 text-gray-500">{part.category}</td>
                     <td className="px-4 py-3 text-center">
@@ -197,7 +197,7 @@ export default function ReportsPage() {
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span
-                        className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${part.quantity === 0
+                        className={`inline-block px-2.5 py-0.5 rounded-full text-sm font-medium ${part.quantity === 0
                           ? 'bg-red-100 text-red-600'
                           : part.quantity <= 5
                             ? 'bg-orange-100 text-orange-600'
@@ -225,18 +225,18 @@ export default function ReportsPage() {
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col gap-3">
           <div>
             <h2 className="font-semibold text-gray-800">อะไหล่ที่เบิกบ่อย</h2>
-            <p className="text-xs text-gray-400">5 รายการที่ถูกเบิกมากที่สุด</p>
+            <p className="text-sm text-gray-400">5 รายการที่ถูกเบิกมากที่สุด</p>
           </div>
           <div className="flex flex-col gap-3 flex-1 justify-center">
             {topRequestedParts.map((p, i) => (
               <div key={p.code} className="flex items-center gap-3">
-                <span className="w-5 h-5 rounded-full bg-orange-50 text-orange-500 text-xs font-semibold flex items-center justify-center flex-shrink-0">
+                <span className="w-5 h-5 rounded-full bg-orange-50 text-orange-500 text-sm font-semibold flex items-center justify-center flex-shrink-0">
                   {i + 1}
                 </span>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between mb-1">
-                    <span className="text-xs font-medium text-gray-700 truncate max-w-[130px]">{p.name}</span>
-                    <span className="text-xs text-gray-400 flex-shrink-0 ml-2">{p.count} ชิ้น</span>
+                    <span className="text-sm font-medium text-gray-700 truncate max-w-[130px]">{p.name}</span>
+                    <span className="text-sm text-gray-400 flex-shrink-0 ml-2">{p.count} ชิ้น</span>
                   </div>
                   <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                     <div
@@ -259,7 +259,7 @@ export default function ReportsPage() {
         {/* Category Distribution */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-full">
           <h2 className="font-semibold text-gray-800 mb-1">สัดส่วนสต็อกตามหมวดหมู่</h2>
-          <p className="text-xs text-gray-400 mb-4">จำนวนชิ้นรวมแยกตามประเภทอะไหล่</p>
+          <p className="text-sm text-gray-400 mb-4">จำนวนชิ้นรวมแยกตามประเภทอะไหล่</p>
           {/* Simple horizontal stacked bar */}
           <div className="w-full flex h-4 rounded-full overflow-hidden gap-px mb-4">
             {categories.map(([cat, qty], i) => (
@@ -273,7 +273,7 @@ export default function ReportsPage() {
               />
             ))}
           </div>
-          <div className="space-y-2 flex-1 overflow-y-auto pr-1">
+          <div className="space-y-2 flex-1 overflow-y-auto pr-1 max-h-[300px]">
             {categories.map(([cat, qty], i) => (
               <div key={cat} className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
@@ -285,8 +285,8 @@ export default function ReportsPage() {
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <span className="text-sm font-semibold text-gray-800">{qty}</span>
-                  <span className="text-xs text-gray-400">ชิ้น</span>
-                  <span className="text-xs text-gray-400 w-9 text-right">
+                  <span className="text-sm text-gray-400">ชิ้น</span>
+                  <span className="text-sm text-gray-400 w-9 text-right">
                     {((qty / totalCategoryQty) * 100).toFixed(0)}%
                   </span>
                 </div>
@@ -298,7 +298,7 @@ export default function ReportsPage() {
         {/* PO Status Summary */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-full">
           <h2 className="font-semibold text-gray-800 mb-1">สถานะใบสั่งซื้อ</h2>
-          <p className="text-xs text-gray-400 mb-5">สรุปจำนวนใบสั่งซื้อตามสถานะ</p>
+          <p className="text-sm text-gray-400 mb-5">สรุปจำนวนใบสั่งซื้อตามสถานะ</p>
           <div className="space-y-3">
             {(
               [
@@ -329,7 +329,7 @@ export default function ReportsPage() {
         {/* Recent Activity */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-full">
           <h2 className="font-semibold text-gray-800 mb-1">กิจกรรมล่าสุด</h2>
-          <p className="text-xs text-gray-400 mb-4">รายการใบสั่งซื้อและเบิกอะไหล่ล่าสุด</p>
+          <p className="text-sm text-gray-400 mb-4">รายการใบสั่งซื้อและเบิกอะไหล่ล่าสุด</p>
           <div className="space-y-3 flex-1 overflow-y-auto pr-1">
             {activities.map((a) => (
               <div key={a.id} className="flex items-start gap-3">
@@ -350,11 +350,11 @@ export default function ReportsPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-medium text-gray-700">{a.label}</span>
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${a.badgeColor}`}>{a.badge}</span>
+                    <span className={`text-sm px-1.5 py-0.5 rounded-full font-medium ${a.badgeColor}`}>{a.badge}</span>
                   </div>
                   <div className="flex justify-between mt-0.5">
-                    <span className="text-xs text-gray-400 truncate">{a.sub}</span>
-                    <span className="text-xs text-gray-400 flex-shrink-0 ml-2">{a.date}</span>
+                    <span className="text-sm text-gray-400 truncate">{a.sub}</span>
+                    <span className="text-sm text-gray-400 flex-shrink-0 ml-2">{a.date}</span>
                   </div>
                 </div>
               </div>
@@ -371,7 +371,7 @@ export default function ReportsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 text-gray-500 text-xs">
+              <tr className="bg-gray-50 text-gray-500 text-sm">
                 <th className="px-5 py-2.5 text-left font-medium">หมวดหมู่</th>
                 <th className="px-4 py-2.5 text-center font-medium">จำนวนรายการ</th>
                 <th className="px-4 py-2.5 text-center font-medium">ชิ้นรวม</th>
@@ -411,7 +411,7 @@ export default function ReportsPage() {
                               }}
                             />
                           </div>
-                          <span className="text-xs text-gray-400 w-9 text-right">
+                          <span className="text-sm text-gray-400 w-9 text-right">
                             {((data.value / totalStockValue) * 100).toFixed(1)}%
                           </span>
                         </div>
@@ -427,7 +427,7 @@ export default function ReportsPage() {
                 <td className="px-4 py-3 text-center text-gray-600 font-medium">
                   {fmt(mockParts.reduce((s, p) => s + p.quantity, 0))} ชิ้น
                 </td>
-                <td className="px-5 py-3 text-center text-gray-400 text-xs"></td>
+                <td className="px-5 py-3 text-center text-gray-400 text-sm"></td>
               </tr>
             </tfoot>
           </table>
@@ -463,7 +463,7 @@ function KpiCard({
         <span className={iconColor}>{icon}</span>
       </div>
       <div>
-        <p className="text-xs text-gray-400 mb-0.5">{label}</p>
+        <p className="text-sm text-gray-400 mb-0.5">{label}</p>
         <p className={`text-xl font-semibold ${highlight ? 'text-red-500' : 'text-gray-800'}`}>{value}</p>
       </div>
     </div>

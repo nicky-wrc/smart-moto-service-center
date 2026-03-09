@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { mockSuppliers } from '../../data/suppliersMockData'
 import SearchBox from '../../components/SearchBox'
@@ -7,15 +7,15 @@ import { mockPurchaseOrders, type POStatus } from '../../data/purchaseOrdersMock
 const StatusBadge = ({ status }: { status: POStatus }) => {
   switch (status) {
     case 'draft':
-      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700"><span className="w-1.5 h-1.5 rounded-full bg-gray-500"></span>แบบร่าง</span>
+      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium bg-gray-100 text-gray-700"><span className="w-1.5 h-1.5 rounded-full bg-gray-500"></span>แบบร่าง</span>
     case 'pending':
-      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-600 border border-amber-200"><span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>รออนุมัติ</span>
+      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium bg-amber-50 text-amber-600 border border-amber-200"><span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>รออนุมัติ</span>
     case 'approved':
-      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-50 text-emerald-600 border border-emerald-200"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>อนุมัติแล้ว</span>
+      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium bg-emerald-50 text-emerald-600 border border-emerald-200"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>อนุมัติแล้ว</span>
     case 'rejected':
-      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-red-50 text-red-600 border border-red-200"><span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>ไม่อนุมัติ</span>
+      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium bg-red-50 text-red-600 border border-red-200"><span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>ไม่อนุมัติ</span>
     case 'cancelled':
-      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200"><span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>ยกเลิกแล้ว</span>
+      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium bg-gray-100 text-gray-600 border border-gray-200"><span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>ยกเลิกแล้ว</span>
   }
 }
 
@@ -31,6 +31,27 @@ export default function PurchaseOrdersPage() {
   const [filterStatus, setFilterStatus] = useState('')
   const [filterDate, setFilterDate] = useState('')
   const [filterSupplier, setFilterSupplier] = useState('')
+  const [activeRowId, setActiveRowId] = useState<string | null>(
+    () => sessionStorage.getItem('po_last_visited')
+  )
+
+  // Clear the highlight after 5 seconds so it doesn't persist forever
+  useEffect(() => {
+    const id = sessionStorage.getItem('po_last_visited')
+    if (id) {
+      setActiveRowId(id)
+      const timer = setTimeout(() => {
+        setActiveRowId(null)
+        sessionStorage.removeItem('po_last_visited')
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [])
+
+  const markVisited = (id: string) => {
+    sessionStorage.setItem('po_last_visited', id)
+    setActiveRowId(id)
+  }
 
   // Filtered Orders
   const filteredOrders = useMemo(() => {
@@ -91,7 +112,7 @@ export default function PurchaseOrdersPage() {
 
             <div className="relative z-30 grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">สถานะใบสั่งซื้อ</label>
+                <label className="block text-sm font-medium text-gray-500 mb-1">สถานะใบสั่งซื้อ</label>
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
@@ -106,7 +127,7 @@ export default function PurchaseOrdersPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">วันที่สร้างใบสั่งซื้อ</label>
+                <label className="block text-sm font-medium text-gray-500 mb-1">วันที่สร้างใบสั่งซื้อ</label>
                 <input
                   type="date"
                   value={filterDate}
@@ -115,7 +136,7 @@ export default function PurchaseOrdersPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">ซัพพลายเออร์</label>
+                <label className="block text-sm font-medium text-gray-500 mb-1">ซัพพลายเออร์</label>
                 <select
                   value={filterSupplier}
                   onChange={(e) => setFilterSupplier(e.target.value)}
@@ -144,9 +165,9 @@ export default function PurchaseOrdersPage() {
             <p className="text-gray-500 max-w-sm">เริ่มทำการสั่งซื้ออะไหล่โดยการกดปุ่ม "สร้างใบคำสั่งซื้อ"</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 220px)' }}>
             <table className="w-full text-sm text-center">
-              <thead>
+              <thead className="sticky top-0 z-10">
                 <tr className="bg-[#f8fafc] text-gray-600 border-b border-gray-200 font-medium">
                   <th className="py-4 px-6 text-left font-medium">เลขที่ใบสั่งซื้อ</th>
                   <th className="py-4 px-6 text-left font-medium">ซัพพลายเออร์</th>
@@ -159,7 +180,11 @@ export default function PurchaseOrdersPage() {
               </thead>
               <tbody className="divide-y divide-gray-100 text-gray-700">
                 {filteredOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50/80 transition-colors">
+                  <tr
+                    key={order.id}
+                    className="hover:bg-gray-50/80 transition-colors"
+                    style={activeRowId === order.id ? { backgroundColor: '#F5F5F5' } : {}}
+                  >
                     <td className="py-4 px-6 text-left font-medium text-gray-900">{order.id}</td>
                     <td className="py-4 px-6 text-left">{order.supplierName}</td>
                     <td className="py-4 px-6">{order.createdAt}</td>
@@ -172,8 +197,11 @@ export default function PurchaseOrdersPage() {
                       <div className="flex items-center justify-start gap-2">
                         {/* View Button (Always visible) */}
                         <button
-                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#255B91] hover:bg-blue-800 text-white rounded transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
-                          onClick={() => navigate(`/inventory/purchase-orders/${order.id}`)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-[#255B91] hover:bg-blue-800 text-white rounded transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
+                          onClick={() => {
+                            markVisited(order.id)
+                            navigate(`/inventory/purchase-orders/${order.id}`)
+                          }}
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                             <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
@@ -185,8 +213,11 @@ export default function PurchaseOrdersPage() {
                         {/* Edit Button (Only for draft) */}
                         {order.status === 'draft' && (
                           <button
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-amber-500 hover:bg-amber-600 text-white rounded transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
-                            onClick={() => navigate(`/inventory/purchase-orders/edit/${order.id}`)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-amber-500 hover:bg-amber-600 text-white rounded transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
+                            onClick={() => {
+                              markVisited(order.id)
+                              navigate(`/inventory/purchase-orders/edit/${order.id}`)
+                            }}
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -198,8 +229,11 @@ export default function PurchaseOrdersPage() {
                         {/* Cancel Button (Only for pending) */}
                         {order.status === 'pending' && (
                           <button
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-red-500 hover:bg-red-600 text-white rounded transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
-                            onClick={() => setCancelModalOrderId(order.id)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-red-500 hover:bg-red-600 text-white rounded transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
+                            onClick={() => {
+                              markVisited(order.id)
+                              setCancelModalOrderId(order.id)
+                            }}
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -223,7 +257,7 @@ export default function PurchaseOrdersPage() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col overflow-hidden animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
-              <p className="text-xs font-semibold text-[#F8981D] uppercase tracking-widest mb-0.5">Smart Moto Service Center</p>
+              <p className="text-sm font-semibold text-[#F8981D] uppercase tracking-widest mb-0.5">Smart Moto Service Center</p>
               <h2 className="text-base font-semibold text-[#1E1E1E]">
                 ยืนยันการยกเลิกคำขอสั่งซื้อ
               </h2>

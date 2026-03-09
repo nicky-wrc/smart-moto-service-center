@@ -202,7 +202,7 @@ export default function RequestDetailPage() {
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden">
                         {/* Header */}
                         <div className="px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
-                            <p className="text-xs font-semibold text-[#F8981D] uppercase tracking-widest mb-0.5">Smart Moto Service Center</p>
+                            <p className="text-sm font-semibold text-[#F8981D] uppercase tracking-widest mb-0.5">Smart Moto Service Center</p>
                             <h2 className="text-base font-bold text-[#1E1E1E]">
                                 {confirmAction === 'approve' ? 'ยืนยันการอนุมัติเบิกสินค้า' : 'ยืนยันการไม่อนุมัติเบิกสินค้า'}
                             </h2>
@@ -233,7 +233,7 @@ export default function RequestDetailPage() {
 
                             {/* Items List Snapshot */}
                             <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">รายการอะไหล่</p>
+                                <p className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">รายการอะไหล่</p>
                                 <div className="flex flex-col gap-2.5">
                                     {request.items.filter(item => confirmAction === 'approve' ? !rejectedItemIds.has(item.id) : true).length === 0 ? (
                                         <p className="text-sm text-red-500 text-center py-2">ไม่มีรายการที่เลือก</p>
@@ -244,7 +244,7 @@ export default function RequestDetailPage() {
                                                 <div key={item.id} className="flex items-start justify-between gap-3">
                                                     <div className="flex-1 min-w-0">
                                                         <p className="text-sm font-medium text-[#1E1E1E] truncate">{idx + 1}. {item.partName}</p>
-                                                        <p className="text-xs text-gray-500 mt-0.5">{item.quantity} × {item.pricePerUnit.toLocaleString()} ฿</p>
+                                                        <p className="text-sm text-gray-500 mt-0.5">{item.quantity} × {item.pricePerUnit.toLocaleString()} ฿</p>
                                                     </div>
                                                     <span className="text-sm font-semibold text-[#1E1E1E] shrink-0">
                                                         {(item.quantity * item.pricePerUnit).toLocaleString()} ฿
@@ -366,7 +366,7 @@ export default function RequestDetailPage() {
                                         <div className="flex items-center justify-center gap-4">
                                             <button
                                                 onClick={() => toggleReject(item.id)}
-                                                className={`flex items-center justify-center gap-1.5 w-32 py-1.5 text-xs font-medium text-white rounded transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] ${isRejected ? 'bg-[#5fbfb5] hover:bg-[#52a69d]' : 'bg-[#f59e0b] hover:bg-amber-600'}`}
+                                                className={`flex items-center justify-center gap-1.5 w-32 py-1.5 text-sm font-medium text-white rounded transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] ${isRejected ? 'bg-[#5fbfb5] hover:bg-[#52a69d]' : 'bg-[#f59e0b] hover:bg-amber-600'}`}
                                             >
                                                 {isRejected ? (
                                                     <>
@@ -384,7 +384,7 @@ export default function RequestDetailPage() {
                                                     </>
                                                 )}
                                             </button>
-                                            <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#255B91] text-white rounded hover:bg-blue-800 transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]">
+                                            <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-[#255B91] text-white rounded hover:bg-blue-800 transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]">
                                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                                                     <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
                                                     <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
@@ -428,7 +428,7 @@ export default function RequestDetailPage() {
                     </button>
                 </div>
                 {allRejected && (
-                    <p className="text-xs text-red-500 flex items-center gap-1">
+                    <p className="text-sm text-red-500 flex items-center gap-1">
                         จำเป็นต้องเลือกอย่างน้อยหนึ่งรายการจึงจะสามารถอนุมัติการเบิกสินค้าได้
                     </p>
                 )}
