@@ -48,7 +48,7 @@ export default function PartSelectionModal({ isOpen, onClose, onSelectPart }: Pa
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl flex flex-col max-h-[85vh] overflow-hidden animate-in zoom-in-95 duration-200">
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                    <h2 className="text-xl font-bold text-gray-800">เลือกเพิ่มสินค้า</h2>
+                    <h2 className="text-xl font-semibold text-gray-800">เลือกเพิ่มสินค้า</h2>
                     <button
                         onClick={onClose}
                         className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
@@ -98,8 +98,8 @@ export default function PartSelectionModal({ isOpen, onClose, onSelectPart }: Pa
                                     />
                                     <div className="flex-1">
                                         <div className="flex justify-between items-start mb-1">
-                                            <h4 className="font-semibold text-gray-800 group-hover:text-amber-700 transition-colors">{part.name}</h4>
-                                            <span className="text-xs font-semibold px-2 py-1 bg-gray-100 text-gray-600 rounded-md">
+                                            <h4 className="font-medium text-gray-800 group-hover:text-amber-700 transition-colors">{part.name}</h4>
+                                            <span className="text-xs font-medium px-2 py-1 bg-gray-100 text-gray-600 rounded-md">
                                                 {part.partCode}
                                             </span>
                                         </div>

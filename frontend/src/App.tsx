@@ -8,6 +8,7 @@ import RequestsPage from './pages/inventory/RequestsPage'
 import RequestDetailPage from './pages/inventory/RequestDetailPage'
 import PartsPage from './pages/inventory/PartsPage'
 import PurchaseOrdersPage from './pages/inventory/PurchaseOrdersPage'
+import CreatePurchaseOrderPage from './pages/inventory/CreatePurchaseOrderPage'
 import ReportsPage from './pages/inventory/ReportsPage'
 import HistoryPage from './pages/inventory/HistoryPage'
 import HistoryDetailPage from './pages/inventory/HistoryDetailPage'
@@ -46,6 +47,7 @@ export default function App() {
             <Route path="requests/:id" element={<RequestDetailPage />} />
             <Route path="parts" element={<PartsPage />} />
             <Route path="purchase-orders" element={<PurchaseOrdersPage />} />
+            <Route path="purchase-orders/create" element={<CreatePurchaseOrderPage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="history" element={<HistoryPage />} />
             <Route path="history/:id" element={<HistoryDetailPage />} />
