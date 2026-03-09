@@ -27,6 +27,7 @@ import MechanicHistoryPage from './pages/mechanic/MechanicHistoryPage'
 // Accountant (บัญชี)
 import AccountantLayout from './pages/accountant/AccountantLayout'
 import AccountIndex from './pages/accountant'
+import AccountantDashboardPage from './pages/accountant/DashboardPage'
 import PaymentHistoryPage from './pages/accountant/PaymentHistoryPage'
 import PaymentHistoryDetailPage from './pages/accountant/PaymentHistoryDetailPage'
 import Pendingpayment from './pages/accountant/Pendingpayment'
@@ -72,6 +73,7 @@ export default function App() {
         {/* บัญชี */}
         <Route path="/accountant" element={<AccountantLayout />}>
           <Route index element={<AccountIndex />} />
+          <Route path="dashboard" element={<AccountantDashboardPage />} />
           <Route path="historys" element={<PaymentHistoryPage />} />
           <Route path="historys/:id" element={<PaymentHistoryDetailPage />} />
           <Route path="pendingpayment" element={<Pendingpayment />} />

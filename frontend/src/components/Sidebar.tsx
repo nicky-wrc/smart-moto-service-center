@@ -23,7 +23,7 @@ export default function Sidebar({ navItems }: SidebarProps) {
           <button
             onClick={() => navigate(item.path)}
             className={`
-              w-10 h-10 flex items-center justify-center rounded-lg transition-colors
+              w-10 h-10 flex items-center justify-center rounded-lg transition-colors cursor-pointer
               ${isActive(item.path)
                 ? 'bg-[#F8981D] text-white'
                 : 'text-[#F8981D] hover:bg-white/10'

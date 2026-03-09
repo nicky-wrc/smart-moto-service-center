@@ -9,3 +9,34 @@ body {
   background-color: #44403C;
   color: #1E1E1E;
 }
+
+@media print {
+
+  body {
+    background: white;
+  }
+
+  /* ซ่อนทุกอย่างก่อน */
+  body * {
+    visibility: hidden;
+  }
+
+  /* แสดงเฉพาะใบเสร็จ */
+  .print-area, .print-area * {
+    visibility: visible;
+  }
+
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 210mm;
+    height: 297mm;
+  }
+
+  /* ซ่อน scrollbar */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+}
