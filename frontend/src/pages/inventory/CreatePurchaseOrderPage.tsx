@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { mockSuppliers } from '../../data/suppliersMockData'
 import PartSelectionModal from '../../components/PartSelectionModal'
 import { type PartItem } from '../../data/partsMockData'
+import { mockPurchaseOrders, type PurchaseOrder } from '../../data/purchaseOrdersMockData'
 
 interface OrderItem extends PartItem {
     orderQuantity: number
@@ -79,6 +80,27 @@ export default function CreatePurchaseOrderPage() {
             alert('กรุณาเพิ่มสินค้าอย่างน้อย 1 รายการ')
             return
         }
+
+        const supplier = mockSuppliers.find(s => s.id === supplierId)
+        const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '')
+        const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0')
+
+        const newOrder: PurchaseOrder = {
+            id: `PO-${dateStr}-${randomNum}`,
+            supplierId: supplierId as number,
+            supplierName: supplier?.companyName || 'Unknown Supplier',
+            createdAt: getTodayString(),
+            deliveryDate: deliveryDate,
+            totalAmount: totalAmount,
+            status: action === 'submit' ? 'pending' : 'draft',
+            items: orderItems,
+            remarks,
+            managerMessage
+        }
+
+        // Add to top of the list
+        mockPurchaseOrders.unshift(newOrder)
+
         // Mock success
         alert(action === 'draft' ? 'บันทึกเป็นแบบร่างสำเร็จ!' : 'ส่งคำขอสั่งซื้อสำเร็จ!')
         navigate('/inventory/purchase-orders')
