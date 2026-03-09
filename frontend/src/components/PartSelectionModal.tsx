@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { partService } from '../services/partService'
-import { type PartItem } from '../data/partsMockData'
+import { mockParts, type PartItem } from '../data/partsMockData'
 import SearchBox from './SearchBox'
 
 interface PartSelectionModalProps {
@@ -9,14 +9,25 @@ interface PartSelectionModalProps {
     onSelectPart: (part: PartItem) => void
 }
 
+
+
 export default function PartSelectionModal({ isOpen, onClose, onSelectPart }: PartSelectionModalProps) {
     const [parts, setParts] = useState<PartItem[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const [search, setSearch] = useState('')
     const [debouncedSearch, setDebouncedSearch] = useState('')
+    const [selectedModel, setSelectedModel] = useState('')
 
-    // Using a simpler client-side state for the modal since we just want a quick pick list
-    // In a real app we'd still paginate, but for the mock UX, top 20 is fine.
+    // Build unique model list from static mock data (excluding "ทุกรุ่น" since those should show in all)
+    const motorcycleModels = useMemo(() => {
+        const models = new Set<string>()
+        mockParts.forEach(p => {
+            if (p.motorcycleModel && p.motorcycleModel !== 'ทุกรุ่น') {
+                models.add(p.motorcycleModel)
+            }
+        })
+        return Array.from(models).sort()
+    }, [])
 
     useEffect(() => {
         const timer = setTimeout(() => setDebouncedSearch(search), 300)
@@ -30,8 +41,12 @@ export default function PartSelectionModal({ isOpen, onClose, onSelectPart }: Pa
         const fetchParts = async () => {
             setIsLoading(true)
             try {
-                // Fetch first 20 items matching search
-                const res = await partService.getParts({ page: 1, limit: 20, search: debouncedSearch })
+                const res = await partService.getParts({
+                    page: 1,
+                    limit: 50,
+                    search: debouncedSearch,
+                    motorcycleModel: selectedModel
+                })
                 if (isMounted) setParts(res.data)
             } finally {
                 if (isMounted) setIsLoading(false)
@@ -39,7 +54,15 @@ export default function PartSelectionModal({ isOpen, onClose, onSelectPart }: Pa
         }
         fetchParts()
         return () => { isMounted = false }
-    }, [isOpen, debouncedSearch])
+    }, [isOpen, debouncedSearch, selectedModel])
+
+    // Reset filters when modal closes
+    useEffect(() => {
+        if (!isOpen) {
+            setSearch('')
+            setSelectedModel('')
+        }
+    }, [isOpen])
 
     if (!isOpen) return null
 
@@ -59,13 +82,42 @@ export default function PartSelectionModal({ isOpen, onClose, onSelectPart }: Pa
                     </button>
                 </div>
 
-                {/* Search */}
-                <div className="p-4 border-b border-gray-100 bg-gray-50/50">
-                    <SearchBox
-                        value={search}
-                        onChange={setSearch}
-                        placeholder="ค้นหารหัส หรือชื่อสินค้า..."
-                    />
+                {/* Search & Filter Row */}
+                <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-3">
+                    <div className="flex-1">
+                        <SearchBox
+                            value={search}
+                            onChange={setSearch}
+                            placeholder="ค้นหารหัส หรือชื่อสินค้า..."
+                        />
+                    </div>
+                    {/* Motorcycle Model Dropdown */}
+                    <div className="relative flex items-center shrink-0">
+                        <div className="pointer-events-none absolute left-3 text-amber-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 17 24" fill="currentColor">
+                                <path d="M8.632 15.526a2.112 2.112 0 0 0-2.106 2.105v4.305a2.106 2.106 0 0 0 4.212 0v-.043v.002v-4.263a2.112 2.112 0 0 0-2.104-2.106z" />
+                                <path d="M16.263 2.631H12.21C11.719 1.094 10.303 0 8.631 0S5.544 1.094 5.06 2.604l-.007.027h-4a1.053 1.053 0 0 0 0 2.106h4.053c.268.899.85 1.635 1.615 2.096l.016.009c-2.871.867-4.929 3.48-4.947 6.577v5.528a1.753 1.753 0 0 0 1.736 1.737h1.422v-3a3.737 3.737 0 1 1 7.474 0v3h1.421a1.752 1.752 0 0 0 1.738-1.737v-5.474a6.855 6.855 0 0 0-4.899-6.567l-.048-.012a3.653 3.653 0 0 0 1.625-2.08l.007-.026h4.053a1.056 1.056 0 0 0 1.053-1.053a1.149 1.149 0 0 0-1.104-1.105h-.002z" />
+                            </svg>
+                        </div>
+                        <select
+                            value={selectedModel}
+                            onChange={(e) => setSelectedModel(e.target.value)}
+                            className={`pl-8 pr-8 py-2.5 text-sm border rounded-xl appearance-none outline-none transition-colors cursor-pointer min-w-[180px] ${selectedModel
+                                ? 'border-amber-400 bg-amber-50 text-amber-700 font-medium'
+                                : 'border-gray-300 bg-white text-gray-600 hover:border-amber-300'
+                                }`}
+                        >
+                            <option value="">\u0e40\u0e25\u0e37\u0e2d\u0e01\u0e23\u0e38\u0e48\u0e19\u0e23\u0e16 (\u0e17\u0e31\u0e49\u0e07\u0e2b\u0e21\u0e14)</option>
+                            {motorcycleModels.map(model => (
+                                <option key={model} value={model}>{model}</option>
+                            ))}
+                        </select>
+                        <div className="pointer-events-none absolute right-3 text-gray-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                    </div>
                 </div>
 
                 {/* List */}
@@ -83,9 +135,7 @@ export default function PartSelectionModal({ isOpen, onClose, onSelectPart }: Pa
                             {parts.map(part => (
                                 <button
                                     key={part.id}
-                                    onClick={() => {
-                                        onSelectPart(part)
-                                    }}
+                                    onClick={() => onSelectPart(part)}
                                     className="flex items-center gap-4 p-3 hover:bg-amber-50 rounded-xl text-left transition-colors border border-transparent hover:border-amber-100 group"
                                 >
                                     <img
@@ -97,11 +147,18 @@ export default function PartSelectionModal({ isOpen, onClose, onSelectPart }: Pa
                                         }}
                                     />
                                     <div className="flex-1">
-                                        <div className="flex justify-between items-start mb-1">
+                                        <div className="flex justify-between items-start mb-1 gap-2">
                                             <h4 className="font-medium text-gray-800 group-hover:text-amber-700 transition-colors">{part.name}</h4>
-                                            <span className="text-xs font-medium px-2 py-1 bg-gray-100 text-gray-600 rounded-md">
-                                                {part.partCode}
-                                            </span>
+                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                {part.motorcycleModel && (
+                                                    <span className="text-xs font-medium px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-md">
+                                                        {part.motorcycleModel}
+                                                    </span>
+                                                )}
+                                                <span className="text-xs font-medium px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md">
+                                                    {part.partCode}
+                                                </span>
+                                            </div>
                                         </div>
                                         <div className="flex gap-4 text-sm text-gray-500">
                                             <span>ราคา: <span className="font-semibold text-gray-700">฿{part.price.toLocaleString()}</span></span>

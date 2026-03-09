@@ -7,6 +7,7 @@ export interface PartItem {
     quantity: number
     price: number
     imageUrl: string
+    motorcycleModel?: string
 }
 
 export const mockParts: PartItem[] = [
@@ -18,7 +19,8 @@ export const mockParts: PartItem[] = [
         location: "A1-01",
         quantity: 25,
         price: 550,
-        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Tire+70/90"
+        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Tire+70/90",
+        motorcycleModel: "Wave125i"
     },
     {
         id: 2,
@@ -28,7 +30,8 @@ export const mockParts: PartItem[] = [
         location: "B2-04",
         quantity: 8,
         price: 350,
-        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Engine+Oil"
+        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Engine+Oil",
+        motorcycleModel: "ทุกรุ่น"
     },
     {
         id: 3,
@@ -38,7 +41,8 @@ export const mockParts: PartItem[] = [
         location: "C1-12",
         quantity: 50,
         price: 320,
-        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Brake+Pads"
+        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Brake+Pads",
+        motorcycleModel: "PCX150"
     },
     {
         id: 4,
@@ -48,7 +52,8 @@ export const mockParts: PartItem[] = [
         location: "A3-05",
         quantity: 12,
         price: 150,
-        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=LED+Bulb"
+        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=LED+Bulb",
+        motorcycleModel: "ทุกรุ่น"
     },
     {
         id: 5,
@@ -58,7 +63,8 @@ export const mockParts: PartItem[] = [
         location: "B1-08",
         quantity: 5,
         price: 180,
-        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Air+Filter"
+        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Air+Filter",
+        motorcycleModel: "Wave125i"
     },
     {
         id: 6,
@@ -68,7 +74,8 @@ export const mockParts: PartItem[] = [
         location: "A2-02",
         quantity: 100,
         price: 120,
-        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Spark+Plug"
+        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Spark+Plug",
+        motorcycleModel: "ทุกรุ่น"
     },
     {
         id: 7,
@@ -78,7 +85,8 @@ export const mockParts: PartItem[] = [
         location: "C2-10",
         quantity: 3,
         price: 450,
-        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Drive+Belt"
+        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Drive+Belt",
+        motorcycleModel: "Scoopy i"
     },
     {
         id: 8,
@@ -88,7 +96,8 @@ export const mockParts: PartItem[] = [
         location: "A4-01",
         quantity: 15,
         price: 650,
-        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Battery"
+        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Battery",
+        motorcycleModel: "ทุกรุ่น"
     },
     {
         id: 9,
@@ -98,7 +107,8 @@ export const mockParts: PartItem[] = [
         location: "B2-05",
         quantity: 40,
         price: 80,
-        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Gear+Oil"
+        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Gear+Oil",
+        motorcycleModel: "ทุกรุ่น"
     },
     {
         id: 10,
@@ -108,7 +118,8 @@ export const mockParts: PartItem[] = [
         location: "A1-02",
         quantity: 35,
         price: 140,
-        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Inner+Tube"
+        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Inner+Tube",
+        motorcycleModel: "Wave125i"
     },
     {
         id: 11,
@@ -118,7 +129,8 @@ export const mockParts: PartItem[] = [
         location: "C1-05",
         quantity: 7,
         price: 220,
-        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Brake+Lever"
+        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Brake+Lever",
+        motorcycleModel: "Click125i"
     },
     {
         id: 12,
@@ -128,7 +140,8 @@ export const mockParts: PartItem[] = [
         location: "D1-01",
         quantity: 2,
         price: 4500,
-        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Rear+Shock"
+        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Rear+Shock",
+        motorcycleModel: "XMAX"
     },
     {
         id: 13,
@@ -138,7 +151,8 @@ export const mockParts: PartItem[] = [
         location: "D2-02",
         quantity: 4,
         price: 3800,
-        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Exhaust"
+        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Exhaust",
+        motorcycleModel: "ADV150"
     },
     {
         id: 14,
@@ -148,7 +162,8 @@ export const mockParts: PartItem[] = [
         location: "B3-11",
         quantity: 20,
         price: 150,
-        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Speedometer+Cable"
+        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Speedometer+Cable",
+        motorcycleModel: "Wave110i"
     },
     {
         id: 15,
@@ -158,7 +173,8 @@ export const mockParts: PartItem[] = [
         location: "B4-09",
         quantity: 12,
         price: 250,
-        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Mirrors"
+        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Mirrors",
+        motorcycleModel: "Fino"
     },
     {
         id: 16,
@@ -168,7 +184,8 @@ export const mockParts: PartItem[] = [
         location: "B1-02",
         quantity: 18,
         price: 120,
-        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Oil+Filter"
+        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Oil+Filter",
+        motorcycleModel: "Yamaha R15"
     },
     {
         id: 17,
@@ -178,7 +195,8 @@ export const mockParts: PartItem[] = [
         location: "C2-01",
         quantity: 8,
         price: 850,
-        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Chain"
+        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Chain",
+        motorcycleModel: "ทุกรุ่น"
     },
     {
         id: 18,
@@ -188,6 +206,7 @@ export const mockParts: PartItem[] = [
         location: "A2-05",
         quantity: 22,
         price: 90,
-        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Spark+Plug+Cap"
+        imageUrl: "https://placehold.co/400x300/333333/ffffff.png?text=Spark+Plug+Cap",
+        motorcycleModel: "ทุกรุ่น"
     }
 ]

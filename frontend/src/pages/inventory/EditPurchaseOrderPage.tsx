@@ -33,6 +33,7 @@ export default function EditPurchaseOrderPage() {
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const [isCancelModalOpen, setIsCancelModalOpen] = useState(false)
     const [validationModal, setValidationModal] = useState({
         isOpen: false,
         isError: false,
@@ -94,9 +95,11 @@ export default function EditPurchaseOrderPage() {
     }
 
     const handleCancel = () => {
-        if (!window.confirm('คุณต้องการยกเลิกการแก้ไขใช่หรือไม่? ข้อมูลทั้งหมดที่แก้ไขจะไม่ถูกบันทึก')) {
-            return
-        }
+        setIsCancelModalOpen(true)
+    }
+
+    const confirmCancel = () => {
+        setIsCancelModalOpen(false)
         navigate('/inventory/purchase-orders')
     }
 
@@ -213,6 +216,54 @@ export default function EditPurchaseOrderPage() {
                                     กำลังพากลับ...
                                 </div>
                             )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Cancel Confirmation Modal */}
+            {isCancelModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setIsCancelModalOpen(false)}>
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col overflow-hidden animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
+                        {/* Header */}
+                        <div className="px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
+                            <p className="text-xs font-semibold text-[#F8981D] uppercase tracking-widest mb-0.5">Smart Moto Service Center</p>
+                            <h2 className="text-base font-semibold text-[#1E1E1E]">
+                                ยืนยันการยกเลิกการแก้ไข
+                            </h2>
+                        </div>
+
+                        {/* Content Area */}
+                        <div className="px-6 py-6 flex flex-col gap-6 overflow-y-auto">
+                            <div className="flex flex-col items-center text-center gap-3">
+                                <div className="h-16 w-16 rounded-full flex items-center justify-center bg-[#fee2e2]">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-[#ef4444]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-semibold text-[#1a202c]">ยืนยันการทำรายการนี้หรือไม่?</h3>
+                                    <p className="text-sm text-gray-500 mt-1 px-4">
+                                        ข้อมูลทั้งหมดที่คุณได้แก้ไขไว้ในหน้านี้จะไม่ถูกบันทึก<br />คุณต้องการยกเลิกใช่หรือไม่?
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Buttons Footer */}
+                        <div className="flex border-t border-gray-100 shrink-0">
+                            <button
+                                onClick={() => setIsCancelModalOpen(false)}
+                                className="flex-1 py-4 text-sm text-gray-500 hover:bg-gray-50 font-medium transition-colors border-r border-gray-100"
+                            >
+                                กลับไปแก้ไขต่อ
+                            </button>
+                            <button
+                                onClick={confirmCancel}
+                                className="flex-1 py-4 text-sm font-semibold text-white transition-colors border-none bg-[#44403C] hover:bg-black cursor-pointer"
+                            >
+                                ใช่ ยืนยันยกเลิก
+                            </button>
                         </div>
                     </div>
                 </div>
