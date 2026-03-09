@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Pagination from '../../components/Pagination'
 
 type Role = 'พนักงานรับรถ' | 'พนักงานคงคลัง' | 'พนักงานบัญชี' | 'หัวหน้าช่าง' | 'ช่าง'
 type SalaryType = 'fixed' | 'commission'
@@ -47,12 +48,17 @@ export default function EmployeesPage() {
   const [showCreate, setShowCreate] = useState(false)
   const [form, setForm]           = useState(emptyForm)
   const [editSalary, setEditSalary] = useState<{ id: number; base: number; com: number } | null>(null)
+  const [page, setPage]     = useState(1)
+  const [perPage, setPerPage] = useState(10)
 
   const filtered = employees.filter(e => {
     const matchSearch = e.name.includes(search) || e.role.includes(search)
     const matchRole   = filterRole === 'ทั้งหมด' || e.role === filterRole
     return matchSearch && matchRole
   })
+
+  const safePage = Math.min(page, Math.max(1, Math.ceil(filtered.length / perPage)))
+  const visible  = filtered.slice((safePage - 1) * perPage, safePage * perPage)
 
   const totalSalary = employees
     .filter(e => e.active)
@@ -85,23 +91,45 @@ export default function EmployeesPage() {
   }
 
   return (
-    <div className="h-full overflow-y-auto bg-[#F5F5F5] p-5 flex flex-col gap-4">
+    <div className="h-full flex flex-col overflow-hidden bg-[#F5F5F5]">
+      {/* Summary + toolbar + filter — always visible */}
+      <div className="shrink-0 p-5 pb-0 flex flex-col gap-4">
 
-      {/* Summary + toolbar */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="grid grid-cols-2 gap-3 flex-1 max-w-sm">
-          <div className="bg-[#44403C] rounded-2xl px-4 py-3 shadow-sm">
-            <div className="text-xs text-white/50 font-medium">พนักงานทั้งหมด</div>
-            <div className="text-2xl font-black text-white mt-0.5">{employees.filter(e => e.active).length} <span className="text-sm font-normal text-white/50">คน</span></div>
-          </div>
-          <div className="bg-[#F8981D] rounded-2xl px-4 py-3 shadow-sm">
-            <div className="text-xs text-white/70 font-medium">ค่าแรง/เดือน</div>
-            <div className="text-lg font-black text-white mt-0.5">{(totalSalary / 1000).toFixed(0)}K <span className="text-xs font-normal text-white/60">฿</span></div>
-          </div>
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-[#44403C] rounded-2xl px-5 py-4 shadow-sm">
+          <div className="text-sm text-white/50 font-medium">พนักงานทั้งหมด</div>
+          <div className="text-3xl font-black text-white mt-1">{employees.filter(e => e.active).length}</div>
+          <div className="text-xs text-white/40 mt-1">คน</div>
+        </div>
+        <div className="bg-[#F8981D] rounded-2xl px-5 py-4 shadow-sm">
+          <div className="text-sm text-white/70 font-medium">ค่าแรง/เดือน</div>
+          <div className="text-3xl font-black text-white mt-1">{(totalSalary / 1000).toFixed(0)}K</div>
+          <div className="text-xs text-white/50 mt-1">บาท</div>
+        </div>
+      </div>
+
+      {/* Filter bar + add button */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="ค้นหาชื่อพนักงาน..."
+            className="w-full bg-white border border-gray-200 rounded-full pl-4 pr-10 py-2.5 text-sm outline-none focus:border-[#F8981D] transition-colors" />
+          <svg className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#F8981D]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+        <div className="flex gap-2 shrink-0">
+          {(['ทั้งหมด', ...roles] as const).map(r => (
+            <button key={r} onClick={() => setFilterRole(r)}
+              className={`px-4 py-2 rounded-full text-sm font-medium cursor-pointer border-none transition-colors ${filterRole === r ? 'bg-[#44403C] text-white' : 'bg-white text-stone-500 hover:bg-stone-100 border border-stone-200'}`}>
+              {r}
+            </button>
+          ))}
         </div>
         <button
           onClick={() => { setShowCreate(true); setForm(emptyForm) }}
-          className="flex items-center gap-2 bg-[#44403C] text-white text-sm px-5 py-2.5 rounded-full cursor-pointer border-none font-medium hover:bg-black transition-colors shrink-0"
+          className="flex items-center gap-2 bg-[#F8981D] text-white text-sm px-5 py-2.5 rounded-full cursor-pointer border-none font-medium hover:bg-orange-500 transition-colors shrink-0"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -109,31 +137,13 @@ export default function EmployeesPage() {
           เพิ่มพนักงาน
         </button>
       </div>
+      </div>{/* end shrink-0 top section */}
 
-      {/* Filter bar */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative w-56 shrink-0">
-          <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="ค้นหาชื่อพนักงาน..."
-            className="w-full bg-white border border-gray-200 rounded-full pl-4 pr-10 py-2 text-sm outline-none focus:border-[#F8981D] transition-colors" />
-          <svg className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#F8981D]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </div>
-        <div className="flex gap-2 flex-wrap flex-1">
-          {(['ทั้งหมด', ...roles] as const).map(r => (
-            <button key={r} onClick={() => setFilterRole(r)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer border-none transition-colors ${filterRole === r ? 'bg-[#44403C] text-white' : 'bg-white text-stone-500 hover:bg-stone-100 border border-stone-200'}`}>
-              {r}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="rounded-2xl border border-gray-100 overflow-hidden shadow-sm bg-white">
+      {/* Table — takes remaining space with internal scroll */}
+      <div className="flex-1 overflow-hidden px-5 pt-4 pb-0 flex flex-col">
+      <div className="flex-1 overflow-auto rounded-2xl border border-gray-100 shadow-sm bg-white">
         <table className="w-full text-sm">
-          <thead className="bg-stone-50 border-b border-stone-100">
+          <thead className="sticky top-0 bg-stone-50 border-b border-stone-100 z-10">
             <tr>
               <th className="px-5 py-3.5 text-left font-medium text-stone-500">ชื่อ</th>
               <th className="px-5 py-3.5 text-left font-medium text-stone-500">ตำแหน่ง</th>
@@ -145,7 +155,10 @@ export default function EmployeesPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-50">
-            {filtered.map(emp => {
+            {visible.length === 0 && (
+              <tr><td colSpan={7} className="text-center py-10 text-stone-400 text-sm">ไม่มีรายการ</td></tr>
+            )}
+            {visible.map(emp => {
               const monthly = emp.baseSalary + (emp.commissionPerJob ?? 0) * (emp.jobsDone ?? 0)
               const cfg = roleConfig[emp.role]
               return (
@@ -186,6 +199,7 @@ export default function EmployeesPage() {
           </tbody>
         </table>
       </div>
+      </div>{/* end table flex-1 */}
 
       {/* Create Modal */}
       {showCreate && (
@@ -276,6 +290,11 @@ export default function EmployeesPage() {
           </div>
         )
       })()}
+
+      <Pagination
+        page={safePage} perPage={perPage} total={filtered.length}
+        onPageChange={setPage} onPerPageChange={setPerPage}
+      />
     </div>
   )
 }
