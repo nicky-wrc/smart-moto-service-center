@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ResponsiveContainer,
@@ -12,8 +13,6 @@ import { TbMoneybagPlus } from "react-icons/tb";
 import { TbPigMoney } from "react-icons/tb";
 import { TbCashBanknoteMove } from "react-icons/tb";
 import { MdOutlinePendingActions } from "react-icons/md";
-
-const C = 2 * Math.PI * 45
 
 // ── Mock data ────────────────────────────────────────────────────────────────
 const mockTransactions = [
@@ -42,6 +41,7 @@ const fmt = (n: number) => n.toLocaleString('th-TH')
 
 export default function AccountantDashboardPage() {
   const navigate = useNavigate()
+  const [search, setSearch] = useState('')
 
   const paid = mockTransactions.filter(t => t.status === 'ชำระแล้ว')
   const pending = mockTransactions.filter(t => t.status === 'รอชำระ')
@@ -54,6 +54,15 @@ export default function AccountantDashboardPage() {
 
 
 
+
+  const q = search.trim().toLowerCase()
+  const filteredTransactions = q
+    ? mockTransactions.filter(t =>
+        t.customer.toLowerCase().includes(q) ||
+        t.plate.toLowerCase().includes(q) ||
+        t.id.toLowerCase().includes(q)
+      )
+    : mockTransactions
 
   // Status badge color
   const statusColor: Record<string, string> = {
@@ -81,7 +90,7 @@ export default function AccountantDashboardPage() {
         {/* Pending count */}
         <div
           onClick={() => navigate('/accountant/pendingpayment')}
-          className="bg-[#F8981D] rounded-2xl px-10 py-4 flex items-center justify-between shadow-sm cursor-pointer hover:brightness-95 transition-all"
+          className="bg-[#F8981D] rounded-2xl px-10 py-4 flex items-center justify-between shadow-sm"
         >
           <div className='p-5 bg-white/30 rounded-full'>
             <MdOutlinePendingActions className='text-4xl text-white' />
@@ -115,7 +124,23 @@ export default function AccountantDashboardPage() {
         </div>
       </div>
 
-      <div className="flex-1 grid gap-4 min-h-0" style={{ gridTemplateColumns: ' 1fr 700px' }}>
+      {/* Search toolbar */}
+      <div className="shrink-0 flex items-center gap-3">
+        <div className="flex-1 relative">
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="ค้นหาชื่อลูกค้า ทะเบียน หรือเลขที่ใบงาน..."
+            className="w-full bg-white border border-gray-200 rounded-full pl-4 pr-10 py-2 text-sm outline-none focus:border-[#F8981D] transition-colors"
+          />
+          <svg className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#F8981D]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+      </div>
+
+      <div className="flex-1 grid gap-4 min-h-0" style={{ gridTemplateColumns: ' 1fr 1fr' }}>
 
         <div className="flex flex-col gap-4 min-h-0">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col overflow-hidden flex-1 min-h-0">
@@ -178,7 +203,7 @@ export default function AccountantDashboardPage() {
             </button>
           </div>
           <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
-            {mockTransactions.map(t => {
+            {filteredTransactions.map(t => {
               const color = statusColor[t.status] ?? '#9ca3af'
               return (
                 <div

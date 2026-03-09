@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import ProtectedRoute from './components/ProtectedRoute'
+import LoginPage from './pages/login/LoginPage'
 
 // Inventory (พนักงานคงคลัง)
 import InventoryLayout from './pages/inventory/InventoryLayout'
@@ -51,10 +53,20 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route index element={<Navigate to="/foreman/jobs" replace />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route index element={<Navigate to="/login" replace />} />
+        <Route path="/unauthorized" element={
+          <div className="min-h-screen flex items-center justify-center text-gray-500">
+            ไม่มีสิทธิ์เข้าถึงหน้านี้
+          </div>
+        } />
 
         {/* พนักงานคงคลัง */}
-        <Route path="/inventory" element={<InventoryLayout />}>
+        <Route path="/inventory" element={
+          <ProtectedRoute roles={['STOCK_KEEPER', 'ADMIN', 'MANAGER']}>
+            <InventoryLayout />
+          </ProtectedRoute>
+        }>
           <Route index element={<InventoryIndex />} />
           <Route path="requests" element={<RequestsPage />} />
           <Route path="parts" element={<PartsPage />} />
@@ -63,7 +75,11 @@ export default function App() {
         </Route>
 
         {/* หัวหน้าช่าง */}
-        <Route path="/foreman" element={<ForemanLayout />}>
+        <Route path="/foreman" element={
+          <ProtectedRoute roles={['FOREMAN', 'SERVICE_ADVISOR', 'ADMIN', 'MANAGER']}>
+            <ForemanLayout />
+          </ProtectedRoute>
+        }>
           <Route index element={<ForemanIndex />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="jobs" element={<JobOrdersPage />} />
@@ -73,7 +89,11 @@ export default function App() {
         </Route>
 
         {/* ช่าง */}
-        <Route path="/mechanic" element={<MechanicLayout />}>
+        <Route path="/mechanic" element={
+          <ProtectedRoute roles={['TECHNICIAN', 'FOREMAN', 'ADMIN', 'MANAGER']}>
+            <MechanicLayout />
+          </ProtectedRoute>
+        }>
           <Route index element={<MechanicIndex />} />
           <Route path="jobs" element={<MechanicJobsPage />} />
           <Route path="jobs/:id" element={<MechanicJobDetailPage />} />
@@ -81,7 +101,11 @@ export default function App() {
         </Route>
 
         {/* บัญชี */}
-        <Route path="/accountant" element={<AccountantLayout />}>
+        <Route path="/accountant" element={
+          <ProtectedRoute roles={['CASHIER', 'ADMIN', 'MANAGER']}>
+            <AccountantLayout />
+          </ProtectedRoute>
+        }>
           <Route index element={<AccountIndex />} />
           <Route path="dashboard" element={<AccountantDashboardPage />} />
           <Route path="historys" element={<PaymentHistoryPage />} />
@@ -91,7 +115,11 @@ export default function App() {
         </Route>
 
         {/* เจ้าของร้าน */}
-        <Route path="/owner" element={<OwnerLayout />}>
+        <Route path="/owner" element={
+          <ProtectedRoute roles={['MANAGER', 'ADMIN']}>
+            <OwnerLayout />
+          </ProtectedRoute>
+        }>
           <Route index element={<OwnerIndex />} />
           <Route path="dashboard" element={<OwnerDashboardPage />} />
           <Route path="reports" element={<OwnerReportsPage />} />
@@ -103,7 +131,11 @@ export default function App() {
         </Route>
 
         {/* roles อื่น — layouts จะสร้างเพิ่มในภายหลัง */}
-        <Route path="/reception/*" element={<ReceptionPage />} />
+        <Route path="/reception/*" element={
+          <ProtectedRoute roles={['SERVICE_ADVISOR', 'ADMIN', 'MANAGER']}>
+            <ReceptionPage />
+          </ProtectedRoute>
+        } />
       </Routes>
     </BrowserRouter>
   )

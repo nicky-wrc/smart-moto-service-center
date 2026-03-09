@@ -1,18 +1,24 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
+import { paymentsService, type Payment } from "../../services/payments"
 
-const testData = [
-  { id: "0000001", customer: "ธาดา รถ",       plate: "กข123",  total: 3500, status: "รอชำระ" },
-  { id: "0000002", customer: "สมชาย การ์ด",   plate: "ขค456",  total: 2100, status: "รอชำระ" },
-  { id: "0000003", customer: "สมชาย การ์ด",   plate: "ขค456",  total: 2100, status: "ชำระแล้ว" },
-]
+type PendingItem = {
+  id: string
+  paymentId: number
+  customer: string
+  plate: string
+  total: number
+  status: string
+}
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "รอชำระ":   return "bg-yellow-400"
-    case "ชำระแล้ว": return "bg-green-500"
-    case "ยกเลิก":   return "bg-red-500"
-    default:          return "bg-gray-400"
+function mapPaymentToPending(p: Payment): PendingItem {
+  return {
+    id: p.job?.jobNo ?? p.paymentNo,
+    paymentId: p.id,
+    customer: p.customer ? `${p.customer.firstName} ${p.customer.lastName}` : '-',
+    plate: p.job?.motorcycle?.licensePlate ?? '-',
+    total: Number(p.totalAmount),
+    status: 'รอชำระ',
   }
 }
 
@@ -26,29 +32,28 @@ function getPageNumbers(current: number, total: number): (number | '...')[] {
   return pages
 }
 
-const searchFields = [
-  { value: "all",      label: "ทั้งหมด" },
-  { value: "id",       label: "เลขใบงาน" },
-  { value: "customer", label: "ลูกค้า" },
-  { value: "plate",    label: "ทะเบียนรถ" },
-]
-
 function Pendingpayment() {
   const navigate = useNavigate()
   const [search, setSearch] = useState("")
-  const [searchField, setSearchField] = useState("all")
-  const [openSearchField, setOpenSearchField] = useState(false)
   const [sortBy, setSortBy] = useState("newest")
   const [openSort, setOpenSort] = useState(false)
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(10)
+  const [pendingData, setPendingData] = useState<PendingItem[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const filteredData = testData.filter((item) => {
+  useEffect(() => {
+    setLoading(true)
+    paymentsService.list({ status: 'PENDING' })
+      .then(payments => setPendingData(payments.map(mapPaymentToPending)))
+      .catch(err => console.error('Failed to load pending payments:', err))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const filteredData = pendingData.filter((item) => {
     if (!search) return true
-    if (searchField === "id")       return item.id.includes(search)
-    if (searchField === "customer") return item.customer.includes(search)
-    if (searchField === "plate")    return item.plate.includes(search)
-    return item.id.includes(search) || item.customer.includes(search) || item.plate.includes(search)
+    const q = search.toLowerCase()
+    return item.id.toLowerCase().includes(q) || item.customer.toLowerCase().includes(q) || item.plate.toLowerCase().includes(q)
   })
 
   const sortedData = [...filteredData].sort((a, b) => {
@@ -72,76 +77,44 @@ function Pendingpayment() {
     <div className="w-full h-full bg-white flex flex-col">
       <div className="px-7 pt-7 pb-1 flex-1 flex flex-col overflow-hidden">
 
-        <div className="w-full h-12 flex items-center justify-between shrink-0">
-          <div className="w-full h-full flex items-center rounded-full relative">
-            <div className="relative h-full">
-              <button
-                onClick={() => setOpenSearchField(!openSearchField)}
-                className="pl-8 pr-4 flex items-center bg-[#F8981D] h-full rounded-l-full cursor-pointer"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="whitespace-nowrap">
-                    {searchFields.find(f => f.value === searchField)?.label ?? "ทั้งหมด"}
-                  </div>
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="size-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                  </svg>
-                </div>
-              </button>
-              {openSearchField && (
-                <div className="absolute left-0 top-full mt-2 bg-white rounded-lg shadow-[0_0px_4px_rgba(0,0,0,0.2)] z-20 min-w-30">
-                  {searchFields.map(f => (
-                    <button
-                      key={f.value}
-                      onClick={() => { setSearchField(f.value); setOpenSearchField(false); setPage(1) }}
-                      className={`w-full text-left px-4 py-2 hover:bg-gray-100 text-sm ${searchField === f.value ? "font-semibold text-[#F8981D]" : ""}`}
-                    >
-                      {f.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="flex items-center justify-start w-full h-[95%] pl-3 pr-6 shadow-[0_0px_2px_rgba(0,0,0,0.4)] rounded-r-full">
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => handleSearch(e.target.value)}
-                placeholder={`ค้นหา${searchFields.find(f => f.value === searchField)?.label === "ทั้งหมด" ? "เลขใบงาน / ลูกค้า / ทะเบียนรถ" : searchFields.find(f => f.value === searchField)?.label}`}
-                className="w-full h-[95%] outline-none text-sm"
-              />
-            </div>
+        <div className="shrink-0 flex items-center gap-3">
+          <div className="flex-1 relative">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => handleSearch(e.target.value)}
+              placeholder="ค้นหาเลขใบงาน / ลูกค้า / ทะเบียนรถ..."
+              className="w-full bg-white border border-gray-200 rounded-full pl-4 pr-10 py-2 text-sm outline-none focus:border-[#F8981D] transition-colors"
+            />
+            <svg className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#F8981D]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
           </div>
-
-          <div className="h-full ml-5">
-            <div className="relative h-full">
-              <button
-                onClick={() => setOpenSort(!openSort)}
-                className="rounded-full whitespace-nowrap px-8 flex items-center bg-white h-full shadow-[0_0px_2px_rgba(0,0,0,0.4)] cursor-pointer"
-              >
-                <div className="flex items-center gap-3">
-                  <div>จัดเรียงตาม</div>
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="size-4">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
-                  </svg>
-                </div>
-              </button>
-              {openSort && (
-                <div className="absolute right-0 mt-2 w-42 bg-white rounded-lg shadow-[0_0px_2px_rgba(0,0,0,0.4)] z-20">
-                  {[
-                    { value: "newest",     label: "ล่าสุด" },
-                    { value: "oldest",     label: "เก่าสุด" },
-                    { value: "price-high", label: "ยอดสูง → ต่ำ" },
-                    { value: "price-low",  label: "ยอดต่ำ → สูง" },
-                  ].map(opt => (
-                    <button key={opt.value} onClick={() => { setSortBy(opt.value); setOpenSort(false) }}
-                      className="w-full text-left px-4 py-2 hover:bg-gray-100">
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+          <div className="relative shrink-0">
+            <button
+              onClick={() => setOpenSort(!openSort)}
+              className="flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2 text-sm text-gray-600 cursor-pointer hover:border-gray-300 transition-colors"
+            >
+              จัดเรียง
+              <svg className={`w-4 h-4 text-gray-400 transition-transform ${openSort ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {openSort && (
+              <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl border border-gray-100 shadow-lg z-20 overflow-hidden">
+                {[
+                  { value: "newest",     label: "ล่าสุด" },
+                  { value: "oldest",     label: "เก่าสุด" },
+                  { value: "price-high", label: "ยอดสูง → ต่ำ" },
+                  { value: "price-low",  label: "ยอดต่ำ → สูง" },
+                ].map(opt => (
+                  <button key={opt.value} onClick={() => { setSortBy(opt.value); setOpenSort(false) }}
+                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 border-none bg-transparent cursor-pointer transition-colors ${sortBy === opt.value ? 'text-[#F8981D] font-medium' : 'text-gray-600'}`}>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -158,8 +131,11 @@ function Pendingpayment() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 border-b border-gray-200">
-              {visibleItems.length === 0 && (
-                <tr><td colSpan={6} className="text-center py-10 text-gray-400">ไม่มีรายการ</td></tr>
+              {loading && (
+                <tr><td colSpan={6} className="text-center py-10 text-gray-400">กำลังโหลด...</td></tr>
+              )}
+              {!loading && visibleItems.length === 0 && (
+                <tr><td colSpan={6} className="text-center py-10 text-gray-400">ไม่มีรายการรอชำระ</td></tr>
               )}
               {visibleItems.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50">
@@ -169,29 +145,18 @@ function Pendingpayment() {
                   <td className="px-6 py-5">{item.total.toLocaleString()}</td>
                   <td className="px-6 py-5 text-center">
                     <div className="flex items-center w-fit mx-auto gap-2">
-                      <span className={`w-2 h-2 rounded-full ${getStatusColor(item.status)}`}></span>
-                      {item.status}
+                      <span className="w-2 h-2 rounded-full bg-yellow-400"></span>
+                      รอชำระ
                     </div>
                   </td>
                   <td className="px-6 py-5 text-center">
-                    {item.status === "ชำระแล้ว" ? (
-                      <button onClick={() => navigate(`/accountant/pendingpayment/${item.id}`)}
-                        className="flex items-center gap-2 bg-[#7eccff] text-white text-xs px-4 py-2 rounded-md mx-auto cursor-pointer">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="size-4">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12s3.75-6 9.75-6 9.75 6 9.75 6-3.75 6-9.75 6-9.75-6-9.75-6Z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-                        </svg>
-                        ดูข้อมูล
-                      </button>
-                    ) : (
-                      <button onClick={() => navigate(`/accountant/pendingpayment/${item.id}`)}
-                        className="flex items-center gap-2 bg-green-600 text-white text-xs px-4 py-2 rounded-md mx-auto cursor-pointer">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="size-4">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z" />
-                        </svg>
-                        รับชำระ
-                      </button>
-                    )}
+                    <button onClick={() => navigate(`/accountant/pendingpayment/${item.paymentId}`)}
+                      className="flex items-center gap-2 bg-green-600 text-white text-xs px-4 py-2 rounded-md mx-auto cursor-pointer">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="size-4">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z" />
+                      </svg>
+                      รับชำระ
+                    </button>
                   </td>
                 </tr>
               ))}
