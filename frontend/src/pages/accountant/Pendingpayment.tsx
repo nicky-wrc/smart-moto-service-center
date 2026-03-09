@@ -72,7 +72,6 @@ function Pendingpayment() {
     <div className="w-full h-full bg-white flex flex-col">
       <div className="px-7 pt-7 pb-1 flex-1 flex flex-col overflow-hidden">
 
-        {/* Toolbar */}
         <div className="w-full h-12 flex items-center justify-between shrink-0">
           <div className="w-full h-full flex items-center rounded-full relative">
             <div className="relative h-full">
@@ -146,7 +145,6 @@ function Pendingpayment() {
           </div>
         </div>
 
-        {/* Table */}
         <div className="w-full flex-1 mt-6 overflow-x-auto">
           <table className="min-w-180.5 w-full text-sm text-black">
             <thead className="bg-[#F5F5F5] text-black">
@@ -201,7 +199,6 @@ function Pendingpayment() {
           </table>
         </div>
 
-        {/* Pagination */}
         <div className="shrink-0 border-t border-gray-100 bg-white py-3 flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm text-gray-400">
             <span>{total === 0 ? '0 รายการ' : `${start}–${end} จาก ${total} รายการ`}</span>
