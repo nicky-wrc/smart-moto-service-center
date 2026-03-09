@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { mockSuppliers } from '../../data/suppliersMockData'
 import PartSelectionModal from '../../components/PartSelectionModal'
@@ -26,13 +26,40 @@ export default function CreatePurchaseOrderPage() {
     const navigate = useNavigate()
 
     // Form State
-    const [supplierId, setSupplierId] = useState<number | ''>('')
-    const [deliveryDate, setDeliveryDate] = useState(getTomorrowString())
-    const [remarks, setRemarks] = useState('')
-    const [managerMessage, setManagerMessage] = useState('')
+    const [supplierId, setSupplierId] = useState<number | ''>(() => {
+        const saved = localStorage.getItem('draft_po_supplier')
+        return saved ? Number(saved) : ''
+    })
+    const [deliveryDate, setDeliveryDate] = useState(() => {
+        const saved = localStorage.getItem('draft_po_deliveryDate')
+        return saved || getTomorrowString()
+    })
+    const [remarks, setRemarks] = useState(() => {
+        return localStorage.getItem('draft_po_remarks') || ''
+    })
+    const [managerMessage, setManagerMessage] = useState(() => {
+        return localStorage.getItem('draft_po_managerMessage') || ''
+    })
 
     // Items State
-    const [orderItems, setOrderItems] = useState<OrderItem[]>([])
+    const [orderItems, setOrderItems] = useState<OrderItem[]>(() => {
+        const saved = localStorage.getItem('draft_po_items')
+        if (saved) {
+            try {
+                return JSON.parse(saved)
+            } catch (e) {
+                return []
+            }
+        }
+        return []
+    })
+
+    // Save to LocalStorage effects
+    useEffect(() => { localStorage.setItem('draft_po_supplier', String(supplierId)) }, [supplierId])
+    useEffect(() => { localStorage.setItem('draft_po_deliveryDate', deliveryDate) }, [deliveryDate])
+    useEffect(() => { localStorage.setItem('draft_po_remarks', remarks) }, [remarks])
+    useEffect(() => { localStorage.setItem('draft_po_managerMessage', managerMessage) }, [managerMessage])
+    useEffect(() => { localStorage.setItem('draft_po_items', JSON.stringify(orderItems)) }, [orderItems])
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false)
@@ -74,6 +101,14 @@ export default function CreatePurchaseOrderPage() {
         if (orderItems.length > 0 && !window.confirm('คุณมีรายการสินค้าที่เลือกไว้ ต้องการยกเลิกการสร้างใบสั่งซื้อใช่หรือไม่?')) {
             return
         }
+
+        // Clear local storage on cancel
+        localStorage.removeItem('draft_po_supplier')
+        localStorage.removeItem('draft_po_deliveryDate')
+        localStorage.removeItem('draft_po_remarks')
+        localStorage.removeItem('draft_po_managerMessage')
+        localStorage.removeItem('draft_po_items')
+
         navigate('/inventory/purchase-orders')
     }
 
@@ -82,8 +117,8 @@ export default function CreatePurchaseOrderPage() {
             setValidationModal({
                 isOpen: true,
                 isError: true,
-                title: 'ข้อมูลไม่ครบถ้วน',
-                message: 'กรุณาเลือกซัพพลายเออร์ที่ต้องการสั่งซื้อ'
+                title: 'กรุณาเลือกซัพพลายเออร์',
+                message: 'กรุณาเลือกซัพพลายเออร์ที่ต้องการก่อน จึงจะสามารถสร้างใบสั่งซื้อได้'
             })
             return
         }
@@ -117,6 +152,13 @@ export default function CreatePurchaseOrderPage() {
         // Add to top of the list
         mockPurchaseOrders.unshift(newOrder)
 
+        // Clear local storage on submit
+        localStorage.removeItem('draft_po_supplier')
+        localStorage.removeItem('draft_po_deliveryDate')
+        localStorage.removeItem('draft_po_remarks')
+        localStorage.removeItem('draft_po_managerMessage')
+        localStorage.removeItem('draft_po_items')
+
         // Show success modal instead of alert
         setValidationModal({
             isOpen: true,
@@ -141,7 +183,7 @@ export default function CreatePurchaseOrderPage() {
                         {/* Header */}
                         <div className="px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
                             <p className="text-xs font-semibold text-[#F8981D] uppercase tracking-widest mb-0.5">Smart Moto Service Center</p>
-                            <h2 className="text-base font-bold text-[#1E1E1E]">
+                            <h2 className="text-base font-semibold text-[#1E1E1E]">
                                 {validationModal.isError ? 'ข้อมูลไม่ครบถ้วน' : 'ทำรายการสำเร็จ'}
                             </h2>
                         </div>
@@ -154,7 +196,7 @@ export default function CreatePurchaseOrderPage() {
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                     </svg>
                                 ) : (
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-[#00a650]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-[#00a650]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                     </svg>
                                 )}
@@ -162,7 +204,7 @@ export default function CreatePurchaseOrderPage() {
                             <div>
                                 <h3 className="text-lg font-semibold text-[#1a202c]">{validationModal.title}</h3>
                                 {validationModal.message && (
-                                    <p className="text-sm font-medium text-gray-500 mt-2 leading-relaxed max-w-[280px] mx-auto">
+                                    <p className="text-sm font-semibold text-gray-500 mt-2 leading-relaxed max-w-[280px] mx-auto">
                                         {validationModal.message}
                                     </p>
                                 )}

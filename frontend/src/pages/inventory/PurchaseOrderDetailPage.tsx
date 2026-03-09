@@ -85,7 +85,7 @@ export default function PurchaseOrderDetailPage() {
                             <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <div>
-                            <p className="font-semibold mb-1">ข้อความจากผู้จัดการ</p>
+                            <p className="font-semibold mb-1">ข้อความถึงผู้จัดการ</p>
                             <p>{request.managerMessage}</p>
                         </div>
                     </div>
