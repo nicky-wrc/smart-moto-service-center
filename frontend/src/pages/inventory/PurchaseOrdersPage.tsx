@@ -14,6 +14,8 @@ const StatusBadge = ({ status }: { status: POStatus }) => {
       return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-50 text-emerald-600 border border-emerald-200"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>อนุมัติแล้ว</span>
     case 'rejected':
       return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-red-50 text-red-600 border border-red-200"><span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>ไม่อนุมัติ</span>
+    case 'cancelled':
+      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200"><span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>ยกเลิกแล้ว</span>
   }
 }
 
@@ -21,6 +23,8 @@ export default function PurchaseOrdersPage() {
   const navigate = useNavigate()
 
   // List Filters State
+  const [orders, setOrders] = useState(mockPurchaseOrders)
+  const [cancelModalOrderId, setCancelModalOrderId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [showListFilters, setShowListFilters] = useState(false)
   const [filterStatus, setFilterStatus] = useState('')
@@ -29,14 +33,14 @@ export default function PurchaseOrdersPage() {
 
   // Filtered Orders
   const filteredOrders = useMemo(() => {
-    return mockPurchaseOrders.filter(order => {
+    return orders.filter(order => {
       if (searchQuery && !order.id.toLowerCase().includes(searchQuery.toLowerCase())) return false
       if (filterStatus && order.status !== filterStatus) return false
       if (filterDate && order.createdAt !== filterDate) return false
       if (filterSupplier && order.supplierId.toString() !== filterSupplier) return false
       return true
     })
-  }, [searchQuery, filterStatus, filterDate, filterSupplier])
+  }, [orders, searchQuery, filterStatus, filterDate, filterSupplier])
 
   // MAIN LIST RENDER
   return (
@@ -97,6 +101,7 @@ export default function PurchaseOrdersPage() {
                   <option value="pending">รออนุมัติ</option>
                   <option value="approved">อนุมัติแล้ว</option>
                   <option value="rejected">ไม่อนุมัติ</option>
+                  <option value="cancelled">ยกเลิกแล้ว</option>
                 </select>
               </div>
               <div>
@@ -165,7 +170,10 @@ export default function PurchaseOrdersPage() {
                     <td className="py-4 px-6">
                       <div className="flex items-center justify-start gap-2">
                         {/* View Button (Always visible) */}
-                        <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#255B91] hover:bg-blue-800 text-white rounded transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]">
+                        <button
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#255B91] hover:bg-blue-800 text-white rounded transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
+                          onClick={() => navigate(`/inventory/purchase-orders/${order.id}`)}
+                        >
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                             <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
                             <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
@@ -189,7 +197,7 @@ export default function PurchaseOrdersPage() {
                         {order.status === 'pending' && (
                           <button
                             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-red-500 hover:bg-red-600 text-white rounded transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
-                            onClick={() => window.confirm('ต้องการยกเลิกคำขอสั่งซื้อนี้ใช่หรือไม่?')}
+                            onClick={() => setCancelModalOrderId(order.id)}
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -206,7 +214,43 @@ export default function PurchaseOrdersPage() {
           </div>
         )}
       </div>
+
+      {/* Cancel Confirmation Modal */}
+      {cancelModalOrderId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in" onClick={() => setCancelModalOrderId(null)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
+            <div className="flex flex-col items-center text-center gap-4 mb-6 mt-4">
+              <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">ยกเลิกออเดอร์</h3>
+                <p className="text-sm text-gray-500 px-4">คุณต้องการยกเลิกการสั่งซื้อนี้ใช่หรือไม่?<br />หลังจากการยกเลิกจะไม่สามารถกู้คืนได้</p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-center w-full">
+              <button
+                onClick={() => setCancelModalOrderId(null)}
+                className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors"
+              >
+                ยกเลิก
+              </button>
+              <button
+                onClick={() => {
+                  setOrders(prev => prev.map(o => o.id === cancelModalOrderId ? { ...o, status: 'cancelled' } : o))
+                  setCancelModalOrderId(null)
+                }}
+                className="flex-1 px-4 py-2.5 bg-red-500 text-white font-medium rounded-xl hover:bg-red-600 transition-colors shadow-sm"
+              >
+                ยืนยันการยกเลิกออเดอร์
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
-
