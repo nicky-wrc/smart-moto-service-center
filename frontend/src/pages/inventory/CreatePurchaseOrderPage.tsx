@@ -36,6 +36,12 @@ export default function CreatePurchaseOrderPage() {
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const [validationModal, setValidationModal] = useState({
+        isOpen: false,
+        isError: false,
+        title: '',
+        message: ''
+    })
 
     // Derived values
     const totalAmount = useMemo(() => {
@@ -73,11 +79,21 @@ export default function CreatePurchaseOrderPage() {
 
     const handleSubmit = (action: 'draft' | 'submit') => {
         if (!supplierId) {
-            alert('กรุณาเลือกซัพพลายเออร์')
+            setValidationModal({
+                isOpen: true,
+                isError: true,
+                title: 'ข้อมูลไม่ครบถ้วน',
+                message: 'กรุณาเลือกซัพพลายเออร์ที่ต้องการสั่งซื้อ'
+            })
             return
         }
         if (orderItems.length === 0) {
-            alert('กรุณาเพิ่มสินค้าอย่างน้อย 1 รายการ')
+            setValidationModal({
+                isOpen: true,
+                isError: true,
+                title: 'ไม่มีรายการสินค้า',
+                message: 'กรุณาเพิ่มสินค้าอย่างน้อย 1 รายการเพื่อสร้างใบสั่งซื้อ'
+            })
             return
         }
 
@@ -101,13 +117,77 @@ export default function CreatePurchaseOrderPage() {
         // Add to top of the list
         mockPurchaseOrders.unshift(newOrder)
 
-        // Mock success
-        alert(action === 'draft' ? 'บันทึกเป็นแบบร่างสำเร็จ!' : 'ส่งคำขอสั่งซื้อสำเร็จ!')
-        navigate('/inventory/purchase-orders')
+        // Show success modal instead of alert
+        setValidationModal({
+            isOpen: true,
+            isError: false,
+            title: action === 'draft' ? 'บันทึกเป็นแบบร่างสำเร็จ!' : 'ส่งคำขอสั่งซื้อสำเร็จ!',
+            message: 'กำลังกลับสู่หน้ารายการใบสั่งซื้อ...'
+        })
+
+        // Auto redirect after success
+        setTimeout(() => {
+            navigate('/inventory/purchase-orders')
+        }, 2000)
     }
 
     return (
-        <div className="p-6 bg-[#F5F5F5] min-h-full flex flex-col gap-6">
+        <div className="p-6 bg-[#F5F5F5] min-h-full flex flex-col gap-6 relative">
+
+            {/* Validation/Success Modal */}
+            {validationModal.isOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+                        {/* Header */}
+                        <div className="px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
+                            <p className="text-xs font-semibold text-[#F8981D] uppercase tracking-widest mb-0.5">Smart Moto Service Center</p>
+                            <h2 className="text-base font-bold text-[#1E1E1E]">
+                                {validationModal.isError ? 'ข้อมูลไม่ครบถ้วน' : 'ทำรายการสำเร็จ'}
+                            </h2>
+                        </div>
+
+                        {/* Content Area */}
+                        <div className="px-6 py-8 flex flex-col items-center text-center gap-4">
+                            <div className={`h-16 w-16 rounded-full flex items-center justify-center ${validationModal.isError ? 'bg-[#fee2e2]' : 'bg-[#e0f8e9]'}`}>
+                                {validationModal.isError ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-[#ef4444]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-[#00a650]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                )}
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-semibold text-[#1a202c]">{validationModal.title}</h3>
+                                {validationModal.message && (
+                                    <p className="text-sm font-medium text-gray-500 mt-2 leading-relaxed max-w-[280px] mx-auto">
+                                        {validationModal.message}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Footer Buttons */}
+                        <div className="flex border-t border-gray-100 shrink-0">
+                            {validationModal.isError ? (
+                                <button
+                                    onClick={() => setValidationModal({ isOpen: false, isError: false, title: '', message: '' })}
+                                    className="flex-1 py-4 text-sm font-semibold text-white bg-[#44403C] hover:bg-black transition-colors"
+                                >
+                                    รับทราบ
+                                </button>
+                            ) : (
+                                <div className="flex-1 py-4 text-sm font-medium text-gray-500 bg-gray-50 text-center flex items-center justify-center gap-2">
+                                    <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-amber-500 animate-spin"></div>
+                                    กำลังพากลับ...
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Top Navigation */}
             <div className="flex items-center gap-2 text-gray-500 cursor-pointer hover:text-amber-600 w-fit transition-colors" onClick={handleCancel}>
