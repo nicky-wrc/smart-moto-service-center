@@ -41,6 +41,7 @@ import OwnerEmployeesPage from './pages/owner/EmployeesPage'
 import OwnerStockPage from './pages/owner/StockPage'
 import OwnerPendingJobsPage from './pages/owner/PendingJobsPage'
 import OwnerPurchaseRequestsPage from './pages/owner/PurchaseRequestsPage'
+import OwnerPurchaseRequestDetailPage from './pages/owner/PurchaseRequestDetailPage'
 
 // Other roles (placeholder — layouts TBD)
 import ReceptionPage from './pages/reception'
@@ -96,6 +97,7 @@ export default function App() {
           <Route path="stock" element={<OwnerStockPage />} />
           <Route path="pending-jobs" element={<OwnerPendingJobsPage />} />
           <Route path="purchase-requests" element={<OwnerPurchaseRequestsPage />} />
+          <Route path="purchase-requests/:id" element={<OwnerPurchaseRequestDetailPage />} />
         </Route>
 
         {/* roles อื่น — layouts จะสร้างเพิ่มในภายหลัง */}
