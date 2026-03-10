@@ -5,7 +5,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dto/login.dto';
 
-interface UserWithoutPassword {
+export interface UserWithoutPassword {
   id: number;
   username: string;
   name: string;
@@ -43,7 +43,7 @@ export class AuthService {
   }
 
   // ฟังก์ชันสร้าง Token
-  async login(loginDto: LoginDto) {
+  async login(loginDto: LoginDto): Promise<{ access_token: string; user: UserWithoutPassword }> {
     const user = await this.validateUser(loginDto.username, loginDto.password);
 
     if (!user) {

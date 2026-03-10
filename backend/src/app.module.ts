@@ -16,6 +16,7 @@ import { JobChecklistsModule } from './job-checklists/job-checklists.module';
 import { PartsModule } from './parts/parts.module';
 import { PaymentsModule } from './payments/payments.module';
 import { QuotationsModule } from './quotations/quotations.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { QuotationsModule } from './quotations/quotations.module';
     PartsModule,
     PaymentsModule,
     QuotationsModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
