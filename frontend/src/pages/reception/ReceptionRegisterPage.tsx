@@ -119,7 +119,7 @@ export default function ReceptionRegisterPage() {
                         ย้อนกลับ
                     </button>
                     <h2 className="text-2xl font-semibold text-gray-800">
-                        {returnTo === 'repair' ? 'แก้ไขข้อมูลส่วนบุคคล' : returnTo === 'newMoto' ? 'กรอกข้อมูลรถคันใหม่ที่ต้องการเข้าซ่อม' : 'ลงทะเบียนลูกค้าใหม่'}
+                        {returnTo === 'repair' ? 'แก้ไขข้อมูลส่วนบุคคล' : returnTo === 'newMoto' ? 'กรอกข้อมูลรถคันใหม่' : 'ลงทะเบียนลูกค้าใหม่'}
                     </h2>
                     <p className="text-gray-500 text-sm mt-1">
                         {returnTo === 'repair' ? 'แก้ไขข้อมูลส่วนบุคคล' : returnTo === 'newMoto' ? 'กรอกข้อมูลรถคันใหม่ที่ต้องการเข้าซ่อม' : 'กรอกข้อมูลส่วนบุคคลและข้อมูลรถเพื่อบันทึกประวัติการรับบริการ'}
