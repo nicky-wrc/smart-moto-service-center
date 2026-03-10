@@ -29,12 +29,39 @@ export default function ReceptionConfirmPage() {
     const fullName = `${data.firstName || ''} ${data.lastName || ''}`.trim() || '-'
     const licensePlate = [data.plateLine1, data.plateLine2, data.province].filter(Boolean).join(' ')
 
+    const handleConfirm = () => {
+        // Save to localStorage
+        const newCustomer = {
+            id: `CUST-NEW-${Date.now()}`,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            phone: data.phone,
+            address: data.address,
+            motorcycles: [
+                {
+                    id: `M-NEW-${Date.now()}`,
+                    model: data.model,
+                    color: data.color,
+                    plateLine1: data.plateLine1,
+                    plateLine2: data.plateLine2,
+                    province: data.province,
+                }
+            ]
+        }
+
+        const existingCustomersStr = localStorage.getItem('smart_moto_customers')
+        const existingCustomers = existingCustomersStr ? JSON.parse(existingCustomersStr) : []
+        localStorage.setItem('smart_moto_customers', JSON.stringify([...existingCustomers, newCustomer]))
+
+        navigate('/reception/success', { state: { formData: data } })
+    }
+
     return (
         <div className="p-6 max-w-3xl mx-auto min-h-full">
             {/* Header */}
             <div className="mb-6">
                 <button
-                    onClick={() => navigate('/reception/register', { state: { formData: data } })}
+                    onClick={() => navigate(-1)}
                     className="flex items-center text-sm font-medium text-gray-500 hover:text-amber-600 mb-3 transition-colors"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -95,13 +122,13 @@ export default function ReceptionConfirmPage() {
                 {/* Action Buttons */}
                 <div className="flex justify-end gap-3 mt-2 pb-8">
                     <button
-                        onClick={() => navigate('/reception/register', { state: { formData: data } })}
+                        onClick={() => navigate(-1)}
                         className="px-6 py-2.5 rounded-xl border border-amber-400 text-amber-600 font-medium bg-white hover:bg-amber-50 active:bg-amber-100 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/30"
                     >
                         กลับไปแก้ไข
                     </button>
                     <button
-                        onClick={() => navigate('/reception/success', { state: { formData: data } })}
+                        onClick={handleConfirm}
                         className="px-6 py-2.5 rounded-xl border border-transparent text-white font-medium bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-sm"
                     >
                         ยืนยันบันทึก

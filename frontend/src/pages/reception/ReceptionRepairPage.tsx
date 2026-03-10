@@ -29,6 +29,7 @@ export default function ReceptionRepairPage() {
 
     const [symptoms, setSymptoms] = useState('')
     const [symptomsError, setSymptomsError] = useState('')
+    const [vehicleError, setVehicleError] = useState('')
     const [images, setImages] = useState<{ url: string; name: string }[]>([])
     const [isDragging, setIsDragging] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -54,11 +55,24 @@ export default function ReceptionRepairPage() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
+        let hasError = false
+
         if (!symptoms.trim()) {
             setSymptomsError('โปรดระบุอาการที่ต้องการแจ้งซ่อม')
-            return
+            hasError = true
+        } else {
+            setSymptomsError('')
         }
-        setSymptomsError('')
+
+        if (!data.model || !data.plateLine1 || !data.province) {
+            setVehicleError('กรุณาเพิ่มข้อมูลรถมอเตอร์ไซค์ให้ครบถ้วนก่อนส่งใบแจ้งซ่อม (กดที่ปุ่มแก้ไขข้อมูล)')
+            hasError = true
+        } else {
+            setVehicleError('')
+        }
+
+        if (hasError) return
+
         // TODO: Submit to API
         navigate('/reception/repair-success', { state: { formData: data } })
     }
@@ -68,7 +82,7 @@ export default function ReceptionRepairPage() {
             {/* Header */}
             <div className="mb-6">
                 <button
-                    onClick={() => navigate('/reception/success', { state: { formData: data } })}
+                    onClick={() => navigate(-1)}
                     className="flex items-center text-sm font-medium text-gray-500 hover:text-amber-600 mb-3 transition-colors"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -130,7 +144,22 @@ export default function ReceptionRepairPage() {
                             แก้ไขข้อมูล
                         </button>
                     </div>
-                    <div className="px-6 py-5 flex flex-col gap-3.5">
+                    <div className="px-6 py-5 flex flex-col gap-3.5 relative">
+                        {vehicleError && (
+                            <div className="absolute inset-0 bg-red-50/80 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center p-4 text-center rounded-b-2xl border-t border-red-100">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-red-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                <p className="text-sm text-red-600 font-medium">กรุณาเพิ่มข้อมูลรถมอเตอร์ไซค์ให้ครบถ้วนก่อนส่งใบแจ้งซ่อม</p>
+                                <button
+                                    type="button"
+                                    onClick={() => navigate('/reception/register', { state: { formData: data, returnTo: 'repair' } })}
+                                    className="mt-3 px-4 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold rounded-lg transition-colors"
+                                >
+                                    คลิกที่นี่เพื่อเพิ่มข้อมูลรถ
+                                </button>
+                            </div>
+                        )}
                         <InfoRow label="รุ่นรถ" value={data.model || '-'} />
                         <InfoRow label="สีรถ" value={data.color || '-'} />
                         <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-1 mt-1 border-t border-gray-100">

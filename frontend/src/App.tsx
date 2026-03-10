@@ -41,6 +41,7 @@ import ReceptionConfirmPage from './pages/reception/ReceptionConfirmPage'
 import ReceptionSuccessPage from './pages/reception/ReceptionSuccessPage'
 import ReceptionRepairPage from './pages/reception/ReceptionRepairPage'
 import ReceptionRepairSuccessPage from './pages/reception/ReceptionRepairSuccessPage'
+import ReceptionSearchPage from './pages/reception/ReceptionSearchPage'
 
 export default function App() {
   return (
@@ -88,6 +89,7 @@ export default function App() {
             <Route path="register" element={<ReceptionRegisterPage />} />
             <Route path="confirm" element={<ReceptionConfirmPage />} />
             <Route path="success" element={<ReceptionSuccessPage />} />
+            <Route path="search" element={<ReceptionSearchPage />} />
             <Route path="repair" element={<ReceptionRepairPage />} />
             <Route path="repair-success" element={<ReceptionRepairSuccessPage />} />
           </Route>
