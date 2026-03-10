@@ -1,103 +1,8 @@
-import { mockParts } from '../../data/partsMockData'
-import { mockPurchaseOrders } from '../../data/purchaseOrdersMockData'
-import { mockRequests } from '../../data/requestsMockData'
-
-// ─── Derived data ───────────────────────────────────────────────────────────
+import { useEffect, useState } from 'react'
+import { dashboardService, type DashboardMetrics, type Activity } from '../../services/dashboardService'
+import { useActivityLog } from '../../hooks/useActivityLog'
 
 const LOW_STOCK_THRESHOLD = 10
-
-const lowStockParts = mockParts
-  .filter((p) => p.quantity <= LOW_STOCK_THRESHOLD)
-  .sort((a, b) => a.quantity - b.quantity)
-
-const totalStockValue = mockParts.reduce((sum, p) => sum + p.quantity * p.price, 0)
-
-const totalItems = mockParts.length
-
-// Count requested part codes from all requests
-const partRequestCount: Record<string, { name: string; count: number; code: string }> = {}
-mockRequests.forEach((req) => {
-  req.items.forEach((item) => {
-    if (!partRequestCount[item.partCode]) {
-      partRequestCount[item.partCode] = { name: item.partName, count: 0, code: item.partCode }
-    }
-    partRequestCount[item.partCode].count += item.quantity
-  })
-})
-const topRequestedParts = Object.values(partRequestCount)
-  .sort((a, b) => b.count - a.count)
-  .slice(0, 5)
-
-const maxRequested = topRequestedParts[0]?.count ?? 1
-
-// Category stock distribution
-const categoryMap: Record<string, number> = {}
-mockParts.forEach((p) => {
-  categoryMap[p.category] = (categoryMap[p.category] ?? 0) + p.quantity
-})
-const categories = Object.entries(categoryMap).sort((a, b) => b[1] - a[1])
-const totalCategoryQty = categories.reduce((s, [, q]) => s + q, 0)
-
-// PO status counts
-const poStatusCount = {
-  draft: 0,
-  pending: 0,
-  approved: 0,
-  rejected: 0,
-  cancelled: 0,
-}
-mockPurchaseOrders.forEach((po) => {
-  poStatusCount[po.status] = (poStatusCount[po.status] ?? 0) + 1
-})
-
-// Recent activity: combine PO & requests (last 5 events, newest first)
-type Activity = {
-  id: string
-  type: 'po' | 'request'
-  label: string
-  sub: string
-  date: string
-  badge: string
-  badgeColor: string
-}
-
-const activities: Activity[] = [
-  ...mockPurchaseOrders.map((po) => ({
-    id: po.id,
-    type: 'po' as const,
-    label: po.id,
-    sub: po.supplierName,
-    date: po.createdAt,
-    badge: poLabel(po.status),
-    badgeColor: poColor(po.status),
-  })),
-  ...mockRequests.slice(0, 6).map((req) => ({
-    id: `REQ-${req.id}`,
-    type: 'request' as const,
-    label: `REQ-${String(req.id).padStart(3, '0')}`,
-    sub: req.requester,
-    date: req.requestedAt.split(' ')[0],
-    badge: 'เบิกอะไหล่',
-    badgeColor: 'bg-blue-100 text-blue-700',
-  })),
-]
-  .sort((a, b) => (b.date > a.date ? 1 : -1))
-  .slice(0, 6)
-
-function poLabel(s: string) {
-  return { draft: 'ร่าง', pending: 'รออนุมัติ', approved: 'อนุมัติแล้ว', rejected: 'ปฏิเสธ', cancelled: 'ยกเลิก' }[s] ?? s
-}
-function poColor(s: string) {
-  return (
-    {
-      draft: 'bg-gray-100 text-gray-600',
-      pending: 'bg-yellow-100 text-yellow-700',
-      approved: 'bg-green-100 text-green-700',
-      rejected: 'bg-red-100 text-red-700',
-      cancelled: 'bg-red-50 text-red-400',
-    }[s] ?? 'bg-gray-100 text-gray-600'
-  )
-}
 
 function fmt(n: number) {
   return n.toLocaleString('th-TH')
@@ -118,6 +23,46 @@ const CAT_COLORS = [
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function ReportsPage() {
+  const { activities: recentLog } = useActivityLog()
+
+  const [data, setData] = useState<DashboardMetrics | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    let isMounted = true
+    const loadData = async () => {
+      try {
+        const result = await dashboardService.fetchDashboardMetrics()
+        if (isMounted) setData(result)
+      } catch (err) {
+        console.error('Failed to load dashboard metrics', err)
+      } finally {
+        if (isMounted) setIsLoading(false)
+      }
+    }
+    loadData()
+    return () => { isMounted = false }
+  }, [])
+
+  if (isLoading || !data) {
+    return (
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-500"></div>
+      </div>
+    )
+  }
+
+  // Display top 10 activities overall, combining new tracking logs with old fallback data
+  const renderActivities: Activity[] = [...recentLog, ...data.fallbackActivities.filter(fa => !recentLog.find(ra => ra.id === fa.id))]
+    .sort((a, b) => {
+      const timeA = ('timestamp' in a ? (a as any).timestamp : new Date(a.date).getTime()) as number
+      const timeB = ('timestamp' in b ? (b as any).timestamp : new Date(b.date).getTime()) as number
+      return timeB - timeA
+    })
+    .slice(0, 10)
+
+  const maxRequested = data.topRequestedParts[0]?.count ?? 1
+
   return (
     <div className="px-6 py-4 min-h-screen space-y-4 bg-gray-50">
       {/* ── Header ── */}
@@ -134,14 +79,14 @@ export default function ReportsPage() {
           iconBg="bg-orange-100"
           iconColor="text-orange-500"
           label="รายการอะไหล่ทั้งหมด"
-          value={`${fmt(totalItems)} รายการ`}
+          value={`${fmt(data.totalItems)} รายการ`}
         />
         <KpiCard
           icon={<WarningIcon />}
           iconBg="bg-red-100"
           iconColor="text-red-500"
           label="อะไหล่ใกล้หมด"
-          value={`${fmt(lowStockParts.length)} รายการ`}
+          value={`${fmt(data.lowStockParts.length)} รายการ`}
           highlight
         />
         <KpiCard
@@ -149,14 +94,14 @@ export default function ReportsPage() {
           iconBg="bg-green-100"
           iconColor="text-green-600"
           label="มูลค่าสต็อกรวม"
-          value={`฿${fmt(totalStockValue)}`}
+          value={`฿${fmt(data.totalStockValue)}`}
         />
         <KpiCard
           icon={<DocIcon />}
           iconBg="bg-blue-100"
           iconColor="text-blue-500"
           label="ใบสั่งซื้อทั้งหมด"
-          value={`${fmt(mockPurchaseOrders.length)} ใบ`}
+          value={`${fmt(data.purchaseOrderCount)} ใบ`}
         />
       </div>
 
@@ -173,7 +118,7 @@ export default function ReportsPage() {
                   <p className="text-sm text-gray-400">คงเหลือน้อยกว่า {LOW_STOCK_THRESHOLD} ชิ้น</p>
                 </div>
                 <span className="text-sm bg-red-50 text-red-500 border border-red-100 px-2.5 py-1 rounded-full font-medium">
-                  {lowStockParts.length} รายการ
+                  {data.lowStockParts.length} รายการ
                 </span>
               </div>
               <div className="overflow-x-auto">
@@ -188,7 +133,7 @@ export default function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {lowStockParts.map((part) => (
+                    {data.lowStockParts.map((part) => (
                       <tr key={part.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-5 py-3 text-gray-500 font-mono text-sm">{part.partCode}</td>
                         <td className="px-4 py-3 font-medium text-gray-700 max-w-[180px] truncate">{part.name}</td>
@@ -212,7 +157,7 @@ export default function ReportsPage() {
                         </td>
                       </tr>
                     ))}
-                    {lowStockParts.length === 0 && (
+                    {data.lowStockParts.length === 0 && (
                       <tr>
                         <td colSpan={5} className="px-5 py-8 text-center text-gray-400 text-sm">
                           ✅ อะไหล่ทุกรายการมีสต็อกเพียงพอ
@@ -231,7 +176,7 @@ export default function ReportsPage() {
                 <p className="text-sm text-gray-400">5 รายการที่ถูกเบิกมากที่สุด</p>
               </div>
               <div className="flex flex-col gap-3 flex-1">
-                {topRequestedParts.map((p, i) => (
+                {data.topRequestedParts.map((p, i) => (
                   <div key={p.code} className="flex items-center gap-3">
                     <span className="w-5 h-5 rounded-full bg-orange-50 text-orange-500 text-sm font-semibold flex items-center justify-center flex-shrink-0">
                       {i + 1}
@@ -265,19 +210,19 @@ export default function ReportsPage() {
               <p className="text-sm text-gray-400 mb-4">จำนวนชิ้นรวมแยกตามประเภทอะไหล่</p>
               {/* Simple horizontal stacked bar */}
               <div className="w-full flex h-4 rounded-full overflow-hidden gap-px mb-4">
-                {categories.map(([cat, qty], i) => (
+                {data.categories.map(([cat, qty], i) => (
                   <div
                     key={cat}
                     title={`${cat}: ${qty}`}
                     style={{
-                      width: `${(qty / totalCategoryQty) * 100}%`,
+                      width: `${(qty / data.totalCategoryQty) * 100}%`,
                       backgroundColor: CAT_COLORS[i % CAT_COLORS.length],
                     }}
                   />
                 ))}
               </div>
               <div className="space-y-2 flex-1">
-                {categories.map(([cat, qty], i) => (
+                {data.categories.map(([cat, qty], i) => (
                   <div key={cat} className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <span
@@ -290,7 +235,7 @@ export default function ReportsPage() {
                       <span className="text-sm font-semibold text-gray-800">{qty}</span>
                       <span className="text-sm text-gray-400">ชิ้น</span>
                       <span className="text-sm text-gray-400 w-9 text-right">
-                        {((qty / totalCategoryQty) * 100).toFixed(0)}%
+                        {((qty / data.totalCategoryQty) * 100).toFixed(0)}%
                       </span>
                     </div>
                   </div>
@@ -312,8 +257,8 @@ export default function ReportsPage() {
                     { key: 'cancelled', label: 'ยกเลิก', color: 'bg-red-200', textColor: 'text-red-400' },
                   ] as const
                 ).map(({ key, label, color, textColor }) => {
-                  const count = poStatusCount[key]
-                  const pct = mockPurchaseOrders.length > 0 ? (count / mockPurchaseOrders.length) * 100 : 0
+                  const count = data.poStatusCount[key]
+                  const pct = data.purchaseOrderCount > 0 ? (count / data.purchaseOrderCount) * 100 : 0
                   return (
                     <div key={key}>
                       <div className="flex justify-between mb-1">
@@ -334,7 +279,7 @@ export default function ReportsPage() {
               <h2 className="font-semibold text-gray-800 mb-1">กิจกรรมล่าสุด</h2>
               <p className="text-sm text-gray-400 mb-4">รายการใบสั่งซื้อและเบิกอะไหล่ล่าสุด</p>
               <div className="space-y-3 flex-1">
-                {activities.map((a) => (
+                {renderActivities.map((a) => (
                   <div key={a.id} className="flex items-start gap-3">
                     <div
                       className={`mt-0.5 w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${a.type === 'po' ? 'bg-blue-50' : 'bg-orange-50'

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import type { PartRequest } from '../../data/requestsMockData'
 import { useRequestHistory } from '../../contexts/RequestHistoryContext'
 import { partRequisitionService } from '../../services/partRequisitionService'
+import { useActivityLog } from '../../hooks/useActivityLog'
 
 type ConfirmAction = 'approve' | 'reject' | null
 type ResultScreen = 'approved' | 'rejected' | null
@@ -11,6 +12,7 @@ export default function RequestDetailPage() {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
     const { addHistory } = useRequestHistory()
+    const { addActivity } = useActivityLog()
 
     const [request, setRequest] = useState<PartRequest | null>(null)
     const [isLoading, setIsLoading] = useState(true)
@@ -182,6 +184,16 @@ export default function RequestDetailPage() {
                 approvedAt,
                 status: confirmAction === 'approve' ? 'อนุมัติการเบิก' : 'ไม่อนุมัติการเบิก',
                 items: request.items,
+            })
+
+            addActivity({
+                id: `REQ-${request.id}-${now.getTime()}`,
+                type: 'request',
+                label: `เบิกอะไหล่ (REQ-${String(request.id).padStart(3, '0')})`,
+                sub: request.requester,
+                date: approvedAt,
+                badge: confirmAction === 'approve' ? 'อนุมัติการเบิก' : 'ไม่อนุมัติการเบิก',
+                badgeColor: confirmAction === 'approve' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700',
             })
 
             setConfirmAction(null)
