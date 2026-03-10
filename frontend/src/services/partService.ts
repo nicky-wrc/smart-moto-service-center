@@ -82,6 +82,12 @@ export const partService = {
 
                 if (motorcycleModel) {
                     filtered = filtered.filter(p => p.motorcycleModel === motorcycleModel || p.motorcycleModel === 'ทุกรุ่น')
+                    // Show exact model matches first, then ทุกรุ่น
+                    filtered.sort((a, b) => {
+                        const aExact = a.motorcycleModel === motorcycleModel ? 0 : 1
+                        const bExact = b.motorcycleModel === motorcycleModel ? 0 : 1
+                        return aExact - bExact
+                    })
                 }
 
                 const totalDocs = filtered.length
