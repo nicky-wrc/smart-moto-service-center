@@ -2,12 +2,13 @@
 import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateSalaryDto } from './dto/update-salary.dto';
 import { PrismaService } from '../prisma/prisma.service'; // Import ให้ถูก path
 import * as bcrypt from 'bcrypt'; // เดี๋ยวเราต้องลงตัวนี้เพิ่ม
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(createUserDto: CreateUserDto) {
     // 1. Hash Password เพื่อความปลอดภัย (ไม่เก็บรหัสตรงๆ)
@@ -31,11 +32,34 @@ export class UsersService {
   }
 
   // (Method อื่นๆ ปล่อยไว้ก่อนได้ครับ)
-  update(id: number, _updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  update(id: number, updateUserDto: UpdateUserDto) {
+    // Implement update logic if needed
+    return this.prisma.user.update({
+      where: { id },
+      data: updateUserDto,
+    });
+  }
+
+  async updateSalary(id: number, dto: UpdateSalaryDto) {
+    return this.prisma.user.update({
+      where: { id },
+      data: {
+        baseSalary: dto.baseSalary,
+        commissionRate: dto.commissionRate,
+      },
+      select: {
+        id: true,
+        name: true,
+        role: true,
+        baseSalary: true,
+        commissionRate: true,
+      },
+    });
   }
 
   remove(id: number) {
-    return `This action removes a #${id} user`;
+    return this.prisma.user.delete({
+      where: { id },
+    });
   }
 }

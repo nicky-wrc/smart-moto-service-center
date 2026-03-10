@@ -1,13 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@source "../src/**/*.{ts,tsx}";
 
 :root {
   /* สีหลักตาม SmartMoto Electronics */
-  --primary-dark: #1e3a5f; /* สีฟ้าเข้ม */
+  --primary-dark: #1e3a5f;
   --primary-blue: #2c5282;
-  --accent-orange: #ff6b35; /* สีส้ม */
+  --accent-orange: #ff6b35;
   --accent-orange-hover: #ff8c5a;
   --text-dark: #1a202c;
   --text-gray: #4a5568;
@@ -20,11 +18,12 @@
 }
 
 body {
-  font-family: 'Sarabun', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  color: var(--text-dark);
-  background-color: var(--bg-light);
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  font-family: 'Kanit', system-ui, -apple-system, sans-serif;
+  background-color: #44403C;
+  color: #1E1E1E;
 }
 
 #root {
@@ -253,4 +252,36 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--primary-dark);
+}
+
+/* Print Styles */
+@media print {
+
+  body {
+    background: white;
+  }
+
+  /* ซ่อนทุกอย่างก่อน */
+  body * {
+    visibility: hidden;
+  }
+
+  /* แสดงเฉพาะใบเสร็จ */
+  .print-area, .print-area * {
+    visibility: visible;
+  }
+
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 210mm;
+    height: 297mm;
+  }
+
+  /* ซ่อน scrollbar */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
 }

@@ -1,463 +1,142 @@
-import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
-import { Package, Wrench } from 'lucide-react';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { AuthGuard } from './guards/AuthGuard';
-import { RoleGuard } from './guards/RoleGuard';
-import { MainLayout } from './components/Layout/MainLayout';
-import { LoginPage } from './pages/auth/LoginPage';
-import { DashboardPage } from './pages/DashboardPage';
-import { CustomerSearchPage } from './pages/reception/CustomerSearchPage';
-import { CustomerCreatePage } from './pages/reception/CustomerCreatePage';
-import { CustomerDetailPage } from './pages/reception/CustomerDetailPage';
-import { MotorcycleCreatePage } from './pages/reception/MotorcycleCreatePage';
-import { JobCreatePage } from './pages/reception/JobCreatePage';
-import { JobQueuePage } from './pages/workshop/JobQueuePage';
-import { AppointmentsPage } from './pages/reception/AppointmentsPage';
-import { AppointmentCalendarPage } from './pages/reception/AppointmentCalendarPage';
-import { CreateAppointmentPage } from './pages/reception/CreateAppointmentPage';
-import { AppointmentDetailPage } from './pages/reception/AppointmentDetailPage';
-import { JobDetailPage } from './pages/workshop/JobDetailPage';
-import { PartRequisitionPage } from './pages/workshop/PartRequisitionPage';
-import { PartMasterPage } from './pages/inventory/PartMasterPage';
-import { GoodsReceiptPage } from './pages/inventory/GoodsReceiptPage';
-import { ReceiptHistoryPage } from './pages/inventory/ReceiptHistoryPage';
-import { PackagesPage } from './pages/inventory/PackagesPage';
-import { IssueRequisitionsPage } from './pages/inventory/IssueRequisitionsPage';
-import { QuotationsPage } from './pages/billing/QuotationsPage';
-import { PaymentsPage } from './pages/billing/PaymentsPage';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import ProtectedRoute from './components/ProtectedRoute'
+import LoginPage from './pages/login/LoginPage'
 
-// Placeholder pages (จะสร้างต่อ)
-const ReceptionPage = () => (
-  <div>
-    <h1 className="text-2xl font-bold text-gray-900 mb-4">Reception</h1>
-    <div className="card">
-      <p className="text-gray-600">เลือกเมนูจาก navigation bar ด้านบน</p>
-    </div>
-  </div>
-);
-const WorkshopPage = () => (
-  <div>
-    <h1 className="text-2xl font-bold text-gray-900 mb-4">งานช่าง</h1>
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <Link to="/workshop/queue" className="card hover:shadow-lg transition">
-        <Wrench className="w-12 h-12 text-blue-500 mb-2" />
-        <h3 className="font-semibold text-gray-900 mb-1">คิวงาน</h3>
-        <p className="text-sm text-gray-600">ดูงานที่รอรับและกำลังทำ</p>
-      </Link>
-      <Link to="/workshop/requisitions" className="card hover:shadow-lg transition">
-        <Package className="w-12 h-12 text-green-500 mb-2" />
-        <h3 className="font-semibold text-gray-900 mb-1">ขอเบิกอะไหล่</h3>
-        <p className="text-sm text-gray-600">สร้างคำขอเบิกอะไหล่</p>
-      </Link>
-    </div>
-  </div>
-);
+// Inventory (พนักงานคงคลัง)
+import InventoryLayout from './pages/inventory/InventoryLayout'
+import InventoryIndex from './pages/inventory'
+import RequestsPage from './pages/inventory/RequestsPage'
+import PartsPage from './pages/inventory/PartsPage'
+import PurchaseOrdersPage from './pages/inventory/PurchaseOrdersPage'
+import ReportsPage from './pages/inventory/ReportsPage'
 
-const InventoryPage = () => (
-  <div>
-    <h1 className="text-2xl font-bold text-gray-900 mb-4">หน้าคลังอะไหล่</h1>
-    <div className="card">
-      <p className="text-gray-600 mb-4">เลือกเมนูจาก navigation bar ด้านบน</p>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Link to="/inventory/parts" className="card hover:shadow-lg transition">
-          <Package className="w-12 h-12 text-blue-500 mb-2" />
-          <h3 className="font-semibold text-gray-900">จัดการอะไหล่</h3>
-          <p className="text-sm text-gray-600">ดูและจัดการอะไหล่ทั้งหมด</p>
-        </Link>
-            <Link to="/inventory/packages" className="card hover:shadow-lg transition">
-              <Package className="w-12 h-12 text-green-500 mb-2" />
-              <h3 className="font-semibold text-gray-900">ชุดอะไหล่</h3>
-              <p className="text-sm text-gray-600">จัดการชุดอะไหล่</p>
-            </Link>
-            <Link to="/inventory/receipts" className="card hover:shadow-lg transition">
-              <Package className="w-12 h-12 text-orange-500 mb-2" />
-              <h3 className="font-semibold text-gray-900">รับของเข้า</h3>
-              <p className="text-sm text-gray-600">ประวัติการรับของเข้า</p>
-            </Link>
-            <Link to="/inventory/issue" className="card hover:shadow-lg transition">
-              <Package className="w-12 h-12 text-red-500 mb-2" />
-              <h3 className="font-semibold text-gray-900">เบิกอะไหล่</h3>
-              <p className="text-sm text-gray-600">อนุมัติและเบิกอะไหล่</p>
-            </Link>
-      </div>
-    </div>
-  </div>
-);
-const BillingPage = () => (
-  <div>
-    <h1 className="text-2xl font-bold text-gray-900 mb-4">หน้าการเงิน</h1>
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <Link to="/billing/quotations" className="card hover:shadow-lg transition">
-        <h3 className="font-semibold text-gray-900 mb-2">ใบเสนอราคา</h3>
-        <p className="text-sm text-gray-600">จัดการใบเสนอราคา</p>
-      </Link>
-      <Link to="/billing/payments" className="card hover:shadow-lg transition">
-        <h3 className="font-semibold text-gray-900 mb-2">การชำระเงิน</h3>
-        <p className="text-sm text-gray-600">ดูประวัติการชำระเงิน</p>
-      </Link>
-    </div>
-  </div>
-);
-const AdminPage = () => (
-  <div className="card">
-    <h1 className="text-2xl font-bold">หน้าจัดการระบบ</h1>
-    <p className="text-gray-600 mt-2">กำลังพัฒนา...</p>
-  </div>
-);
+// Foreman (หัวหน้าช่าง)
+import ForemanLayout from './pages/foreman/ForemanLayout'
+import ForemanIndex from './pages/foreman'
+import DashboardPage from './pages/foreman/DashboardPage'
+import JobOrdersPage from './pages/foreman/JobOrdersPage'
+import JobDetailPage from './pages/foreman/JobDetailPage'
+import JobHistoryPage from './pages/foreman/JobHistoryPage'
+import MechanicsPage from './pages/foreman/MechanicsPage'
 
-const AppRoutes = () => {
-  const { isAuthenticated } = useAuth();
+// Mechanic (ช่าง)
+import MechanicLayout from './pages/mechanic/MechanicLayout'
+import MechanicIndex from './pages/mechanic'
+import MechanicJobsPage from './pages/mechanic/MechanicJobsPage'
+import MechanicJobDetailPage from './pages/mechanic/MechanicJobDetailPage'
+import MechanicHistoryPage from './pages/mechanic/MechanicHistoryPage'
 
+// Accountant (บัญชี)
+import AccountantLayout from './pages/accountant/AccountantLayout'
+import AccountIndex from './pages/accountant'
+import AccountantDashboardPage from './pages/accountant/DashboardPage'
+import PaymentHistoryPage from './pages/accountant/PaymentHistoryPage'
+import PaymentHistoryDetailPage from './pages/accountant/PaymentHistoryDetailPage'
+import Pendingpayment from './pages/accountant/Pendingpayment'
+import PendingpaymentDetail from './pages/accountant/PendingpaymentDetail'
+
+// Owner (เจ้าของร้าน)
+import OwnerLayout from './pages/owner/OwnerLayout'
+import OwnerIndex from './pages/owner'
+import OwnerDashboardPage from './pages/owner/DashboardPage'
+import OwnerReportsPage from './pages/owner/ReportsPage'
+import OwnerEmployeesPage from './pages/owner/EmployeesPage'
+import OwnerStockPage from './pages/owner/StockPage'
+import OwnerPendingJobsPage from './pages/owner/PendingJobsPage'
+import OwnerPurchaseRequestsPage from './pages/owner/PurchaseRequestsPage'
+import OwnerPurchaseRequestDetailPage from './pages/owner/PurchaseRequestDetailPage'
+
+// Other roles (placeholder — layouts TBD)
+import ReceptionPage from './pages/reception'
+
+export default function App() {
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route index element={<Navigate to="/login" replace />} />
+        <Route path="/unauthorized" element={
+          <div className="min-h-screen flex items-center justify-center text-gray-500">
+            ไม่มีสิทธิ์เข้าถึงหน้านี้
+          </div>
+        } />
 
-      {/* Protected Routes */}
-      <Route
-        path="/dashboard"
-        element={
-          <AuthGuard>
-            <MainLayout>
-              <DashboardPage />
-            </MainLayout>
-          </AuthGuard>
-        }
-      />
+        {/* พนักงานคงคลัง */}
+        <Route path="/inventory" element={
+          <ProtectedRoute roles={['STOCK_KEEPER', 'ADMIN', 'MANAGER']}>
+            <InventoryLayout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<InventoryIndex />} />
+          <Route path="requests" element={<RequestsPage />} />
+          <Route path="parts" element={<PartsPage />} />
+          <Route path="purchase-orders" element={<PurchaseOrdersPage />} />
+          <Route path="reports" element={<ReportsPage />} />
+        </Route>
 
-      {/* Reception Routes */}
-      <Route
-        path="/reception"
-        element={
-          <AuthGuard>
-            <RoleGuard allowedRoles={['SERVICE_ADVISOR', 'ADMIN', 'MANAGER']}>
-              <MainLayout>
-                <ReceptionPage />
-              </MainLayout>
-            </RoleGuard>
-          </AuthGuard>
-        }
-      />
-      <Route
-        path="/reception/customers"
-        element={
-          <AuthGuard>
-            <RoleGuard allowedRoles={['SERVICE_ADVISOR', 'ADMIN', 'MANAGER']}>
-              <MainLayout>
-                <CustomerSearchPage />
-              </MainLayout>
-            </RoleGuard>
-          </AuthGuard>
-        }
-      />
-      <Route
-        path="/reception/customers/new"
-        element={
-          <AuthGuard>
-            <RoleGuard allowedRoles={['SERVICE_ADVISOR', 'ADMIN', 'MANAGER']}>
-              <MainLayout>
-                <CustomerCreatePage />
-              </MainLayout>
-            </RoleGuard>
-          </AuthGuard>
-        }
-      />
-      <Route
-        path="/reception/customers/:id"
-        element={
-          <AuthGuard>
-            <RoleGuard allowedRoles={['SERVICE_ADVISOR', 'ADMIN', 'MANAGER']}>
-              <MainLayout>
-                <CustomerDetailPage />
-              </MainLayout>
-            </RoleGuard>
-          </AuthGuard>
-        }
-      />
-      <Route
-        path="/reception/motorcycles/new"
-        element={
-          <AuthGuard>
-            <RoleGuard allowedRoles={['SERVICE_ADVISOR', 'ADMIN', 'MANAGER']}>
-              <MainLayout>
-                <MotorcycleCreatePage />
-              </MainLayout>
-            </RoleGuard>
-          </AuthGuard>
-        }
-      />
-      <Route
-        path="/reception/jobs/new"
-        element={
-          <AuthGuard>
-            <RoleGuard allowedRoles={['SERVICE_ADVISOR', 'ADMIN', 'MANAGER']}>
-              <MainLayout>
-                <JobCreatePage />
-              </MainLayout>
-            </RoleGuard>
-          </AuthGuard>
-        }
-      />
-      <Route
-        path="/reception/appointments"
-        element={
-          <AuthGuard>
-            <RoleGuard allowedRoles={['SERVICE_ADVISOR', 'ADMIN', 'MANAGER']}>
-              <MainLayout>
-                <AppointmentsPage />
-              </MainLayout>
-            </RoleGuard>
-          </AuthGuard>
-        }
-      />
-      <Route
-        path="/reception/appointments/calendar"
-        element={
-          <AuthGuard>
-            <RoleGuard allowedRoles={['SERVICE_ADVISOR', 'ADMIN', 'MANAGER']}>
-              <MainLayout>
-                <AppointmentCalendarPage />
-              </MainLayout>
-            </RoleGuard>
-          </AuthGuard>
-        }
-      />
-          <Route
-            path="/reception/appointments/new"
-            element={
-              <AuthGuard>
-                <RoleGuard allowedRoles={['SERVICE_ADVISOR', 'ADMIN', 'MANAGER']}>
-                  <MainLayout>
-                    <CreateAppointmentPage />
-                  </MainLayout>
-                </RoleGuard>
-              </AuthGuard>
-            }
-          />
-          <Route
-            path="/reception/appointments/:id"
-            element={
-              <AuthGuard>
-                <RoleGuard allowedRoles={['SERVICE_ADVISOR', 'ADMIN', 'MANAGER']}>
-                  <MainLayout>
-                    <AppointmentDetailPage />
-                  </MainLayout>
-                </RoleGuard>
-              </AuthGuard>
-            }
-          />
+        {/* หัวหน้าช่าง */}
+        <Route path="/foreman" element={
+          <ProtectedRoute roles={['FOREMAN', 'SERVICE_ADVISOR', 'ADMIN', 'MANAGER']}>
+            <ForemanLayout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<ForemanIndex />} />
+          <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="jobs" element={<JobOrdersPage />} />
+          <Route path="jobs/:id" element={<JobDetailPage />} />
+          <Route path="mechanics" element={<MechanicsPage />} />
+          <Route path="history" element={<JobHistoryPage />} />
+        </Route>
 
-      {/* Workshop Routes */}
-      <Route
-        path="/workshop"
-        element={
-          <AuthGuard>
-            <RoleGuard allowedRoles={['TECHNICIAN', 'FOREMAN', 'ADMIN', 'MANAGER']}>
-              <MainLayout>
-                <WorkshopPage />
-              </MainLayout>
-            </RoleGuard>
-          </AuthGuard>
-        }
-      />
-      <Route
-        path="/workshop/queue"
-        element={
-          <AuthGuard>
-            <RoleGuard allowedRoles={['TECHNICIAN', 'FOREMAN', 'ADMIN', 'MANAGER']}>
-              <MainLayout>
-                <JobQueuePage />
-              </MainLayout>
-            </RoleGuard>
-          </AuthGuard>
-        }
-      />
-      <Route
-        path="/workshop/jobs/:id"
-        element={
-          <AuthGuard>
-            <RoleGuard allowedRoles={['TECHNICIAN', 'FOREMAN', 'ADMIN', 'MANAGER']}>
-              <MainLayout>
-                <JobDetailPage />
-              </MainLayout>
-            </RoleGuard>
-          </AuthGuard>
-        }
-      />
-      <Route
-        path="/workshop/requisitions"
-        element={
-          <AuthGuard>
-            <RoleGuard allowedRoles={['TECHNICIAN', 'FOREMAN', 'ADMIN', 'MANAGER']}>
-              <MainLayout>
-                <PartRequisitionPage />
-              </MainLayout>
-            </RoleGuard>
-          </AuthGuard>
-        }
-      />
+        {/* ช่าง */}
+        <Route path="/mechanic" element={
+          <ProtectedRoute roles={['TECHNICIAN', 'FOREMAN', 'ADMIN', 'MANAGER']}>
+            <MechanicLayout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<MechanicIndex />} />
+          <Route path="jobs" element={<MechanicJobsPage />} />
+          <Route path="jobs/:id" element={<MechanicJobDetailPage />} />
+          <Route path="history" element={<MechanicHistoryPage />} />
+        </Route>
 
-      {/* Inventory Routes */}
-      <Route
-        path="/inventory"
-        element={
-          <AuthGuard>
-            <RoleGuard allowedRoles={['STOCK_KEEPER', 'ADMIN', 'MANAGER']}>
-              <MainLayout>
-                <InventoryPage />
-              </MainLayout>
-            </RoleGuard>
-          </AuthGuard>
-        }
-      />
-      <Route
-        path="/inventory/parts"
-        element={
-          <AuthGuard>
-            <RoleGuard allowedRoles={['STOCK_KEEPER', 'ADMIN', 'MANAGER']}>
-              <MainLayout>
-                <PartMasterPage />
-              </MainLayout>
-            </RoleGuard>
-          </AuthGuard>
-        }
-      />
-      <Route
-        path="/inventory/packages"
-        element={
-          <AuthGuard>
-            <RoleGuard allowedRoles={['STOCK_KEEPER', 'ADMIN', 'MANAGER']}>
-              <MainLayout>
-                <div className="card">
-                  <h1 className="text-2xl font-bold">ชุดอะไหล่</h1>
-                  <p className="text-gray-600 mt-2">กำลังพัฒนา...</p>
-                </div>
-              </MainLayout>
-            </RoleGuard>
-          </AuthGuard>
-        }
-      />
-          <Route
-            path="/inventory/receipts"
-            element={
-              <AuthGuard>
-                <RoleGuard allowedRoles={['STOCK_KEEPER', 'ADMIN', 'MANAGER']}>
-                  <MainLayout>
-                    <ReceiptHistoryPage />
-                  </MainLayout>
-                </RoleGuard>
-              </AuthGuard>
-            }
-          />
-          <Route
-            path="/inventory/receipts/new"
-            element={
-              <AuthGuard>
-                <RoleGuard allowedRoles={['STOCK_KEEPER', 'ADMIN', 'MANAGER']}>
-                  <MainLayout>
-                    <GoodsReceiptPage />
-                  </MainLayout>
-                </RoleGuard>
-              </AuthGuard>
-            }
-          />
-          <Route
-            path="/inventory/packages"
-            element={
-              <AuthGuard>
-                <RoleGuard allowedRoles={['STOCK_KEEPER', 'ADMIN', 'MANAGER']}>
-                  <MainLayout>
-                    <PackagesPage />
-                  </MainLayout>
-                </RoleGuard>
-              </AuthGuard>
-            }
-          />
-          <Route
-            path="/inventory/issue"
-            element={
-              <AuthGuard>
-                <RoleGuard allowedRoles={['STOCK_KEEPER', 'ADMIN', 'MANAGER']}>
-                  <MainLayout>
-                    <IssueRequisitionsPage />
-                  </MainLayout>
-                </RoleGuard>
-              </AuthGuard>
-            }
-          />
+        {/* บัญชี */}
+        <Route path="/accountant" element={
+          <ProtectedRoute roles={['CASHIER', 'ADMIN', 'MANAGER']}>
+            <AccountantLayout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<AccountIndex />} />
+          <Route path="dashboard" element={<AccountantDashboardPage />} />
+          <Route path="historys" element={<PaymentHistoryPage />} />
+          <Route path="historys/:id" element={<PaymentHistoryDetailPage />} />
+          <Route path="pendingpayment" element={<Pendingpayment />} />
+          <Route path="pendingpayment/:id" element={<PendingpaymentDetail />} />
+        </Route>
 
-          {/* Billing Routes */}
-          <Route
-            path="/billing"
-            element={
-              <AuthGuard>
-                <RoleGuard allowedRoles={['CASHIER', 'ADMIN', 'MANAGER']}>
-                  <MainLayout>
-                    <BillingPage />
-                  </MainLayout>
-                </RoleGuard>
-              </AuthGuard>
-            }
-          />
-          <Route
-            path="/billing/quotations"
-            element={
-              <AuthGuard>
-                <RoleGuard allowedRoles={['CASHIER', 'ADMIN', 'MANAGER']}>
-                  <MainLayout>
-                    <QuotationsPage />
-                  </MainLayout>
-                </RoleGuard>
-              </AuthGuard>
-            }
-          />
-          <Route
-            path="/billing/payments"
-            element={
-              <AuthGuard>
-                <RoleGuard allowedRoles={['CASHIER', 'ADMIN', 'MANAGER']}>
-                  <MainLayout>
-                    <PaymentsPage />
-                  </MainLayout>
-                </RoleGuard>
-              </AuthGuard>
-            }
-          />
+        {/* เจ้าของร้าน */}
+        <Route path="/owner" element={
+          <ProtectedRoute roles={['MANAGER', 'ADMIN']}>
+            <OwnerLayout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<OwnerIndex />} />
+          <Route path="dashboard" element={<OwnerDashboardPage />} />
+          <Route path="reports" element={<OwnerReportsPage />} />
+          <Route path="employees" element={<OwnerEmployeesPage />} />
+          <Route path="stock" element={<OwnerStockPage />} />
+          <Route path="pending-jobs" element={<OwnerPendingJobsPage />} />
+          <Route path="purchase-requests" element={<OwnerPurchaseRequestsPage />} />
+          <Route path="purchase-requests/:id" element={<OwnerPurchaseRequestDetailPage />} />
+        </Route>
 
-      {/* Admin Routes */}
-      <Route
-        path="/admin/*"
-        element={
-          <AuthGuard>
-            <RoleGuard allowedRoles={['ADMIN', 'MANAGER']}>
-              <MainLayout>
-                <AdminPage />
-              </MainLayout>
-            </RoleGuard>
-          </AuthGuard>
-        }
-      />
-
-      {/* Default Route */}
-      <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
-  );
-};
-
-function App() {
-  return (
-    <BrowserRouter
-      future={{
-        v7_startTransition: true,
-        v7_relativeSplatPath: true,
-      }}
-    >
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
+        {/* roles อื่น — layouts จะสร้างเพิ่มในภายหลัง */}
+        <Route path="/reception/*" element={
+          <ProtectedRoute roles={['SERVICE_ADVISOR', 'ADMIN', 'MANAGER']}>
+            <ReceptionPage />
+          </ProtectedRoute>
+        } />
+      </Routes>
     </BrowserRouter>
-  );
+  )
 }
-
-export default App;
