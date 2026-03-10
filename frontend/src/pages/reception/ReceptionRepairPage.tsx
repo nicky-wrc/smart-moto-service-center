@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { addReceptionHistory } from '../../utils/receptionHistory'
+import { receptionApiService, type RepairRequestDTO } from '../../services/receptionApiService'
 
 interface RegistrationData {
     firstName: string
@@ -78,7 +79,7 @@ export default function ReceptionRepairPage() {
     const fullName = `${data.firstName || ''} ${data.lastName || ''}`.trim()
     const licensePlate = [data.plateLine1, data.plateLine2, data.province].filter(Boolean).join(' ')
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         let hasError = false
 
@@ -105,41 +106,94 @@ export default function ReceptionRepairPage() {
 
         if (hasError) return
 
-        // Determine activity type based on where the user came from
-        let activityType: 'แจ้งซ่อมครั้งแรก' | 'แจ้งซ่อมรถที่มีในระบบ' | 'แจ้งซ่อมรถคันใหม่'
-        
-        if (isExistingCustomer) {
-            // ลูกค้าเก่า
-            if (isNewMotorcycle) {
-                // ลูกค้าเก่ากดปุ่ม "เพิ่มรถยอดแจ้งซ่อมคันใหม่"
-                activityType = 'แจ้งซ่อมรถคันใหม่'
+        try {
+            // Determine activity type based on where the user came from
+            let activityType: 'แจ้งซ่อมครั้งแรก' | 'แจ้งซ่อมรถที่มีในระบบ' | 'แจ้งซ่อมรถคันใหม่'
+            
+            if (isExistingCustomer) {
+                // ลูกค้าเก่า
+                if (isNewMotorcycle) {
+                    // ลูกค้าเก่ากดปุ่ม "เพิ่มรถยอดแจ้งซ่อมคันใหม่"
+                    activityType = 'แจ้งซ่อมรถคันใหม่'
+                } else {
+                    // ลูกค้าเก่าเลือกรถที่มีในระบบ
+                    activityType = 'แจ้งซ่อมรถที่มีในระบบ'
+                }
             } else {
-                // ลูกค้าเก่าเลือกรถที่มีในระบบ
-                activityType = 'แจ้งซ่อมรถที่มีในระบบ'
+                // ลูกค้าใหม่ (ลงทะเบียนและแจ้งซ่อมพร้อมกัน)
+                activityType = 'แจ้งซ่อมครั้งแรก'
             }
-        } else {
-            // ลูกค้าใหม่ (ลงทะเบียนและแจ้งซ่อมพร้อมกัน)
-            activityType = 'แจ้งซ่อมครั้งแรก'
+
+            // Prepare data for API
+            const repairRequestData: RepairRequestDTO = {
+                customerData: {
+                    firstName: data.firstName,
+                    lastName: data.lastName,
+                    phone: data.phone,
+                    address: data.address
+                },
+                motorcycleData: {
+                    model: data.model,
+                    color: data.color,
+                    licensePlate: {
+                        line1: data.plateLine1,
+                        line2: data.plateLine2,
+                        province: data.province
+                    }
+                },
+                symptoms: symptoms.trim(),
+                tags: selectedTags,
+                images: images.map(img => img.url), // TODO: Convert to base64 or upload first
+                activityType,
+                isExistingCustomer,
+                isNewMotorcycle,
+                createdAt: new Date().toISOString(),
+                status: 'pending_foreman_review'
+            }
+
+            // TODO: Uncomment when backend is ready
+            // Step 1: Upload images first (if any)
+            // if (images.length > 0) {
+            //     const imageFiles = await Promise.all(
+            //         images.map(async (img) => {
+            //             const response = await fetch(img.url)
+            //             const blob = await response.blob()
+            //             return new File([blob], img.name, { type: blob.type })
+            //         })
+            //     )
+            //     const uploadedUrls = await receptionApiService.uploadImages(imageFiles)
+            //     repairRequestData.images = uploadedUrls
+            // }
+            // 
+            // Step 2: Create repair request
+            // const result = await receptionApiService.createRepairRequest(repairRequestData)
+            // 
+            // console.log('Repair request created:', result)
+
+            // Save to local reception history (for now, until backend is ready)
+            addReceptionHistory({
+                activityType,
+                firstName: data.firstName,
+                lastName: data.lastName,
+                phone: data.phone,
+                model: data.model,
+                color: data.color,
+                plateLine1: data.plateLine1,
+                plateLine2: data.plateLine2,
+                province: data.province,
+                symptoms: symptoms.trim(),
+                tags: selectedTags,
+                images: images.map(img => img.url),
+            })
+
+            // Navigate to success page
+            navigate('/reception/repair-success', { state: { formData: data } })
+
+        } catch (error) {
+            console.error('Error submitting repair request:', error)
+            // TODO: Show error modal or toast
+            alert('เกิดข้อผิดพลาดในการส่งใบแจ้งซ่อม กรุณาลองใหม่อีกครั้ง')
         }
-
-        // Save to reception history
-        addReceptionHistory({
-            activityType,
-            firstName: data.firstName,
-            lastName: data.lastName,
-            phone: data.phone,
-            model: data.model,
-            color: data.color,
-            plateLine1: data.plateLine1,
-            plateLine2: data.plateLine2,
-            province: data.province,
-            symptoms: symptoms.trim(),
-            tags: selectedTags,
-            images: images.map(img => img.url),
-        })
-
-        // TODO: Submit to API
-        navigate('/reception/repair-success', { state: { formData: data } })
     }
 
     return (
