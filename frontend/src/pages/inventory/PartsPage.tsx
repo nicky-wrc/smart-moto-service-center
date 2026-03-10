@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import SearchBox from '../../components/SearchBox'
 import { partService } from '../../services/partService'
 import { mockParts, type PartItem } from '../../data/partsMockData'
@@ -6,8 +7,10 @@ import { mockParts, type PartItem } from '../../data/partsMockData'
 // Extract unique filter options from mock data (in real app, this would be an API call)
 const CATEGORIES = Array.from(new Set(mockParts.map(p => p.category)))
 const LOCATIONS = Array.from(new Set(mockParts.map(p => p.location)))
+const MOTORCYCLE_MODELS = Array.from(new Set(mockParts.filter(p => p.motorcycleModel && p.motorcycleModel !== 'ทุกรุ่น').map(p => p.motorcycleModel!))).sort()
 
 export default function PartsPage() {
+  const navigate = useNavigate()
   const [parts, setParts] = useState<PartItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
@@ -23,7 +26,8 @@ export default function PartsPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [filterCategory, setFilterCategory] = useState('')
   const [filterLocation, setFilterLocation] = useState('')
-  const [filterLowStock, setFilterLowStock] = useState(false)
+  const [filterModel, setFilterModel] = useState('')
+  const [filterStockLevel, setFilterStockLevel] = useState('')
 
   // Use debounced search text to avoid rapid requests when typing
   const [debouncedSearch, setDebouncedSearch] = useState(search)
@@ -38,7 +42,7 @@ export default function PartsPage() {
   // Reset pagination to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1)
-  }, [debouncedSearch, filterCategory, filterLocation, filterLowStock])
+  }, [debouncedSearch, filterCategory, filterLocation, filterModel, filterStockLevel])
 
   useEffect(() => {
     let isMounted = true
@@ -52,7 +56,8 @@ export default function PartsPage() {
           search: debouncedSearch,
           category: filterCategory,
           location: filterLocation,
-          lowStock: filterLowStock
+          motorcycleModel: filterModel,
+          stockLevel: filterStockLevel
         })
 
         if (isMounted) {
@@ -69,7 +74,7 @@ export default function PartsPage() {
 
     fetchParts()
     return () => { isMounted = false }
-  }, [currentPage, debouncedSearch, filterCategory, filterLocation, filterLowStock, limit])
+  }, [currentPage, debouncedSearch, filterCategory, filterLocation, filterModel, filterStockLevel, limit])
 
   return (
     <div className="p-6 bg-[#F5F5F5] min-h-full flex flex-col">
@@ -104,7 +109,8 @@ export default function PartsPage() {
             <div className="absolute -top-[10px] right-[1270px] w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[10px] border-b-white z-20" />
             <div className="absolute -top-[12px] right-[1270px] w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[12px] border-b-gray-200 z-10" />
 
-            <div className="relative z-30 grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+            <div className="relative z-30 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
+              {/* Category */}
               <div>
                 <label className="block text-sm font-medium text-gray-500 mb-1">หมวดหมู่</label>
                 <select
@@ -118,6 +124,7 @@ export default function PartsPage() {
                   ))}
                 </select>
               </div>
+              {/* Location */}
               <div>
                 <label className="block text-sm font-medium text-gray-500 mb-1">ตำแหน่งที่ตั้ง</label>
                 <select
@@ -131,22 +138,34 @@ export default function PartsPage() {
                   ))}
                 </select>
               </div>
-              <div className="flex items-center h-full pb-2">
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <div className="relative flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={filterLowStock}
-                      onChange={(e) => setFilterLowStock(e.target.checked)}
-                      className="peer sr-only"
-                    />
-                    <div className="w-5 h-5 border border-gray-300 rounded transition-all peer-checked:bg-red-500 peer-checked:border-red-500 peer-focus:ring-2 peer-focus:ring-red-500/30 group-hover:border-red-400"></div>
-                    <svg className="absolute w-3.5 h-3.5 text-white left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                  </div>
-                  <span className="text-sm font-medium text-gray-700 group-hover:text-red-600 transition-colors select-none">แสดงเฉพาะสินค้า Low Stock</span>
-                </label>
+              {/* Motorcycle Model */}
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">รุ่นรถ</label>
+                <select
+                  value={filterModel}
+                  onChange={(e) => setFilterModel(e.target.value)}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                >
+                  <option value="">ทุกรุ่น</option>
+                  {MOTORCYCLE_MODELS.map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              </div>
+              {/* Stock Level */}
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">ปริมาณคงเหลือ</label>
+                <select
+                  value={filterStockLevel}
+                  onChange={(e) => setFilterStockLevel(e.target.value)}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                >
+                  <option value="">ทั้งหมด</option>
+                  <option value="มีของ">มีของ (คงเหลือ 10 ชิ้นขึ้นไป)</option>
+                  <option value="เหลือน้อย">เหลือน้อย (คงเหลือน้อยกว่า 10 ชิ้น)</option>
+                  <option value="ใกล้หมด">ใกล้หมด (คงเหลือน้อยกว่า 5 ชิ้น)</option>
+                  <option value="หมด">หมด (คงเหลือ 0 ชิ้น)</option>
+                </select>
               </div>
             </div>
           </div>
@@ -176,7 +195,11 @@ export default function PartsPage() {
         <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 220px)' }}>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8 pb-4">
             {parts.map((item) => (
-              <div key={item.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 group flex flex-col">
+              <div
+                key={item.id}
+                onClick={() => navigate(`/inventory/parts/${item.id}`)}
+                className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 group flex flex-col cursor-pointer"
+              >
                 {/* Image Container */}
                 <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
                   <img
@@ -210,13 +233,18 @@ export default function PartsPage() {
 
                 {/* Details Container */}
                 <div className="p-4 flex flex-col flex-1">
-                  <div className="mb-3 flex-1">
-                    <h3 className="text-[15px] font-medium text-gray-800 line-clamp-2 leading-snug mb-1 group-hover:text-amber-600 transition-colors">
+                  <div className="mb-4 flex-1 flex flex-col">
+                    <h3 className="text-[15px] font-medium text-gray-800 line-clamp-2 leading-snug mb-2 group-hover:text-amber-600 transition-colors">
                       {item.name}
                     </h3>
-                    <p className="text-sm text-amber-600 font-medium">
-                      {item.category}
-                    </p>
+                    <div className="flex flex-wrap gap-1.5 mt-auto">
+                      <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md">
+                        {item.category.split(' ')[0]} {/* Show short category name */}
+                      </span>
+                      <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md">
+                        {item.motorcycleModel === 'ทุกรุ่น' || !item.motorcycleModel ? 'รองรับทุกรุ่น' : `${item.motorcycleModel}`}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="space-y-2.5">

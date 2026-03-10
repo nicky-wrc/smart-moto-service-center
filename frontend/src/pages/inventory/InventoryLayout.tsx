@@ -31,7 +31,7 @@ const navItems: NavItem[] = [
   },
     {
     path: '/inventory/history',
-    label: 'ประวัติการเบิก',
+    label: 'ประวัติคำขอเบิก',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -53,7 +53,7 @@ const pageTitles: Record<string, string> = {
   '/inventory/requests': 'รายการคำร้องขอเบิกอะไหล่',
   '/inventory/parts': 'รายการอะไหล่',
   '/inventory/purchase-orders': 'สั่งซื้ออะไหล่',
-  '/inventory/history': 'ประวัติการคำขอเบิกอะไหล่',
+  '/inventory/history': 'ประวัติคำขอเบิกอะไหล่',
   '/inventory/reports': 'รายงานสต็อก',
 
 }

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { mockSuppliers } from '../../data/suppliersMockData'
 import PartSelectionModal from '../../components/PartSelectionModal'
 import { type PartItem } from '../../data/partsMockData'
@@ -25,7 +25,12 @@ const getTomorrowString = () => {
 
 export default function CreatePurchaseOrderPage() {
     const navigate = useNavigate()
+    const location = useLocation()
     const { addActivity } = useActivityLog()
+
+    // If navigated here from Part Detail, auto-add that part
+    const prefillPart: PartItem | undefined = (location.state as any)?.prefillPart
+    const cameFromPartDetail = !!prefillPart
 
     // Form State
     const [supplierId, setSupplierId] = useState<number | ''>(() => {
@@ -43,18 +48,27 @@ export default function CreatePurchaseOrderPage() {
         return localStorage.getItem('draft_po_managerMessage') || ''
     })
 
-    // Items State
+    // Items State — if prefillPart came in from navigation, start fresh with that part
     const [orderItems, setOrderItems] = useState<OrderItem[]>(() => {
+        if (prefillPart) return [{ ...prefillPart, orderQuantity: 1 }]
         const saved = localStorage.getItem('draft_po_items')
         if (saved) {
-            try {
-                return JSON.parse(saved)
-            } catch (e) {
-                return []
-            }
+            try { return JSON.parse(saved) } catch (e) { return [] }
         }
         return []
     })
+
+    // Clear draft localStorage when arriving via prefill to avoid stale conflict
+    useEffect(() => {
+        if (prefillPart) {
+            localStorage.removeItem('draft_po_supplier')
+            localStorage.removeItem('draft_po_deliveryDate')
+            localStorage.removeItem('draft_po_remarks')
+            localStorage.removeItem('draft_po_managerMessage')
+            localStorage.removeItem('draft_po_items')
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     // Save to LocalStorage effects
     useEffect(() => { localStorage.setItem('draft_po_supplier', String(supplierId)) }, [supplierId])
@@ -106,13 +120,17 @@ export default function CreatePurchaseOrderPage() {
 
     const confirmCancel = () => {
         setIsCancelModalOpen(false)
-        // Clear local storage on cancel
         localStorage.removeItem('draft_po_supplier')
         localStorage.removeItem('draft_po_deliveryDate')
         localStorage.removeItem('draft_po_remarks')
         localStorage.removeItem('draft_po_managerMessage')
         localStorage.removeItem('draft_po_items')
-        navigate('/inventory/purchase-orders')
+        // If we came from Part Detail page, go back there; otherwise go to list
+        if (cameFromPartDetail) {
+            navigate(-1)
+        } else {
+            navigate('/inventory/purchase-orders')
+        }
     }
 
     const handleSubmit = (action: 'draft' | 'submit') => {

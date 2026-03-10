@@ -197,7 +197,7 @@ export default function PurchaseOrdersPage() {
                       <div className="flex items-center justify-start gap-2">
                         {/* View Button (Always visible) */}
                         <button
-                          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-[#255B91] hover:bg-blue-800 text-white rounded transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-[#255B91] hover:bg-[#1a3f66] text-white rounded transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
                           onClick={() => {
                             markVisited(order.id)
                             navigate(`/inventory/purchase-orders/${order.id}`)
