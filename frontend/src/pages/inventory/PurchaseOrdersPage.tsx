@@ -35,6 +35,16 @@ export default function PurchaseOrdersPage() {
   const [activeRowId, setActiveRowId] = useState<string | null>(
     () => sessionStorage.getItem('po_last_visited')
   )
+  
+  // Track unread status changes (approved/rejected)
+  const [unreadStatusChanges, setUnreadStatusChanges] = useState<Record<string, 'approved' | 'rejected'>>(() => {
+    try {
+      const saved = localStorage.getItem('po_unread_status_changes')
+      return saved ? JSON.parse(saved) : {}
+    } catch {
+      return {}
+    }
+  })
 
   // Load purchase orders and suppliers from service (mock or real)
   useEffect(() => {
@@ -47,11 +57,40 @@ export default function PurchaseOrdersPage() {
       if (!mounted) return
       setOrders(posResult.data)
       setSuppliers(suppliersResult)
+      
+      // TODO: When backend is ready, check for status changes
+      // Compare previous status with current status to detect changes
+      // const previousStatuses = JSON.parse(localStorage.getItem('po_previous_statuses') || '{}')
+      // const newUnreadChanges: Record<string, 'approved' | 'rejected'> = {}
+      // 
+      // posResult.data.forEach(order => {
+      //   const prevStatus = previousStatuses[order.id]
+      //   if (prevStatus === 'pending' && (order.status === 'approved' || order.status === 'rejected')) {
+      //     newUnreadChanges[order.id] = order.status
+      //   }
+      // })
+      // 
+      // if (Object.keys(newUnreadChanges).length > 0) {
+      //   setUnreadStatusChanges(prev => ({ ...prev, ...newUnreadChanges }))
+      // }
+      // 
+      // // Save current statuses for next comparison
+      // const currentStatuses = posResult.data.reduce((acc, order) => {
+      //   acc[order.id] = order.status
+      //   return acc
+      // }, {} as Record<string, string>)
+      // localStorage.setItem('po_previous_statuses', JSON.stringify(currentStatuses))
+      
     }).catch(console.error).finally(() => {
       if (mounted) setIsLoading(false)
     })
     return () => { mounted = false }
   }, [])
+
+  // Save unread status changes to localStorage
+  useEffect(() => {
+    localStorage.setItem('po_unread_status_changes', JSON.stringify(unreadStatusChanges))
+  }, [unreadStatusChanges])
 
   // Clear the highlight after 5 seconds so it doesn't persist forever
   useEffect(() => {
@@ -69,18 +108,41 @@ export default function PurchaseOrdersPage() {
   const markVisited = (id: string) => {
     sessionStorage.setItem('po_last_visited', id)
     setActiveRowId(id)
+    // Mark as read (remove from unread list)
+    setUnreadStatusChanges((prev) => {
+      const updated = { ...prev }
+      delete updated[id]
+      return updated
+    })
   }
 
-  // Filtered Orders
+  // Filtered Orders with sorting
   const filteredOrders = useMemo(() => {
-    return orders.filter(order => {
+    const filtered = orders.filter(order => {
       if (searchQuery && !order.id.toLowerCase().includes(searchQuery.toLowerCase())) return false
       if (filterStatus && order.status !== filterStatus) return false
       if (filterDate && order.createdAt !== filterDate) return false
       if (filterSupplier && order.supplierId.toString() !== filterSupplier) return false
       return true
     })
-  }, [orders, searchQuery, filterStatus, filterDate, filterSupplier])
+    
+    // Sort orders: 
+    // 1. Unread status changes (approved/rejected) on top
+    // 2. Then by newest first (reverse order)
+    return filtered.sort((a, b) => {
+      const aHasUnread = a.id in unreadStatusChanges
+      const bHasUnread = b.id in unreadStatusChanges
+      
+      // If both have unread or both don't have unread, sort by newest first
+      if (aHasUnread === bHasUnread) {
+        // Newest first (assuming higher ID or later timestamp means newer)
+        return b.id.localeCompare(a.id)
+      }
+      
+      // Unread items go to top
+      return aHasUnread ? -1 : 1
+    })
+  }, [orders, searchQuery, filterStatus, filterDate, filterSupplier, unreadStatusChanges])
 
   // MAIN LIST RENDER
   if (isLoading) {
@@ -205,22 +267,30 @@ export default function PurchaseOrdersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-gray-700">
-                {filteredOrders.map((order) => (
-                  <tr
-                    key={order.id}
-                    className="hover:bg-gray-50/80 transition-colors"
-                    style={activeRowId === order.id ? { backgroundColor: '#F5F5F5' } : {}}
-                  >
-                    <td className="py-4 px-6 text-left font-medium text-gray-900">{order.id}</td>
-                    <td className="py-4 px-6 text-left">{order.supplierName}</td>
-                    <td className="py-4 px-6">{order.createdAt}</td>
-                    <td className="py-4 px-6">{order.deliveryDate}</td>
-                    <td className="py-4 px-6 text-right font-medium">฿{order.totalAmount.toLocaleString()}</td>
-                    <td className="py-4 px-6">
-                      <StatusBadge status={order.status} />
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="flex items-center justify-start gap-2">
+                {filteredOrders.map((order) => {
+                  const unreadStatus = unreadStatusChanges[order.id]
+                  const bgColor = unreadStatus === 'approved' 
+                    ? 'bg-green-50/70' 
+                    : unreadStatus === 'rejected' 
+                    ? 'bg-red-50/70' 
+                    : ''
+                  
+                  return (
+                    <tr
+                      key={order.id}
+                      className={`hover:bg-gray-50/80 transition-colors ${bgColor}`}
+                      style={activeRowId === order.id ? { backgroundColor: '#F5F5F5' } : {}}
+                    >
+                      <td className="py-4 px-6 text-left font-medium text-gray-900">{order.id}</td>
+                      <td className="py-4 px-6 text-left">{order.supplierName}</td>
+                      <td className="py-4 px-6">{order.createdAt}</td>
+                      <td className="py-4 px-6">{order.deliveryDate}</td>
+                      <td className="py-4 px-6 text-right font-medium">฿{order.totalAmount.toLocaleString()}</td>
+                      <td className="py-4 px-6">
+                        <StatusBadge status={order.status} />
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="flex items-center justify-start gap-2">
                         {/* View Button (Always visible) */}
                         <button
                           className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-[#255B91] hover:bg-[#1a3f66] text-white rounded transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
@@ -270,7 +340,8 @@ export default function PurchaseOrdersPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           </div>

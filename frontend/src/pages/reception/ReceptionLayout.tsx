@@ -24,7 +24,7 @@ const navItems: NavItem[] = [
 
 const pageTitles: Record<string, string> = {
     '/reception': 'รับลูกค้าใหม่/ลูกค้าเก่า',
-    '/reception/history': 'ประวัติการรับลูกค้า',
+    '/reception/history': 'ประวัติการเข้ารับบริการ',
 }
 
 export default function ReceptionLayout() {

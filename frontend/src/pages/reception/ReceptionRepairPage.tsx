@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { addReceptionHistory } from '../../utils/receptionHistory'
 
 interface RegistrationData {
     firstName: string
@@ -11,6 +12,12 @@ interface RegistrationData {
     plateLine1: string
     plateLine2: string
     province: string
+}
+
+interface LocationState {
+    formData: RegistrationData
+    isExistingCustomer?: boolean // true = ลูกค้าเก่า, false/undefined = ลูกค้าใหม่
+    isNewMotorcycle?: boolean // true = รถคันใหม่ (ของลูกค้าเก่า)
 }
 
 function InfoRow({ label, value }: { label: string; value: string }) {
@@ -25,7 +32,23 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 export default function ReceptionRepairPage() {
     const navigate = useNavigate()
     const location = useLocation()
-    const data: RegistrationData = location.state?.formData ?? {}
+    const state = location.state as LocationState | undefined
+    
+    // Provide default values for all required fields
+    const data: RegistrationData = state?.formData ?? {
+        firstName: '',
+        lastName: '',
+        phone: '',
+        address: '',
+        model: '',
+        color: '',
+        plateLine1: '',
+        plateLine2: '',
+        province: ''
+    }
+    
+    const isExistingCustomer = state?.isExistingCustomer ?? false
+    const isNewMotorcycle = state?.isNewMotorcycle ?? false
 
     const [symptoms, setSymptoms] = useState('')
     const [selectedTags, setSelectedTags] = useState<string[]>([])
@@ -82,59 +105,99 @@ export default function ReceptionRepairPage() {
 
         if (hasError) return
 
+        // Determine activity type based on where the user came from
+        let activityType: 'แจ้งซ่อมครั้งแรก' | 'แจ้งซ่อมรถที่มีในระบบ' | 'แจ้งซ่อมรถคันใหม่'
+        
+        if (isExistingCustomer) {
+            // ลูกค้าเก่า
+            if (isNewMotorcycle) {
+                // ลูกค้าเก่ากดปุ่ม "เพิ่มรถยอดแจ้งซ่อมคันใหม่"
+                activityType = 'แจ้งซ่อมรถคันใหม่'
+            } else {
+                // ลูกค้าเก่าเลือกรถที่มีในระบบ
+                activityType = 'แจ้งซ่อมรถที่มีในระบบ'
+            }
+        } else {
+            // ลูกค้าใหม่ (ลงทะเบียนและแจ้งซ่อมพร้อมกัน)
+            activityType = 'แจ้งซ่อมครั้งแรก'
+        }
+
+        // Save to reception history
+        addReceptionHistory({
+            activityType,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            phone: data.phone,
+            model: data.model,
+            color: data.color,
+            plateLine1: data.plateLine1,
+            plateLine2: data.plateLine2,
+            province: data.province,
+            symptoms: symptoms.trim(),
+            tags: selectedTags,
+            images: images.map(img => img.url),
+        })
+
         // TODO: Submit to API
         navigate('/reception/repair-success', { state: { formData: data } })
     }
 
     return (
-        <div className="p-6 max-w-3xl mx-auto min-h-full">
+        <div className="h-full flex flex-col bg-[#F5F5F5]">
             {/* Header */}
-            <div className="mb-6">
-                <button
-                    onClick={() => navigate(-1)}
-                    className="flex items-center text-sm font-medium text-gray-500 hover:text-amber-600 mb-3 transition-colors"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                    </svg>
-                    ย้อนกลับ
-                </button>
-                <h2 className="text-2xl font-semibold text-gray-800">แจ้งอาการเข้าซ่อม</h2>
-                <p className="text-gray-500 text-sm mt-1">กรอกอาการและรายละเอียดที่ต้องการให้ช่างตรวจสอบ</p>
+            <div className="p-6 w-full flex flex-col gap-6 shrink-0">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="flex items-center text-sm font-medium text-gray-500 hover:text-amber-600 mb-3 transition-colors"
+                        >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                        </svg>
+                        ย้อนกลับ
+                    </button>
+                    <h2 className="text-2xl font-semibold text-gray-800">แจ้งอาการเข้าซ่อม</h2>
+                    <p className="text-gray-500 text-sm mt-1">กรอกอาการและรายละเอียดที่ต้องการให้ช่างตรวจสอบ</p>
+                </div>
+            </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            {/* Scrollable Content Area */}
+            <div className="flex-1 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col mx-6 mb-6">
+                <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 220px)' }}>
+                    <form onSubmit={handleSubmit} className="flex flex-col gap-6 p-6">
 
-                {/* ===== Summary: Personal Info ===== */}
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                    <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                            <h3 className="text-base font-semibold text-gray-800">ข้อมูลส่วนบุคคล</h3>
+                        {/* ===== Summary: Personal Info ===== */}
+                        <div className="bg-gray-50/50 rounded-2xl border border-gray-200 overflow-hidden">
+                            <div className="px-6 py-4 border-b border-gray-200 bg-white flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                    <h3 className="text-base font-semibold text-gray-800">ข้อมูลส่วนบุคคล</h3>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => navigate('/reception/register', { state: { formData: data, returnTo: 'repair' } })}
+                                    className="flex items-center gap-1.5 text-xs font-medium text-amber-600 hover:text-amber-700 border border-amber-300 hover:border-amber-400 bg-amber-50 hover:bg-amber-100 rounded-lg px-3 py-1.5 transition-all"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                    </svg>
+                                    แก้ไขข้อมูล
+                                </button>
+                            </div>
+                            <div className="px-6 py-5 flex flex-col gap-3.5">
+                                <InfoRow label="ชื่อ-นามสกุล" value={fullName || '-'} />
+                                <InfoRow label="เบอร์โทรศัพท์" value={data.phone || '-'} />
+                                {data.address && <InfoRow label="ที่อยู่" value={data.address} />}
+                            </div>
                         </div>
-                        <button
-                            type="button"
-                            onClick={() => navigate('/reception/register', { state: { formData: data, returnTo: 'repair' } })}
-                            className="flex items-center gap-1.5 text-xs font-medium text-amber-600 hover:text-amber-700 border border-amber-300 hover:border-amber-400 bg-amber-50 hover:bg-amber-100 rounded-lg px-3 py-1.5 transition-all"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                            </svg>
-                            แก้ไขข้อมูล
-                        </button>
-                    </div>
-                    <div className="px-6 py-5 flex flex-col gap-3.5">
-                        <InfoRow label="ชื่อ-นามสกุล" value={fullName || '-'} />
-                        <InfoRow label="เบอร์โทรศัพท์" value={data.phone || '-'} />
-                        {data.address && <InfoRow label="ที่อยู่" value={data.address} />}
-                    </div>
-                </div>
 
                 {/* ===== Summary: Motorcycle Info ===== */}
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                    <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
+                <div className="bg-gray-50/50 rounded-2xl border border-gray-200 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-200 bg-white flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <svg className="h-5 w-5 text-amber-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 17 24" fill="currentColor">
                                 <path d="M8.632 15.526a2.112 2.112 0 0 0-2.106 2.105v4.305a2.106 2.106 0 0 0 4.212 0v-.043v.002v-4.263a2.112 2.112 0 0 0-2.104-2.106z" />
@@ -190,8 +253,8 @@ export default function ReceptionRepairPage() {
                 </div>
 
                 {/* ===== Symptom Input ===== */}
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                    <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2">
+                <div className="bg-gray-50/50 rounded-2xl border border-gray-200 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-200 bg-white flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                         </svg>
@@ -322,22 +385,24 @@ export default function ReceptionRepairPage() {
                 </div>
 
                 {/* ===== Action Buttons ===== */}
-                <div className="flex justify-end gap-3 mt-2 pb-8">
+                <div className="flex justify-end gap-4 mt-4 pb-4 sticky bottom-0 bg-white pt-4 border-t border-gray-200">
                     <button
                         type="button"
                         onClick={() => navigate('/reception')}
-                        className="px-6 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium bg-white hover:bg-gray-50 active:bg-gray-100 transition-all focus:outline-none focus:ring-2 focus:ring-gray-200"
+                        className="min-w-[180px] px-10 py-3.5 rounded-xl border-2 border-gray-300 text-gray-700 text-base font-semibold bg-white hover:bg-gray-50 active:bg-gray-100 transition-all focus:outline-none focus:ring-2 focus:ring-gray-200"
                     >
                         ยกเลิก
                     </button>
                     <button
                         type="submit"
-                        className="px-6 py-2.5 rounded-xl border border-transparent text-white font-medium bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-sm"
+                        className="min-w-[200px] px-10 py-3.5 rounded-xl border-2 border-transparent text-white text-base font-semibold bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-lg"
                     >
                         ส่งใบแจ้งซ่อม
                     </button>
                 </div>
             </form>
+                </div>
+            </div>
         </div>
     )
 }

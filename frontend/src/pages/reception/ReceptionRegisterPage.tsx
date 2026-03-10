@@ -9,11 +9,26 @@ const MOTORCYCLE_MODELS = [
     'Vespa LX 125', 'Vespa Primavera 150', 'Vespa Sprint 150', 'อื่นๆ'
 ]
 
+// Validation helper functions
+const validateThaiEnglishOnly = (value: string): boolean => {
+    return /^[ก-๙a-zA-Z\s]+$/.test(value)
+}
+
+const validatePhoneNumber = (value: string): boolean => {
+    return /^[0-9]{10}$/.test(value)
+}
+
+const validateColorThaiEnglish = (value: string): boolean => {
+    return /^[ก-๙a-zA-Z\s]+$/.test(value)
+}
+
 export default function ReceptionRegisterPage() {
     const navigate = useNavigate()
     const location = useLocation()
     const prefilled = location.state?.formData
     const returnTo: string | undefined = location.state?.returnTo
+    const isExistingCustomer: boolean = location.state?.isExistingCustomer ?? false
+    const isNewMotorcycle: boolean = location.state?.isNewMotorcycle ?? false
     const [errors, setErrors] = useState<Record<string, string>>({})
 
     // Pre-fill from location state if returning from confirm page
@@ -34,6 +49,35 @@ export default function ReceptionRegisterPage() {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target
+
+        // Clear error for this field when user types
+        if (errors[name]) {
+            setErrors({ ...errors, [name]: '' })
+        }
+
+        // Validate firstName and lastName - only Thai and English letters
+        if (name === 'firstName' || name === 'lastName') {
+            if (value && !validateThaiEnglishOnly(value)) {
+                return // Don't update if invalid characters
+            }
+        }
+
+        // Validate phone - only numbers and max 10 digits
+        if (name === 'phone') {
+            if (value && !/^[0-9]*$/.test(value)) {
+                return // Don't update if not a number
+            }
+            if (value.length > 10) {
+                return // Max 10 digits
+            }
+        }
+
+        // Validate color - only Thai and English letters
+        if (name === 'color') {
+            if (value && !validateColorThaiEnglish(value)) {
+                return // Don't update if invalid characters
+            }
+        }
 
         if (name === 'plateLine1') {
             // Remove any spaces
@@ -67,13 +111,51 @@ export default function ReceptionRegisterPage() {
 
         const newErrors: Record<string, string> = {}
 
-        if (!formData.firstName) newErrors.firstName = 'โปรดระบุชื่อ'
-        if (!formData.lastName) newErrors.lastName = 'โปรดระบุนามสกุล'
-        if (!formData.phone) newErrors.phone = 'โปรดระบุเบอร์โทรศัพท์'
+        // Validate personal info
+        if (!formData.firstName) {
+            newErrors.firstName = 'โปรดระบุชื่อ'
+        } else if (!validateThaiEnglishOnly(formData.firstName)) {
+            newErrors.firstName = 'กรอกได้เฉพาะตัวอักษรไทยและอังกฤษเท่านั้น'
+        }
 
+        if (!formData.lastName) {
+            newErrors.lastName = 'โปรดระบุนามสกุล'
+        } else if (!validateThaiEnglishOnly(formData.lastName)) {
+            newErrors.lastName = 'กรอกได้เฉพาะตัวอักษรไทยและอังกฤษเท่านั้น'
+        }
+
+        if (!formData.phone) {
+            newErrors.phone = 'โปรดระบุเบอร์โทรศัพท์'
+        } else if (!validatePhoneNumber(formData.phone)) {
+            newErrors.phone = 'กรอกเบอร์โทรศัพท์ 10 หลักเท่านั้น'
+        }
+
+        // Check for duplicate customer (exact match: firstName + lastName + phone)
+        if (!isExistingCustomer) { // Only check if this is a new customer registration
+            const existingCustomersStr = localStorage.getItem('smart_moto_customers')
+            if (existingCustomersStr) {
+                const existingCustomers = JSON.parse(existingCustomersStr)
+                const isDuplicate = existingCustomers.some((customer: { firstName: string; lastName: string; phone: string }) => 
+                    customer.firstName === formData.firstName &&
+                    customer.lastName === formData.lastName &&
+                    customer.phone === formData.phone
+                )
+                if (isDuplicate) {
+                    newErrors.phone = 'ลูกค้าท่านนี้มีอยู่ในระบบแล้ว (ชื่อ-นามสกุล-เบอร์โทรซ้ำ)'
+                }
+            }
+        }
+
+        // Validate motorcycle info
         if (!formData.model) newErrors.model = 'โปรดระบุรุ่นรถ'
-        if (!formData.color) newErrors.color = 'โปรดระบุสีรถ'
+        
+        if (!formData.color) {
+            newErrors.color = 'โปรดระบุสีรถ'
+        } else if (!validateColorThaiEnglish(formData.color)) {
+            newErrors.color = 'กรอกได้เฉพาะตัวอักษรไทยและอังกฤษเท่านั้น'
+        }
 
+        // Validate license plate
         if (!formData.plateLine1) {
             newErrors.plateLine1 = 'โปรดระบุป้ายทะเบียนบรรทัดบน'
         } else if (!/^([1-9][ก-ฮ]{2}|[ก-ฮ]{3})$/.test(formData.plateLine1)) {
@@ -88,6 +170,26 @@ export default function ReceptionRegisterPage() {
 
         if (!formData.province) newErrors.province = 'โปรดระบุจังหวัดของป้ายทะเบียน'
 
+        // Check for duplicate license plate (exact match: plateLine1 + plateLine2 + province)
+        if (formData.plateLine1 && formData.plateLine2 && formData.province) {
+            const existingCustomersStr = localStorage.getItem('smart_moto_customers')
+            if (existingCustomersStr) {
+                const existingCustomers = JSON.parse(existingCustomersStr)
+                const isDuplicatePlate = existingCustomers.some((customer: { motorcycles?: Array<{ plateLine1: string; plateLine2: string; province: string }> }) => 
+                    customer.motorcycles && customer.motorcycles.some((moto) =>
+                        moto.plateLine1 === formData.plateLine1 &&
+                        moto.plateLine2 === formData.plateLine2 &&
+                        moto.province === formData.province
+                    )
+                )
+                if (isDuplicatePlate) {
+                    newErrors.plateLine1 = 'ป้ายทะเบียนนี้ถูกเพิ่มเข้าประวัติแล้ว'
+                    newErrors.plateLine2 = 'ป้ายทะเบียนนี้ถูกเพิ่มเข้าประวัติแล้ว'
+                    newErrors.province = 'ป้ายทะเบียนนี้ถูกเพิ่มเข้าประวัติแล้ว'
+                }
+            }
+        }
+
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors)
             return
@@ -97,22 +199,29 @@ export default function ReceptionRegisterPage() {
 
         if (returnTo === 'repair' || returnTo === 'newMoto') {
             // Return to repair page with updated/new data
-            navigate('/reception/repair', { state: { formData } })
+            navigate('/reception/repair', { 
+                state: { 
+                    formData,
+                    isExistingCustomer,
+                    isNewMotorcycle,
+                } 
+            })
         } else {
-            // Normal flow: go to confirmation page
-            navigate('/reception/confirm', { state: { formData } })
+            // Normal flow: go to confirmation page, pass returnTo for success page
+            navigate('/reception/confirm', { state: { formData, returnTo } })
         }
     }
 
     return (
-        <div className="p-6 max-w-5xl mx-auto min-h-full">
+        <div className="h-full flex flex-col bg-[#F5F5F5]">
             {/* Header section */}
-            <div className="mb-6 flex items-center justify-between">
-                <div>
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="flex items-center text-sm font-medium text-gray-500 hover:text-amber-600 mb-2 transition-colors"
-                    >
+            <div className="p-6 w-full flex flex-col gap-6 shrink-0">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="flex items-center text-sm font-medium text-gray-500 hover:text-amber-600 mb-2 transition-colors"
+                        >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                         </svg>
@@ -126,16 +235,20 @@ export default function ReceptionRegisterPage() {
                     </p>
                 </div>
             </div>
+            </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-                {/* Section 1: ข้อมูลส่วนบุคคล (Personal Information) */}
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                    <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                        <h3 className="text-lg font-semibold text-gray-800">ข้อมูลส่วนบุคคล</h3>
-                    </div>
+            {/* Scrollable Content Area */}
+            <div className="flex-1 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col mx-6 mb-6">
+                <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 220px)' }}>
+                    <form onSubmit={handleSubmit} className="flex flex-col gap-6 p-6">
+                        {/* Section 1: ข้อมูลส่วนบุคคล (Personal Information) */}
+                        <div className="bg-gray-50/50 rounded-2xl border border-gray-200 overflow-hidden">
+                            <div className="px-6 py-4 border-b border-gray-200 bg-white flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                <h3 className="text-lg font-semibold text-gray-800">ข้อมูลส่วนบุคคล</h3>
+                            </div>
                     <div className="p-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
                             <div>
@@ -182,8 +295,8 @@ export default function ReceptionRegisterPage() {
                 </div>
 
                 {/* Section 2: ข้อมูลรถมอเตอร์ไซค์ (Motorcycle Information) */}
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                    <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2">
+                <div className="bg-gray-50/50 rounded-2xl border border-gray-200 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-200 bg-white flex items-center gap-2">
                         <svg className="h-5 w-5 text-amber-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 17 24" fill="currentColor">
                             <path d="M8.632 15.526a2.112 2.112 0 0 0-2.106 2.105v4.305a2.106 2.106 0 0 0 4.212 0v-.043v.002v-4.263a2.112 2.112 0 0 0-2.104-2.106z" />
                             <path d="M16.263 2.631H12.21C11.719 1.094 10.303 0 8.631 0S5.544 1.094 5.06 2.604l-.007.027h-4a1.053 1.053 0 0 0 0 2.106h4.053c.268.899.85 1.635 1.615 2.096l.016.009c-2.871.867-4.929 3.48-4.947 6.577v5.528a1.753 1.753 0 0 0 1.736 1.737h1.422v-3a3.737 3.737 0 1 1 7.474 0v3h1.421a1.752 1.752 0 0 0 1.738-1.737v-5.474a6.855 6.855 0 0 0-4.899-6.567l-.048-.012a3.653 3.653 0 0 0 1.625-2.08l.007-.026h4.053a1.056 1.056 0 0 0 1.053-1.053a1.149 1.149 0 0 0-1.104-1.105h-.002zM8.631 5.84a2.106 2.106 0 1 1 2.106-2.106l.001.06c0 1.13-.916 2.046-2.046 2.046l-.063-.001h.003z" />
@@ -308,19 +421,19 @@ export default function ReceptionRegisterPage() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex items-center justify-end gap-3 mt-2 pb-8">
+                <div className="flex items-center justify-end gap-4 mt-4 pb-4 sticky bottom-0 bg-white pt-4 border-t border-gray-200">
                     {(returnTo === 'repair' || returnTo === 'newMoto') ? (
                         <>
                             <button
                                 type="button"
                                 onClick={() => navigate('/reception/repair', { state: { formData: prefilled } })}
-                                className="px-6 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium bg-white hover:bg-gray-50 active:bg-gray-100 transition-all focus:outline-none focus:ring-2 focus:ring-gray-200"
+                                className="min-w-[180px] px-10 py-3.5 rounded-xl border-2 border-gray-300 text-gray-700 text-base font-semibold bg-white hover:bg-gray-50 active:bg-gray-100 transition-all focus:outline-none focus:ring-2 focus:ring-gray-200"
                             >
                                 ยกเลิก
                             </button>
                             <button
                                 type="submit"
-                                className="px-6 py-2.5 rounded-xl border border-transparent text-white font-medium bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-sm"
+                                className="min-w-[200px] px-10 py-3.5 rounded-xl border-2 border-transparent text-white text-base font-semibold bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-lg"
                             >
                                 {returnTo === 'newMoto' ? 'บันทึกและแจ้งซ่อม' : 'อัพเดตข้อมูล'}
                             </button>
@@ -330,13 +443,13 @@ export default function ReceptionRegisterPage() {
                             <button
                                 type="button"
                                 onClick={() => navigate('/reception')}
-                                className="px-6 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium bg-white hover:bg-gray-50 active:bg-gray-100 transition-all focus:outline-none focus:ring-2 focus:ring-gray-200"
+                                className="min-w-[180px] px-10 py-3.5 rounded-xl border-2 border-gray-300 text-gray-700 text-base font-semibold bg-white hover:bg-gray-50 active:bg-gray-100 transition-all focus:outline-none focus:ring-2 focus:ring-gray-200"
                             >
                                 ยกเลิก
                             </button>
                             <button
                                 type="submit"
-                                className="px-6 py-2.5 rounded-xl border border-transparent text-white font-medium bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-sm"
+                                className="min-w-[180px] px-10 py-3.5 rounded-xl border-2 border-transparent text-white text-base font-semibold bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-lg"
                             >
                                 ถัดไป
                             </button>
@@ -344,6 +457,8 @@ export default function ReceptionRegisterPage() {
                     )}
                 </div>
             </form>
+                </div>
+            </div>
         </div>
     )
 }

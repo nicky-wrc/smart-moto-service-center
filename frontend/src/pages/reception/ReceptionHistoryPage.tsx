@@ -1,31 +1,14 @@
 import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import SearchBox from '../../components/SearchBox'
+import { getReceptionHistory, type ReceptionHistoryEntry, type ReceptionActivityType } from '../../utils/receptionHistory'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export type ReceptionActivityType =
-    | 'ลงทะเบียนใหม่'
-    | 'แจ้งซ่อมครั้งแรก'
-    | 'แจ้งซ่อมรถที่มีในระบบ'
-    | 'แจ้งซ่อมรถคันใหม่'
+// Re-export types for backward compatibility
+export type { ReceptionActivityType, ReceptionHistoryEntry }
 
-interface ReceptionHistoryEntry {
-    id: string
-    activityType: ReceptionActivityType
-    firstName: string
-    lastName: string
-    phone: string
-    model: string
-    color: string
-    plateLine1: string
-    plateLine2: string
-    province: string
-    symptoms?: string
-    tags?: string[]
-    createdAt: string // "DD/MM/YYYY HH:mm"
-}
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
+// ─── Mock Data (for fallback) ────────────────────────────────────────────────
 
 const MOCK_HISTORY: ReceptionHistoryEntry[] = [
     {
@@ -98,16 +81,17 @@ function getActivityTags(activityType: ReceptionActivityType): string[] {
 
 const ACTIVITY_TAG_COLORS: Record<string, string> = {
     'ลูกค้าใหม่': 'bg-emerald-100 text-emerald-700 border-emerald-200',
-    'ลงทะเบียนใหม่': 'bg-emerald-50  text-emerald-600 border-emerald-200',
-    'แจ้งซ่อมครั้งแรก': 'bg-sky-100    text-sky-700    border-sky-200',
+    'ลงทะเบียนใหม่': 'bg-gray-100 text-gray-700 border-gray-200',
+    'แจ้งซ่อมครั้งแรก': 'bg-gray-100 text-gray-700 border-gray-200',
     'ลูกค้าเก่า': 'bg-amber-100  text-amber-700  border-amber-200',
-    'แจ้งซ่อมรถที่มีในระบบ': 'bg-amber-50   text-amber-600  border-amber-200',
-    'แจ้งซ่อมรถคันใหม่': 'bg-purple-100 text-purple-700 border-purple-200',
+    'แจ้งซ่อมรถที่มีในระบบ': 'bg-gray-100 text-gray-700 border-gray-200',
+    'แจ้งซ่อมรถคันใหม่': 'bg-gray-100 text-gray-700 border-gray-200',
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function ReceptionHistoryPage() {
+    const navigate = useNavigate()
     const [search, setSearch] = useState('')
     const [showFilters, setShowFilters] = useState(false)
     const [filterName, setFilterName] = useState('')
@@ -116,8 +100,14 @@ export default function ReceptionHistoryPage() {
     const [filterModel, setFilterModel] = useState('')
     const [filterActivity, setFilterActivity] = useState<ReceptionActivityType | ''>('')
 
+    // Merge loaded history with mock data
+    const allHistory = useMemo(() => {
+        const loadedHistory = getReceptionHistory()
+        return [...loadedHistory, ...MOCK_HISTORY]
+    }, []) // Empty dependency array means this only runs once on mount
+
     const filtered = useMemo(() => {
-        return MOCK_HISTORY.filter(entry => {
+        return allHistory.filter(entry => {
             const q = search.toLowerCase()
             const fullName = `${entry.firstName} ${entry.lastName}`
             const plate = `${entry.plateLine1} ${entry.plateLine2} ${entry.province}`
@@ -136,7 +126,7 @@ export default function ReceptionHistoryPage() {
 
             return matchSearch && matchName && matchPhone && matchPlate && matchModel && matchActivity
         })
-    }, [search, filterName, filterPhone, filterPlate, filterModel, filterActivity])
+    }, [search, filterName, filterPhone, filterPlate, filterModel, filterActivity, allHistory])
 
     return (
         <div className="p-6 bg-[#F5F5F5] min-h-full flex flex-col">
@@ -246,16 +236,20 @@ export default function ReceptionHistoryPage() {
                             const plate = `${entry.plateLine1} ${entry.plateLine2} ${entry.province}`
                             const activityTags = getActivityTags(entry.activityType)
                             const hasRepairInfo = entry.activityType !== 'ลงทะเบียนใหม่'
+                            
+                            // Extract queue number from ID (e.g., "RH-009-1773169600006" -> "009")
+                            const queueNumber = entry.id.split('-')[1] || entry.id
 
                             return (
                                 <div
                                     key={entry.id}
-                                    className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-md transition-all"
+                                    onClick={() => navigate(`/reception/history/${entry.id}`)}
+                                    className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-md transition-all cursor-pointer"
                                 >
                                     {/* Card Header */}
                                     <div className="flex items-stretch">
                                         <div className="bg-[#1E1E1E] text-white text-sm font-medium px-4 py-2.5 flex items-center rounded-br-xl shrink-0">
-                                            {entry.id}
+                                            ลำดับการรับบริการที่ {queueNumber}
                                         </div>
                                         <div className="flex-1 flex items-center pl-3 pr-4 gap-2">
                                             {activityTags.map(tag => (
@@ -326,11 +320,31 @@ export default function ReceptionHistoryPage() {
                                             {hasRepairInfo && entry.symptoms ? (
                                                 <>
                                                     <p className="text-sm text-gray-700 leading-relaxed">{entry.symptoms}</p>
+                                                    
+                                                    {/* Image attachment status */}
+                                                    <div className="flex items-center gap-1.5 text-xs mt-1">
+                                                        {entry.images && entry.images.length > 0 ? (
+                                                            <>
+                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                                </svg>
+                                                                <span className="text-green-600 font-medium">แนบรูปภาพแล้ว ({entry.images.length} รูป)</span>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                                </svg>
+                                                                <span className="text-gray-400">ไม่มีรูปภาพแนบ</span>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                    
                                                     {/* Symptom tags (repair categories) */}
                                                     {entry.tags && entry.tags.length > 0 && (
                                                         <div className="flex flex-wrap gap-1.5 pt-2">
                                                             {entry.tags.map(tag => (
-                                                                <span key={tag} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200">
+                                                                <span key={tag} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-700 border border-sky-200">
                                                                     {tag}
                                                                 </span>
                                                             ))}
