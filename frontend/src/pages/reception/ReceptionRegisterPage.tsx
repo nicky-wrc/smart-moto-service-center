@@ -29,9 +29,32 @@ export default function ReceptionRegisterPage() {
     })
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target
+
+        if (name === 'plateLine1') {
+            // Remove any spaces
+            const noSpaceValue = value.replace(/\s/g, '')
+            // Check against rules: empty OR (starts with number 1-9 followed by up to 2 Thai consonants) OR (up to 3 Thai consonants)
+            const isValid = noSpaceValue === '' || /^[1-9][ก-ฮ]{0,2}$/.test(noSpaceValue) || /^[ก-ฮ]{1,3}$/.test(noSpaceValue)
+            if (isValid) {
+                setFormData({ ...formData, [name]: noSpaceValue })
+            }
+            return
+        }
+
+        if (name === 'plateLine2') {
+            const noSpaceValue = value.replace(/\s/g, '')
+            // Check against rules: empty OR (starts with 1-9 and followed by 0-3 digits, total length max 4)
+            const isValid = noSpaceValue === '' || /^[1-9][0-9]{0,3}$/.test(noSpaceValue)
+            if (isValid) {
+                setFormData({ ...formData, [name]: noSpaceValue })
+            }
+            return
+        }
+
         setFormData({
             ...formData,
-            [e.target.name]: e.target.value
+            [name]: value
         })
     }
 
@@ -159,19 +182,21 @@ export default function ReceptionRegisterPage() {
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-600 mb-1.5">ป้ายทะเบียนบรรทัดบน <span className="text-red-500">*</span></label>
-                                <input
-                                    type="text"
-                                    name="plateLine1"
-                                    value={formData.plateLine1}
-                                    onChange={handleChange}
-                                    required
-                                    placeholder="เช่น 1กข"
-                                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 focus:bg-white transition-all uppercase"
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-600 mb-1.5">บรรทัดบน <span className="text-red-500">*</span></label>
+                                    <input
+                                        type="text"
+                                        name="plateLine1"
+                                        value={formData.plateLine1}
+                                        onChange={handleChange}
+                                        required
+                                        pattern="^([1-9][ก-ฮ]{2}|[ก-ฮ]{3})$"
+                                        title="ต้องเป็นพยัญชนะ ก-ฮ 3 ตัว หรือ ตัวเลข 1-9 นำหน้าตามด้วยพยัญชนะ ก-ฮ 2 ตัว เช่น กกข หรือ 1กก (ห้ามมีเลข 0 นำหน้า ห้ามมีสระ วรรณยุกต์ อักษรพิเศษหรือเว้นวรรค)"
+                                        placeholder="เช่น 1กก"
+                                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 focus:bg-white transition-all uppercase"
+                                    />
+                                </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-600 mb-1.5">บรรทัดล่าง <span className="text-red-500">*</span></label>
                                     <input
@@ -180,7 +205,9 @@ export default function ReceptionRegisterPage() {
                                         value={formData.plateLine2}
                                         onChange={handleChange}
                                         required
-                                        placeholder="เช่น 1234"
+                                        pattern="^[1-9][0-9]{0,3}$"
+                                        title="ต้องเป็นตัวเลข 1-4 หลัก และห้ามขึ้นต้นด้วย 0 หรือเป็น 0 ทั้งหมด เช่น 9999 (ห้ามมีเว้นวรรค)"
+                                        placeholder="เช่น 9999"
                                         className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 focus:bg-white transition-all"
                                     />
                                 </div>
@@ -212,17 +239,17 @@ export default function ReceptionRegisterPage() {
 
                                     <div className="flex-1 w-full flex flex-col items-center justify-center">
                                         <span className="text-4xl font-semibold text-gray-900 tracking-wider">
-                                            {formData.plateLine1 || '1กข'}
+                                            {formData.plateLine1 || '1กก'}
                                         </span>
                                     </div>
-                                    <div className="w-full flex justify-center py-1">
+                                    <div className="w-full flex justify-center py-1.5 border-y border-gray-200/80 my-0.5">
                                         <span className="text-3xl font-semibold text-gray-800 tracking-tight">
                                             {formData.province || 'กรุงเทพมหานคร'}
                                         </span>
                                     </div>
                                     <div className="flex-1 w-full flex flex-col items-center justify-center">
                                         <span className="text-4xl font-semibold text-gray-900 tracking-widest">
-                                            {formData.plateLine2 || '1234'}
+                                            {formData.plateLine2 || '9999'}
                                         </span>
                                     </div>
                                 </div>
