@@ -42,6 +42,7 @@ import ReceptionSuccessPage from './pages/reception/ReceptionSuccessPage'
 import ReceptionRepairPage from './pages/reception/ReceptionRepairPage'
 import ReceptionRepairSuccessPage from './pages/reception/ReceptionRepairSuccessPage'
 import ReceptionSearchPage from './pages/reception/ReceptionSearchPage'
+import ReceptionHistoryPage from './pages/reception/ReceptionHistoryPage'
 
 export default function App() {
   return (
@@ -92,6 +93,7 @@ export default function App() {
             <Route path="search" element={<ReceptionSearchPage />} />
             <Route path="repair" element={<ReceptionRepairPage />} />
             <Route path="repair-success" element={<ReceptionRepairSuccessPage />} />
+            <Route path="history" element={<ReceptionHistoryPage />} />
           </Route>
 
           {/* roles อื่น — layouts จะสร้างเพิ่มในภายหลัง */}
