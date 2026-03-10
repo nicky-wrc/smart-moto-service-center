@@ -34,7 +34,8 @@ import MechanicHistoryPage from './pages/mechanic/MechanicHistoryPage'
 // Other roles (placeholder — layouts TBD)
 import OwnerPage from './pages/owner'
 import AccountantPage from './pages/accountant'
-import ReceptionPage from './pages/reception'
+import ReceptionLayout from './pages/reception/ReceptionLayout'
+import ReceptionIndex from './pages/reception'
 
 export default function App() {
   return (
@@ -76,8 +77,12 @@ export default function App() {
             <Route path="history" element={<MechanicHistoryPage />} />
           </Route>
 
+          {/* พนักงานรับรถ (Reception) */}
+          <Route path="/reception" element={<ReceptionLayout />}>
+            <Route index element={<ReceptionIndex />} />
+          </Route>
+
           {/* roles อื่น — layouts จะสร้างเพิ่มในภายหลัง */}
-          <Route path="/reception/*" element={<ReceptionPage />} />
           <Route path="/accountant/*" element={<AccountantPage />} />
           <Route path="/owner/*" element={<OwnerPage />} />
         </Routes>
