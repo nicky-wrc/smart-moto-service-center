@@ -7,6 +7,7 @@ import InventoryIndex from './pages/inventory'
 import RequestsPage from './pages/inventory/RequestsPage'
 import RequestDetailPage from './pages/inventory/RequestDetailPage'
 import PartsPage from './pages/inventory/PartsPage'
+import PartDetailPage from './pages/inventory/PartDetailPage'
 import PurchaseOrdersPage from './pages/inventory/PurchaseOrdersPage'
 import CreatePurchaseOrderPage from './pages/inventory/CreatePurchaseOrderPage'
 import EditPurchaseOrderPage from './pages/inventory/EditPurchaseOrderPage'
@@ -48,6 +49,7 @@ export default function App() {
             <Route path="requests" element={<RequestsPage />} />
             <Route path="requests/:id" element={<RequestDetailPage />} />
             <Route path="parts" element={<PartsPage />} />
+            <Route path="parts/:id" element={<PartDetailPage />} />
             <Route path="purchase-orders" element={<PurchaseOrdersPage />} />
             <Route path="purchase-orders/create" element={<CreatePurchaseOrderPage />} />
             <Route path="purchase-orders/edit/:id" element={<EditPurchaseOrderPage />} />

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import type { PartRequest } from '../../data/requestsMockData'
+import { mockParts } from '../../data/partsMockData'
 import { useRequestHistory } from '../../contexts/RequestHistoryContext'
 import { partRequisitionService } from '../../services/partRequisitionService'
 import { useActivityLog } from '../../hooks/useActivityLog'
@@ -396,7 +397,14 @@ export default function RequestDetailPage() {
                                                     </>
                                                 )}
                                             </button>
-                                            <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-[#255B91] text-white rounded hover:bg-blue-800 transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]">
+                                            <button
+                                                onClick={() => {
+                                                    const part = mockParts.find(p => p.partCode === item.partCode)
+                                                    if (part) navigate(`/inventory/parts/${part.id}`)
+                                                    else alert('ไม่พบข้อมูลอะไหล่ในระบบ')
+                                                }}
+                                                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-[#255B91] text-white rounded hover:bg-[#1a3f66] transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
+                                            >
                                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                                                     <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
                                                     <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />

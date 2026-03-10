@@ -11,7 +11,7 @@ export interface GetPartsParams {
     search?: string
     category?: string
     location?: string
-    lowStock?: boolean
+    stockLevel?: string   // 'มีของ' | 'เหลือน้อย' | 'ใกล้หมด' | 'หมด'
     motorcycleModel?: string
 }
 
@@ -49,7 +49,7 @@ export const partService = {
             search = '',
             category = '',
             location = '',
-            lowStock = false,
+            stockLevel = '',
             motorcycleModel = ''
         } = params
 
@@ -70,8 +70,14 @@ export const partService = {
                     filtered = filtered.filter(p => p.location === location)
                 }
 
-                if (lowStock) {
-                    filtered = filtered.filter(p => p.quantity < 10)
+                if (stockLevel === 'มีของ') {
+                    filtered = filtered.filter(p => p.quantity >= 10)
+                } else if (stockLevel === 'เหลือน้อย') {
+                    filtered = filtered.filter(p => p.quantity >= 5 && p.quantity < 10)
+                } else if (stockLevel === 'ใกล้หมด') {
+                    filtered = filtered.filter(p => p.quantity >= 1 && p.quantity < 5)
+                } else if (stockLevel === 'หมด') {
+                    filtered = filtered.filter(p => p.quantity === 0)
                 }
 
                 if (motorcycleModel) {
