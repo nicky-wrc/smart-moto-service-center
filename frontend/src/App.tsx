@@ -36,6 +36,7 @@ import OwnerPage from './pages/owner'
 import AccountantPage from './pages/accountant'
 import ReceptionLayout from './pages/reception/ReceptionLayout'
 import ReceptionIndex from './pages/reception'
+import ReceptionRegisterPage from './pages/reception/ReceptionRegisterPage'
 
 export default function App() {
   return (
@@ -80,6 +81,7 @@ export default function App() {
           {/* พนักงานรับรถ (Reception) */}
           <Route path="/reception" element={<ReceptionLayout />}>
             <Route index element={<ReceptionIndex />} />
+            <Route path="register" element={<ReceptionRegisterPage />} />
           </Route>
 
           {/* roles อื่น — layouts จะสร้างเพิ่มในภายหลัง */}

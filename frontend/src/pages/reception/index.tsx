@@ -34,8 +34,7 @@ export default function ReceptionIndex() {
         {/* New Customer Button */}
         <button
           onClick={() => {
-            // Functionality to be added later
-            // navigate('/reception/register')
+            navigate('/reception/register')
           }}
           className="group flex flex-col items-center justify-center p-12 bg-white rounded-3xl border-2 border-transparent shadow-lg hover:shadow-2xl hover:border-emerald-400 transition-all duration-300 transform hover:-translate-y-2"
         >
