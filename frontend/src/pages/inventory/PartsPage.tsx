@@ -106,8 +106,8 @@ export default function PartsPage() {
         {/* Filter row */}
         {showFilters && (
           <div className="relative mt-2 p-5 bg-white rounded-xl border border-gray-200 shadow-md">
-            <div className="absolute -top-[10px] right-[1270px] w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[10px] border-b-white z-20" />
-            <div className="absolute -top-[12px] right-[1270px] w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[12px] border-b-gray-200 z-10" />
+            <div className="absolute -top-[10px] right-[1400px] w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[10px] border-b-white z-20" />
+            <div className="absolute -top-[12px] right-[1400px] w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[12px] border-b-gray-200 z-10" />
 
             <div className="relative z-30 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
               {/* Category */}

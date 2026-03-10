@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { mockSuppliers } from '../../data/suppliersMockData'
 import SearchBox from '../../components/SearchBox'
-import { mockPurchaseOrders, type POStatus } from '../../data/purchaseOrdersMockData'
+import { purchaseOrderService, type POStatus } from '../../services/purchaseOrderService'
+import { supplierService, type Supplier } from '../../services/supplierService'
+import type { PurchaseOrder } from '../../data/purchaseOrdersMockData'
 
 const StatusBadge = ({ status }: { status: POStatus }) => {
   switch (status) {
@@ -22,9 +23,9 @@ const StatusBadge = ({ status }: { status: POStatus }) => {
 export default function PurchaseOrdersPage() {
   const navigate = useNavigate()
 
-  // Always initialize from the current state of mockPurchaseOrders
-  // to ensure changes made previously (like cancellations or additions) are reflected.
-  const [orders, setOrders] = useState([...mockPurchaseOrders])
+  const [orders, setOrders] = useState<PurchaseOrder[]>([])
+  const [suppliers, setSuppliers] = useState<Supplier[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [cancelModalOrderId, setCancelModalOrderId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [showListFilters, setShowListFilters] = useState(false)
@@ -34,6 +35,23 @@ export default function PurchaseOrdersPage() {
   const [activeRowId, setActiveRowId] = useState<string | null>(
     () => sessionStorage.getItem('po_last_visited')
   )
+
+  // Load purchase orders and suppliers from service (mock or real)
+  useEffect(() => {
+    let mounted = true
+    setIsLoading(true)
+    Promise.all([
+      purchaseOrderService.getAll(),
+      supplierService.getAll(),
+    ]).then(([posResult, suppliersResult]) => {
+      if (!mounted) return
+      setOrders(posResult.data)
+      setSuppliers(suppliersResult)
+    }).catch(console.error).finally(() => {
+      if (mounted) setIsLoading(false)
+    })
+    return () => { mounted = false }
+  }, [])
 
   // Clear the highlight after 5 seconds so it doesn't persist forever
   useEffect(() => {
@@ -143,7 +161,7 @@ export default function PurchaseOrdersPage() {
                   className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                 >
                   <option value="">ทั้งหมด</option>
-                  {mockSuppliers.map((s) => (
+                  {suppliers.map((s: Supplier) => (
                     <option key={s.id} value={s.id}>{s.companyName}</option>
                   ))}
                 </select>
@@ -291,12 +309,10 @@ export default function PurchaseOrdersPage() {
               <button
                 onClick={() => {
                   // Update the local state for immediate UI reflection
-                  setOrders(prev => prev.map(o => o.id === cancelModalOrderId ? { ...o, status: 'cancelled' } : o))
-
-                  // Mutate the mock data source so it persists across page navigations
-                  const targetOrder = mockPurchaseOrders.find(o => o.id === cancelModalOrderId);
-                  if (targetOrder) {
-                    targetOrder.status = 'cancelled';
+                  setOrders(prev => prev.map(o => o.id === cancelModalOrderId ? { ...o, status: 'cancelled' as const } : o))
+                  // Persist via service (works with both mock and real API)
+                  if (cancelModalOrderId) {
+                    purchaseOrderService.updateStatus(cancelModalOrderId, 'cancelled').catch(console.error)
                   }
 
                   setCancelModalOrderId(null)

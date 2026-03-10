@@ -1,3 +1,4 @@
+import { apiClient, USE_MOCK_DATA } from './api'
 import { mockParts, type PartItem } from '../data/partsMockData'
 import { mockPurchaseOrders } from '../data/purchaseOrdersMockData'
 import { mockRequests } from '../data/requestsMockData'
@@ -43,13 +44,22 @@ function poColor(s: string) {
 }
 
 /**
- * Service to fetch dashboard metrics from the backend.
- * Currently simulates an API call returning processed mock data.
+ * Service to fetch dashboard metrics.
+ *
+ * To switch to real API:
+ *   Set VITE_USE_MOCK_DATA=false in .env
+ *   Backend endpoint expected:
+ *     GET /api/inventory/dashboard
+ *   Should return the DashboardMetrics shape (or a superset).
  */
 export const dashboardService = {
     fetchDashboardMetrics: async (): Promise<DashboardMetrics> => {
-        // Simulate network delay
-        await new Promise((resolve) => setTimeout(resolve, 800))
+        if (!USE_MOCK_DATA) {
+            // Real API — backend handles all aggregation server-side
+            return apiClient.get<DashboardMetrics>('/inventory/dashboard')
+        }
+
+        // ─── MOCK IMPLEMENTATION ────────────────────────────────────────────
 
         const lowStockParts = mockParts
             .filter((p) => p.quantity <= LOW_STOCK_THRESHOLD)
@@ -81,13 +91,7 @@ export const dashboardService = {
         const totalCategoryQty = categories.reduce((s, [, q]) => s + q, 0)
 
         // PO status counts
-        const poStatusCount: Record<string, number> = {
-            draft: 0,
-            pending: 0,
-            approved: 0,
-            rejected: 0,
-            cancelled: 0,
-        }
+        const poStatusCount: Record<string, number> = { draft: 0, pending: 0, approved: 0, rejected: 0, cancelled: 0 }
         mockPurchaseOrders.forEach((po) => {
             poStatusCount[po.status] = (poStatusCount[po.status] ?? 0) + 1
         })
@@ -100,7 +104,6 @@ export const dashboardService = {
                 if (po.status === 'pending') badgeText = 'รออนุมัติ'
                 if (po.status === 'approved') badgeText = 'ยืนยันแล้ว'
                 if (po.status === 'cancelled') badgeText = 'ยกเลิกแล้ว'
-
                 return {
                     id: po.id,
                     type: 'po' as const,
@@ -116,22 +119,15 @@ export const dashboardService = {
                 type: 'request' as const,
                 label: `เบิกอะไหล่ (REQ-${String(req.id).padStart(3, '0')})`,
                 sub: req.requester,
-                date: req.requestedAt.split(' ')[0], // Using the date part of requestedAt
+                date: req.requestedAt.split(' ')[0],
                 badge: 'เบิกอะไหล่ใหม่',
                 badgeColor: 'bg-blue-100 text-blue-700',
             })),
         ]
 
-        return {
-            totalItems,
-            lowStockParts,
-            totalStockValue,
-            purchaseOrderCount: mockPurchaseOrders.length,
-            topRequestedParts,
-            categories,
-            totalCategoryQty,
-            poStatusCount,
-            fallbackActivities,
-        }
+        // Simulate network delay
+        await new Promise((resolve) => setTimeout(resolve, 600))
+
+        return { totalItems, lowStockParts, totalStockValue, purchaseOrderCount: mockPurchaseOrders.length, topRequestedParts, categories, totalCategoryQty, poStatusCount, fallbackActivities }
     },
 }

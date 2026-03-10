@@ -17,6 +17,7 @@ export default function PartSelectionModal({ isOpen, onClose, onSelectPart }: Pa
     const [search, setSearch] = useState('')
     const [debouncedSearch, setDebouncedSearch] = useState('')
     const [selectedModel, setSelectedModel] = useState('')
+    const [selectedCategory, setSelectedCategory] = useState('')
 
     // Build unique model list from static mock data (excluding "ทุกรุ่น" since those should show in all)
     const motorcycleModels = useMemo(() => {
@@ -27,6 +28,11 @@ export default function PartSelectionModal({ isOpen, onClose, onSelectPart }: Pa
             }
         })
         return Array.from(models).sort()
+    }, [])
+
+    // Build unique category list
+    const categories = useMemo(() => {
+        return Array.from(new Set(mockParts.map(p => p.category))).sort()
     }, [])
 
     useEffect(() => {
@@ -45,7 +51,8 @@ export default function PartSelectionModal({ isOpen, onClose, onSelectPart }: Pa
                     page: 1,
                     limit: 50,
                     search: debouncedSearch,
-                    motorcycleModel: selectedModel
+                    motorcycleModel: selectedModel,
+                    category: selectedCategory
                 })
                 if (isMounted) setParts(res.data)
             } finally {
@@ -54,13 +61,14 @@ export default function PartSelectionModal({ isOpen, onClose, onSelectPart }: Pa
         }
         fetchParts()
         return () => { isMounted = false }
-    }, [isOpen, debouncedSearch, selectedModel])
+    }, [isOpen, debouncedSearch, selectedModel, selectedCategory])
 
     // Reset filters when modal closes
     useEffect(() => {
         if (!isOpen) {
             setSearch('')
             setSelectedModel('')
+            setSelectedCategory('')
         }
     }, [isOpen])
 
@@ -83,13 +91,37 @@ export default function PartSelectionModal({ isOpen, onClose, onSelectPart }: Pa
                 </div>
 
                 {/* Search & Filter Row */}
-                <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-3">
-                    <div className="flex-1">
+                <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50 flex flex-wrap items-center gap-0.5">
+                    {/* Search box */}
+                    <div className="flex-1 min-w-[160px]">
                         <SearchBox
                             value={search}
                             onChange={setSearch}
                             placeholder="ค้นหารหัส หรือชื่อสินค้า..."
                         />
+                    </div>
+                    {/* Category Dropdown */}
+                    <div className="relative flex items-center shrink-0">
+                        <div className="pointer-events-none absolute left-3 text-sky-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                            </svg>
+                        </div>
+                        <select
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                            className="pl-8 pr-8 py-2.5 text-sm border border-gray-300 bg-white text-gray-600 rounded-xl appearance-none outline-none transition-colors cursor-pointer w-[170px] hover:border-gray-400"
+                        >
+                            <option value="">หมวดหมู่ (ทั้งหมด)</option>
+                            {categories.map(cat => (
+                                <option key={cat} value={cat}>{cat.split(' ')[0]}</option>
+                            ))}
+                        </select>
+                        <div className="pointer-events-none absolute right-3 text-gray-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
                     </div>
                     {/* Motorcycle Model Dropdown */}
                     <div className="relative flex items-center shrink-0">
@@ -102,9 +134,9 @@ export default function PartSelectionModal({ isOpen, onClose, onSelectPart }: Pa
                         <select
                             value={selectedModel}
                             onChange={(e) => setSelectedModel(e.target.value)}
-                            className="pl-8 pr-8 py-2.5 text-sm border border-gray-300 bg-white text-gray-600 rounded-xl appearance-none outline-none transition-colors cursor-pointer min-w-[180px] hover:border-gray-400"
+                            className="pl-8 pr-8 py-2.5 text-sm border border-gray-300 bg-white text-gray-600 rounded-xl appearance-none outline-none transition-colors cursor-pointer w-[160px] hover:border-gray-400"
                         >
-                            <option value="">เลือกรุ่นรถ (ทั้งหมด)</option>
+                            <option value="">รุ่นรถ (ทั้งหมด)</option>
                             {motorcycleModels.map(model => (
                                 <option key={model} value={model}>{model}</option>
                             ))}

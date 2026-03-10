@@ -1,9 +1,7 @@
+import { apiClient, USE_MOCK_DATA, buildQuery } from './api'
 import { mockParts, type PartItem } from '../data/partsMockData'
 
-// TODO: Replace with actual API URL when backend is ready
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
-// eslint-disable-next-line no-console
-console.info('Configured API_BASE_URL (Parts):', API_BASE_URL)
+export type { PartItem }
 
 export interface GetPartsParams {
     page?: number
@@ -24,25 +22,33 @@ export interface PaginatedPartsResponse {
 
 /**
  * Service for handling Parts API calls.
+ *
+ * To switch to real API:
+ *   Set VITE_USE_MOCK_DATA=false in .env
+ *   Backend endpoints expected:
+ *     GET  /api/parts              (with query params)
+ *     GET  /api/parts/:id
  */
 export const partService = {
+
     /**
      * Fetch all parts with pagination and filtering
      */
     getParts: async (params: GetPartsParams = {}): Promise<PaginatedPartsResponse> => {
-        // REAL API IMPLEMENTATION:
-        // const query = new URLSearchParams()
-        // if (params.page) query.append('page', params.page.toString())
-        // if (params.limit) query.append('limit', params.limit.toString())
-        // if (params.search) query.append('search', params.search)
-        // if (params.category) query.append('category', params.category)
-        // if (params.location) query.append('location', params.location)
-        // if (params.lowStock) query.append('lowStock', 'true')
-        // const response = await fetch(`${API_BASE_URL}/parts?${query.toString()}`)
-        // if (!response.ok) throw new Error('Failed to fetch parts')
-        // return response.json()
+        if (!USE_MOCK_DATA) {
+            const qs = buildQuery({
+                page: params.page,
+                limit: params.limit,
+                search: params.search,
+                category: params.category,
+                location: params.location,
+                stockLevel: params.stockLevel,
+                motorcycleModel: params.motorcycleModel,
+            })
+            return apiClient.get<PaginatedPartsResponse>(`/parts${qs}`)
+        }
 
-        // MOCK IMPLEMENTATION:
+        // ─── MOCK IMPLEMENTATION ────────────────────────────────────────────────
         const {
             page = 1,
             limit = 8,
@@ -61,15 +67,12 @@ export const partService = {
                     const qStr = search.toLowerCase()
                     filtered = filtered.filter(p => p.name.toLowerCase().includes(qStr) || p.partCode.toLowerCase().includes(qStr))
                 }
-
                 if (category) {
                     filtered = filtered.filter(p => p.category === category)
                 }
-
                 if (location) {
                     filtered = filtered.filter(p => p.location === location)
                 }
-
                 if (stockLevel === 'มีของ') {
                     filtered = filtered.filter(p => p.quantity >= 10)
                 } else if (stockLevel === 'เหลือน้อย') {
@@ -79,10 +82,8 @@ export const partService = {
                 } else if (stockLevel === 'หมด') {
                     filtered = filtered.filter(p => p.quantity === 0)
                 }
-
                 if (motorcycleModel) {
                     filtered = filtered.filter(p => p.motorcycleModel === motorcycleModel || p.motorcycleModel === 'ทุกรุ่น')
-                    // Show exact model matches first, then ทุกรุ่น
                     filtered.sort((a, b) => {
                         const aExact = a.motorcycleModel === motorcycleModel ? 0 : 1
                         const bExact = b.motorcycleModel === motorcycleModel ? 0 : 1
@@ -92,18 +93,27 @@ export const partService = {
 
                 const totalDocs = filtered.length
                 const totalPages = Math.ceil(totalDocs / limit)
-
                 const startIndex = (page - 1) * limit
-                const endIndex = startIndex + limit
-                const paginatedData = filtered.slice(startIndex, endIndex)
+                const paginatedData = filtered.slice(startIndex, startIndex + limit)
 
-                resolve({
-                    data: paginatedData,
-                    totalDocs,
-                    totalPages,
-                    currentPage: page
-                })
-            }, 600)
+                resolve({ data: paginatedData, totalDocs, totalPages, currentPage: page })
+            }, 400)
         })
-    }
+    },
+
+    /**
+     * Fetch a single part by ID
+     */
+    getById: async (id: number): Promise<PartItem | null> => {
+        if (!USE_MOCK_DATA) {
+            return apiClient.get<PartItem>(`/parts/${id}`)
+        }
+
+        // MOCK
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve(mockParts.find(p => p.id === id) ?? null)
+            }, 300)
+        })
+    },
 }

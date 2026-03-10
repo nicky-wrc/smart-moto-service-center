@@ -1,48 +1,86 @@
-const API_URL = 'http://localhost:3000'
+/**
+ * Centralized API Client for Smart Moto Service Center
+ *
+ * Switch between mock and real API using:
+ *   VITE_USE_MOCK_DATA=true   → uses mock data (default for local dev)
+ *   VITE_USE_MOCK_DATA=false  → calls real backend at VITE_API_URL
+ *
+ * Auth token is automatically injected from localStorage when present.
+ */
 
-export const fetchPartRequisitions = async (params: { status?: string, jobId?: string } = {}) => {
-    const url = new URL(`${API_URL}/part-requisitions`)
-    if (params.status) url.searchParams.append('status', params.status)
-    if (params.jobId) url.searchParams.append('jobId', params.jobId)
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+export const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA !== 'false'
 
-    const res = await fetch(url.toString())
-    if (!res.ok) throw new Error('Failed to fetch part requisitions')
-    return res.json()
-}
+// ─── Auth helper ─────────────────────────────────────────────────────────────
 
-export const fetchPartRequisitionById = async (id: string | number) => {
-    const res = await fetch(`${API_URL}/part-requisitions/${id}`)
-    if (!res.ok) throw new Error(`Failed to fetch part requisition ${id}`)
-    return res.json()
-}
-
-export const issuePartRequisition = async (id: string | number, dto: { notes?: string, issuedItems?: { id: number, issuedQuantity: number }[] }) => {
-    const res = await fetch(`${API_URL}/part-requisitions/${id}/issue`, {
-        method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json',
-            // 'Authorization': `Bearer ${localStorage.getItem('token')}` // uncomment when auth is implemented
-        },
-        body: JSON.stringify(dto)
-    })
-    if (!res.ok) {
-        const err = await res.json()
-        throw new Error(err.message || 'Failed to issue parts')
+function getAuthHeaders(): HeadersInit {
+    const token = localStorage.getItem('auth_token')
+    return {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
     }
-    return res.json()
 }
 
-export const rejectPartRequisition = async (id: string | number, notes?: string) => {
-    const res = await fetch(`${API_URL}/part-requisitions/${id}/reject`, {
-        method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ notes })
+// ─── Error type ──────────────────────────────────────────────────────────────
+
+export interface ApiError extends Error {
+    statusCode: number
+    body?: unknown
+}
+
+export function createApiError(statusCode: number, message: string, body?: unknown): ApiError {
+    const err = new Error(message) as ApiError
+    err.name = 'ApiError'
+    err.statusCode = statusCode
+    err.body = body
+    return err
+}
+
+// ─── Core fetch wrapper ───────────────────────────────────────────────────────
+
+async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+    const url = path.startsWith('http') ? path : `${API_BASE_URL}${path}`
+    const res = await fetch(url, {
+        method,
+        headers: getAuthHeaders(),
+        ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
     })
+
     if (!res.ok) {
-        const err = await res.json()
-        throw new Error(err.message || 'Failed to reject part requisition')
+        let errorBody: unknown
+        try { errorBody = await res.json() } catch { /* ignore */ }
+        const message =
+            (errorBody as any)?.message ||
+            (errorBody as any)?.error ||
+            `API Error ${res.status}: ${res.statusText}`
+        throw createApiError(res.status, message, errorBody)
     }
-    return res.json()
+
+    // 204 No Content — return empty
+    if (res.status === 204) return undefined as T
+
+    return res.json() as Promise<T>
+}
+
+// ─── Typed helpers ────────────────────────────────────────────────────────────
+
+export const apiClient = {
+    get: <T>(path: string) => request<T>('GET', path),
+    post: <T>(path: string, body: unknown) => request<T>('POST', path, body),
+    patch: <T>(path: string, body: unknown) => request<T>('PATCH', path, body),
+    put: <T>(path: string, body: unknown) => request<T>('PUT', path, body),
+    delete: <T>(path: string) => request<T>('DELETE', path),
+}
+
+// ─── Query string builder helper ─────────────────────────────────────────────
+
+export function buildQuery(params: Record<string, string | number | boolean | undefined>): string {
+    const q = new URLSearchParams()
+    for (const [key, val] of Object.entries(params)) {
+        if (val !== undefined && val !== '' && val !== false) {
+            q.append(key, String(val))
+        }
+    }
+    const str = q.toString()
+    return str ? `?${str}` : ''
 }
