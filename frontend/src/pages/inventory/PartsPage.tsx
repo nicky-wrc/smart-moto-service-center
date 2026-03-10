@@ -198,33 +198,33 @@ export default function PartsPage() {
               <div
                 key={item.id}
                 onClick={() => navigate(`/inventory/parts/${item.id}`)}
-                className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 group flex flex-col cursor-pointer"
+                className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl hover:border-amber-300 transition-all duration-300 group flex flex-col cursor-pointer hover:-translate-y-1"
               >
                 {/* Image Container */}
                 <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
                   <img
                     src={item.imageUrl}
                     alt={item.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://placehold.co/400x300/e2e8f0/94a3b8.png?text=No+Image'
+                      (e.target as HTMLImageElement).src = 'https://placehold.co/400x300/f8fafc/94a3b8.png?text=No+Image'
                     }}
                   />
-                  {/* Low stock badge wrapper */}
-                  <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
-                    <span className="bg-[#1E1E1E]/80 backdrop-blur-sm text-white text-sm font-semibold px-2.5 py-1 rounded-md shadow-sm">
-                      {item.partCode}
-                    </span>
+                  {/* Fade overlay bottom */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                  {/* Status Badges */}
+                  <div className="absolute top-3 right-3 flex flex-col gap-2 items-end z-10">
                     {item.quantity === 0 ? (
-                      <span className="bg-gray-100 text-gray-500 text-[11px] font-bold px-2 py-0.5 rounded-md shadow-sm border border-gray-200">
+                      <span className="bg-red-500/95 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-1 rounded-md shadow-sm border border-red-400/20">
                         หมด
                       </span>
                     ) : item.quantity < 5 ? (
-                      <span className="bg-red-50 text-red-600 text-[11px] font-bold px-2 py-0.5 rounded-md shadow-sm animate-pulse border border-red-200">
+                      <span className="bg-orange-500/95 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-1 rounded-md shadow-sm animate-pulse border border-orange-400/20">
                         เหลือน้อยมาก
                       </span>
                     ) : item.quantity < 10 ? (
-                      <span className="bg-amber-50 text-amber-600 text-[11px] font-bold px-2 py-0.5 rounded-md shadow-sm border border-amber-200">
+                      <span className="bg-amber-500/95 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-1 rounded-md shadow-sm border border-amber-400/20">
                         ใกล้หมด
                       </span>
                     ) : null}
@@ -232,48 +232,49 @@ export default function PartsPage() {
                 </div>
 
                 {/* Details Container */}
-                <div className="p-4 flex flex-col flex-1">
-                  <div className="mb-4 flex-1 flex flex-col">
-                    <h3 className="text-[15px] font-medium text-gray-800 line-clamp-2 leading-snug mb-2 group-hover:text-amber-600 transition-colors">
-                      {item.name}
+                <div className="p-4 flex flex-col flex-1 relative bg-white">
+                  <div className="mb-3 flex-1 flex flex-col">
+                    <h3 className="text-[15px] font-semibold text-gray-800 line-clamp-2 leading-snug mb-2 group-hover:text-amber-600 transition-colors">
+                      {item.name} <span className="text-[13px] text-gray-400 font-normal ml-1 whitespace-nowrap">({item.partCode})</span>
                     </h3>
                     <div className="flex flex-wrap gap-1.5 mt-auto">
-                      <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md">
-                        {item.category.split(' ')[0]} {/* Show short category name */}
+                      <span className="text-[11px] font-medium text-amber-700 bg-amber-50/80 border border-amber-100/50 px-2 py-0.5 rounded-md">
+                        {item.category.split(' ')[0]}
                       </span>
-                      <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md">
+                      <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50/80 border border-emerald-100/50 px-2 py-0.5 rounded-md">
                         {item.motorcycleModel === 'ทุกรุ่น' || !item.motorcycleModel ? 'รองรับทุกรุ่น' : `${item.motorcycleModel}`}
                       </span>
                     </div>
                   </div>
 
-                  <div className="space-y-2.5">
+                  <div className="flex flex-col gap-3 pt-3 mt-1 border-t border-gray-50">
                     {/* Location */}
-                    <div className="flex items-center gap-1.5 text-sm text-gray-500 bg-gray-50/80 px-2 py-1.5 rounded-md border border-gray-100">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <div className="flex items-center gap-1.5 text-[13px] text-gray-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
-                      <span className="font-medium truncate block" title={item.location}>
-                        ตำแหน่ง: {item.location}
+                      <span className="truncate block" title={item.location}>
+                        {item.location}
                       </span>
                     </div>
 
-                    {/* Footer line with quantity and price */}
-                    <div className="flex items-end justify-between pt-1">
+                    {/* Footer Stats block */}
+                    <div className="flex items-center justify-between bg-gray-50/60 rounded-xl p-3 border border-gray-100/60 group-hover:bg-amber-50/40 group-hover:border-amber-100/60 transition-colors">
                       <div className="flex flex-col">
-                        <span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">คงเหลือ</span>
+                        <span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5">คงเหลือ</span>
                         <div className="flex items-baseline gap-1">
-                          <span className={`text-xl font-bold leading-none ${item.quantity < 10 ? 'text-red-500' : 'text-gray-800'}`}>
+                          <span className={`text-lg font-bold leading-none ${item.quantity === 0 ? 'text-red-500' : item.quantity < 10 ? 'text-amber-500' : 'text-gray-800'}`}>
                             {item.quantity}
                           </span>
-                          <span className="text-sm text-gray-500 font-medium pb-0.5">ชิ้น</span>
+                          <span className="text-xs text-gray-500 font-medium pb-0.5">ชิ้น</span>
                         </div>
                       </div>
+                      <div className="w-[1px] h-8 bg-gray-200/60"></div>
                       <div className="flex flex-col items-end">
-                        <span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">ราคา/หน่วย</span>
+                        <span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5">ราคา/หน่วย</span>
                         <div className="flex items-baseline gap-1">
-                          <span className="text-sm font-semibold text-gray-800 leading-none">
+                          <span className="text-sm font-bold text-gray-900 leading-none">
                             ฿{item.price.toLocaleString()}
                           </span>
                         </div>
