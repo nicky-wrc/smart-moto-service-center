@@ -152,7 +152,7 @@ export default function ReceptionSearchPage() {
                     plateLine2: '',
                     province: '',
                 },
-                returnTo: 'repair' // This tells the register page to go directly to repair after saving
+                returnTo: 'newMoto' // This tells the register page to show "add new motorcycle" header and go to repair after saving
             }
         })
     }

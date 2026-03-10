@@ -95,8 +95,8 @@ export default function ReceptionRegisterPage() {
 
         setErrors({})
 
-        if (returnTo === 'repair') {
-            // Return to repair page with updated data
+        if (returnTo === 'repair' || returnTo === 'newMoto') {
+            // Return to repair page with updated/new data
             navigate('/reception/repair', { state: { formData } })
         } else {
             // Normal flow: go to confirmation page
@@ -118,8 +118,12 @@ export default function ReceptionRegisterPage() {
                         </svg>
                         ย้อนกลับ
                     </button>
-                    <h2 className="text-2xl font-semibold text-gray-800">ลงทะเบียนลูกค้าใหม่</h2>
-                    <p className="text-gray-500 text-sm mt-1">กรอกข้อมูลส่วนบุคคลและข้อมูลรถเพื่อบันทึกประวัติการรับบริการ</p>
+                    <h2 className="text-2xl font-semibold text-gray-800">
+                        {returnTo === 'repair' ? 'แก้ไขข้อมูลส่วนบุคคล' : returnTo === 'newMoto' ? 'กรอกข้อมูลรถคันใหม่ที่ต้องการเข้าซ่อม' : 'ลงทะเบียนลูกค้าใหม่'}
+                    </h2>
+                    <p className="text-gray-500 text-sm mt-1">
+                        {returnTo === 'repair' ? 'แก้ไขข้อมูลส่วนบุคคล' : returnTo === 'newMoto' ? 'กรอกข้อมูลรถคันใหม่ที่ต้องการเข้าซ่อม' : 'กรอกข้อมูลส่วนบุคคลและข้อมูลรถเพื่อบันทึกประวัติการรับบริการ'}
+                    </p>
                 </div>
             </div>
 
@@ -305,7 +309,7 @@ export default function ReceptionRegisterPage() {
 
                 {/* Action Buttons */}
                 <div className="flex items-center justify-end gap-3 mt-2 pb-8">
-                    {returnTo === 'repair' ? (
+                    {(returnTo === 'repair' || returnTo === 'newMoto') ? (
                         <>
                             <button
                                 type="button"
@@ -318,7 +322,7 @@ export default function ReceptionRegisterPage() {
                                 type="submit"
                                 className="px-6 py-2.5 rounded-xl border border-transparent text-white font-medium bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-sm"
                             >
-                                อัพเดตข้อมูล
+                                {returnTo === 'newMoto' ? 'บันทึกและแจ้งซ่อม' : 'อัพเดตข้อมูล'}
                             </button>
                         </>
                     ) : (

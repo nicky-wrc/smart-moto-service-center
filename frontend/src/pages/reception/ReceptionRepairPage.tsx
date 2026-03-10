@@ -28,7 +28,9 @@ export default function ReceptionRepairPage() {
     const data: RegistrationData = location.state?.formData ?? {}
 
     const [symptoms, setSymptoms] = useState('')
+    const [selectedTags, setSelectedTags] = useState<string[]>([])
     const [symptomsError, setSymptomsError] = useState('')
+    const [tagsError, setTagsError] = useState('')
     const [vehicleError, setVehicleError] = useState('')
     const [images, setImages] = useState<{ url: string; name: string }[]>([])
     const [isDragging, setIsDragging] = useState(false)
@@ -62,6 +64,13 @@ export default function ReceptionRepairPage() {
             hasError = true
         } else {
             setSymptomsError('')
+        }
+
+        if (selectedTags.length === 0) {
+            setTagsError('โปรดเลือกแท็กอาการอย่างน้อย 1 รายการ')
+            hasError = true
+        } else {
+            setTagsError('')
         }
 
         if (!data.model || !data.plateLine1 || !data.province) {
@@ -209,6 +218,43 @@ export default function ReceptionRepairPage() {
                                 <p className="mt-1.5 text-xs text-red-500 font-medium">* {symptomsError}</p>
                             )}
                             <p className="mt-1.5 text-xs text-gray-400">กรุณาอธิบายอาการให้ชัดเจนที่สุดเพื่อประโยชน์ในการวินิจฉัย</p>
+                        </div>
+
+                        {/* ===== Symptom Tags ===== */}
+                        <div className="mt-4 pt-4 border-t border-gray-100">
+                            <label className="block text-sm font-medium text-gray-600 mb-3">แท็ก</label>
+                            <div className="flex flex-wrap gap-2">
+                                {[
+                                    'เครื่องยนต์', 'ไฟฟ้า', 'เบรก',
+                                    'ช่วงล่าง', 'ส่งกำลัง', 'เชื้อเพลิง',
+                                    'ระบายความร้อน', 'บำรุงรักษา'
+                                ].map(tag => {
+                                    const active = selectedTags.includes(tag)
+                                    return (
+                                        <button
+                                            key={tag}
+                                            type="button"
+                                            onClick={() => {
+                                                const next = active
+                                                    ? selectedTags.filter(t => t !== tag)
+                                                    : [...selectedTags, tag]
+                                                setSelectedTags(next)
+                                                if (next.length > 0) setTagsError('')
+                                            }}
+                                            className={`px-4 py-2 rounded-full text-sm font-medium border transition-all select-none
+                                                ${active
+                                                    ? 'bg-amber-500 border-amber-500 text-white shadow-sm'
+                                                    : 'bg-white border-dashed border-gray-300 text-gray-500 hover:border-amber-400 hover:text-amber-600'
+                                                }`}
+                                        >
+                                            {active ? `${tag} ×` : `${tag} +`}
+                                        </button>
+                                    )
+                                })}
+                            </div>
+                            {tagsError && (
+                                <p className="mt-2 text-xs text-red-500 font-medium">* {tagsError}</p>
+                            )}
                         </div>
 
                         {/* ===== Image Upload ===== */}
