@@ -145,16 +145,18 @@ export default function PartSelectionModal({ isOpen, onClose, onSelectPart }: Pa
                                     />
                                     <div className="flex-1">
                                         <div className="flex justify-between items-start mb-1 gap-2">
-                                            <h4 className="font-medium text-gray-800 group-hover:text-amber-700 transition-colors">{part.name}</h4>
+                                            <h4 className="font-medium text-gray-800 group-hover:text-amber-700 transition-colors">
+                                                {part.name} <span className="text-gray-400 font-normal text-xs ml-1">({part.partCode})</span>
+                                            </h4>
                                             <div className="flex items-center gap-1.5 shrink-0">
+                                                <span className="text-[11px] font-semibold text-sky-700 bg-sky-50 border border-sky-100 px-2 py-0.5 rounded-md">
+                                                    {part.category.split(' ')[0]}
+                                                </span>
                                                 {part.motorcycleModel && (
                                                     <span className="text-sm font-medium px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-md">
                                                         {part.motorcycleModel}
                                                     </span>
                                                 )}
-                                                <span className="text-sm font-medium px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md">
-                                                    {part.partCode}
-                                                </span>
                                             </div>
                                         </div>
                                         <div className="flex gap-4 text-sm text-gray-500">

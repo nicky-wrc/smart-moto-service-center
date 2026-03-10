@@ -68,7 +68,7 @@ export default function ReportsPage() {
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <span className="text-sm bg-orange-50 text-orange-500 border border-orange-200 px-3 py-1.5 rounded-full font-medium ">
-          อัปเดตล่าสุด: {new Date().toLocaleDateString('th-TH', { day: '2-digit', month: 'long', year: 'numeric' })}
+          อัปเดตล่าสุด : {new Date().toLocaleDateString('th-TH', { day: '2-digit', month: 'long', year: 'numeric' })}
         </span>
       </div>
 
@@ -121,7 +121,7 @@ export default function ReportsPage() {
                   {data.lowStockParts.length} รายการ
                 </span>
               </div>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: '280px' }}>
                 <table className="w-full text-sm">
                   <thead className="sticky top-0 bg-gray-50 z-10">
                     <tr className="bg-gray-50 text-gray-500 text-sm">
@@ -160,7 +160,7 @@ export default function ReportsPage() {
                     {data.lowStockParts.length === 0 && (
                       <tr>
                         <td colSpan={5} className="px-5 py-8 text-center text-gray-400 text-sm">
-                          ✅ อะไหล่ทุกรายการมีสต็อกเพียงพอ
+                          อะไหล่ทุกรายการมีสต็อกเพียงพอ
                         </td>
                       </tr>
                     )}
@@ -221,7 +221,7 @@ export default function ReportsPage() {
                   />
                 ))}
               </div>
-              <div className="space-y-2 flex-1">
+              <div className="space-y-2 overflow-y-auto" style={{ maxHeight: '260px' }}>
                 {data.categories.map(([cat, qty], i) => (
                   <div key={cat} className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
@@ -278,7 +278,7 @@ export default function ReportsPage() {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-full">
               <h2 className="font-semibold text-gray-800 mb-1">กิจกรรมล่าสุด</h2>
               <p className="text-sm text-gray-400 mb-4">รายการใบสั่งซื้อและเบิกอะไหล่ล่าสุด</p>
-              <div className="space-y-3 flex-1">
+              <div className="space-y-3 overflow-y-auto" style={{ maxHeight: '260px' }}>
                 {renderActivities.map((a) => (
                   <div key={a.id} className="flex items-start gap-3">
                     <div
