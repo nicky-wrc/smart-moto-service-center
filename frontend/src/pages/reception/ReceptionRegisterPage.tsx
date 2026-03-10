@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { PROVINCES } from '../../data/provinces'
 
 const MOTORCYCLE_MODELS = [
@@ -11,9 +11,13 @@ const MOTORCYCLE_MODELS = [
 
 export default function ReceptionRegisterPage() {
     const navigate = useNavigate()
+    const location = useLocation()
+    const prefilled = location.state?.formData
+    const returnTo: string | undefined = location.state?.returnTo
+    const [errors, setErrors] = useState<Record<string, string>>({})
 
-    // For demonstration only - simple state to handle form interactions
-    const [formData, setFormData] = useState({
+    // Pre-fill from location state if returning from confirm page
+    const [formData, setFormData] = useState(prefilled ?? {
         // Personal Info
         firstName: '',
         lastName: '',
@@ -60,9 +64,44 @@ export default function ReceptionRegisterPage() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
-        // Mock save logic, redirect to a mock dashboard or back to list
-        alert('บันทึกข้อมูลลูกค้าใหม่ รหัสลูกค้า: CUS-001 สำเร็จ!')
-        navigate('/reception')
+
+        const newErrors: Record<string, string> = {}
+
+        if (!formData.firstName) newErrors.firstName = 'โปรดระบุชื่อ'
+        if (!formData.lastName) newErrors.lastName = 'โปรดระบุนามสกุล'
+        if (!formData.phone) newErrors.phone = 'โปรดระบุเบอร์โทรศัพท์'
+
+        if (!formData.model) newErrors.model = 'โปรดระบุรุ่นรถ'
+        if (!formData.color) newErrors.color = 'โปรดระบุสีรถ'
+
+        if (!formData.plateLine1) {
+            newErrors.plateLine1 = 'โปรดระบุป้ายทะเบียนบรรทัดบน'
+        } else if (!/^([1-9][ก-ฮ]{2}|[ก-ฮ]{3})$/.test(formData.plateLine1)) {
+            newErrors.plateLine1 = 'รูปแบบไม่ถูกต้อง เช่น กกข หรือ 1กก'
+        }
+
+        if (!formData.plateLine2) {
+            newErrors.plateLine2 = 'โปรดระบุป้ายทะเบียนบรรทัดล่าง'
+        } else if (!/^[1-9][0-9]{0,3}$/.test(formData.plateLine2)) {
+            newErrors.plateLine2 = 'รูปแบบไม่ถูกต้อง เช่น 9999'
+        }
+
+        if (!formData.province) newErrors.province = 'โปรดระบุจังหวัดของป้ายทะเบียน'
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors)
+            return
+        }
+
+        setErrors({})
+
+        if (returnTo === 'repair') {
+            // Return to repair page with updated data
+            navigate('/reception/repair', { state: { formData } })
+        } else {
+            // Normal flow: go to confirmation page
+            navigate('/reception/confirm', { state: { formData } })
+        }
     }
 
     return (
@@ -102,10 +141,11 @@ export default function ReceptionRegisterPage() {
                                     name="firstName"
                                     value={formData.firstName}
                                     onChange={handleChange}
-                                    required
                                     placeholder="เช่น สมชาย"
-                                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 focus:bg-white transition-all"
+                                    className={`w-full px-4 py-2 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 focus:bg-white transition-all ${errors.firstName ? 'border-red-500 bg-red-50/50' : 'border-gray-200'
+                                        }`}
                                 />
+                                {errors.firstName && <p className="mt-1.5 text-xs text-red-500 font-medium">* {errors.firstName}</p>}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-600 mb-1.5">นามสกุล <span className="text-red-500">*</span></label>
@@ -114,10 +154,11 @@ export default function ReceptionRegisterPage() {
                                     name="lastName"
                                     value={formData.lastName}
                                     onChange={handleChange}
-                                    required
                                     placeholder="เช่น ใจดี"
-                                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 focus:bg-white transition-all"
+                                    className={`w-full px-4 py-2 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 focus:bg-white transition-all ${errors.lastName ? 'border-red-500 bg-red-50/50' : 'border-gray-200'
+                                        }`}
                                 />
+                                {errors.lastName && <p className="mt-1.5 text-xs text-red-500 font-medium">* {errors.lastName}</p>}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-600 mb-1.5">เบอร์โทรศัพท์ <span className="text-red-500">*</span></label>
@@ -126,10 +167,11 @@ export default function ReceptionRegisterPage() {
                                     name="phone"
                                     value={formData.phone}
                                     onChange={handleChange}
-                                    required
                                     placeholder="08X-XXX-XXXX"
-                                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 focus:bg-white transition-all"
+                                    className={`w-full px-4 py-2 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 focus:bg-white transition-all ${errors.phone ? 'border-red-500 bg-red-50/50' : 'border-gray-200'
+                                        }`}
                                 />
+                                {errors.phone && <p className="mt-1.5 text-xs text-red-500 font-medium">* {errors.phone}</p>}
                             </div>
                         </div>
                     </div>
@@ -152,14 +194,15 @@ export default function ReceptionRegisterPage() {
                                     name="model"
                                     value={formData.model}
                                     onChange={handleChange}
-                                    required
-                                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 focus:bg-white transition-all appearance-none"
+                                    className={`w-full px-4 py-2 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 focus:bg-white transition-all appearance-none ${errors.model ? 'border-red-500 bg-red-50/50' : 'border-gray-200'
+                                        }`}
                                 >
                                     <option value="" disabled>เลือกรุ่นรถ</option>
                                     {MOTORCYCLE_MODELS.map(model => (
                                         <option key={model} value={model}>{model}</option>
                                     ))}
                                 </select>
+                                {errors.model && <p className="mt-1.5 text-xs text-red-500 font-medium">* {errors.model}</p>}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-600 mb-1.5">สีรถ <span className="text-red-500">*</span></label>
@@ -168,10 +211,11 @@ export default function ReceptionRegisterPage() {
                                     name="color"
                                     value={formData.color}
                                     onChange={handleChange}
-                                    required
                                     placeholder="เช่น ดำ-แดง"
-                                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 focus:bg-white transition-all"
+                                    className={`w-full px-4 py-2 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 focus:bg-white transition-all ${errors.color ? 'border-red-500 bg-red-50/50' : 'border-gray-200'
+                                        }`}
                                 />
+                                {errors.color && <p className="mt-1.5 text-xs text-red-500 font-medium">* {errors.color}</p>}
                             </div>
 
                             <div className="md:col-span-2 pt-2 pb-1">
@@ -190,12 +234,11 @@ export default function ReceptionRegisterPage() {
                                         name="plateLine1"
                                         value={formData.plateLine1}
                                         onChange={handleChange}
-                                        required
-                                        pattern="^([1-9][ก-ฮ]{2}|[ก-ฮ]{3})$"
-                                        title="ต้องเป็นพยัญชนะ ก-ฮ 3 ตัว หรือ ตัวเลข 1-9 นำหน้าตามด้วยพยัญชนะ ก-ฮ 2 ตัว เช่น กกข หรือ 1กก (ห้ามมีเลข 0 นำหน้า ห้ามมีสระ วรรณยุกต์ อักษรพิเศษหรือเว้นวรรค)"
                                         placeholder="เช่น 1กก"
-                                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 focus:bg-white transition-all uppercase"
+                                        className={`w-full px-4 py-2 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 focus:bg-white transition-all uppercase ${errors.plateLine1 ? 'border-red-500 bg-red-50/50' : 'border-gray-200'
+                                            }`}
                                     />
+                                    {errors.plateLine1 && <p className="mt-1.5 text-xs text-red-500 font-medium">* {errors.plateLine1}</p>}
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-600 mb-1.5">บรรทัดล่าง <span className="text-red-500">*</span></label>
@@ -204,12 +247,11 @@ export default function ReceptionRegisterPage() {
                                         name="plateLine2"
                                         value={formData.plateLine2}
                                         onChange={handleChange}
-                                        required
-                                        pattern="^[1-9][0-9]{0,3}$"
-                                        title="ต้องเป็นตัวเลข 1-4 หลัก และห้ามขึ้นต้นด้วย 0 หรือเป็น 0 ทั้งหมด เช่น 9999 (ห้ามมีเว้นวรรค)"
                                         placeholder="เช่น 9999"
-                                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 focus:bg-white transition-all"
+                                        className={`w-full px-4 py-2 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 focus:bg-white transition-all ${errors.plateLine2 ? 'border-red-500 bg-red-50/50' : 'border-gray-200'
+                                            }`}
                                     />
+                                    {errors.plateLine2 && <p className="mt-1.5 text-xs text-red-500 font-medium">* {errors.plateLine2}</p>}
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-600 mb-1.5">จังหวัด <span className="text-red-500">*</span></label>
@@ -217,8 +259,8 @@ export default function ReceptionRegisterPage() {
                                         name="province"
                                         value={formData.province}
                                         onChange={handleChange}
-                                        required
-                                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 focus:bg-white transition-all appearance-none"
+                                        className={`w-full px-4 py-2 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 focus:bg-white transition-all appearance-none ${errors.province ? 'border-red-500 bg-red-50/50' : 'border-gray-200'
+                                            }`}
                                     >
                                         <option value="" disabled>เลือกจังหวัด</option>
                                         <option value="กรุงเทพมหานคร">กรุงเทพมหานคร</option>
@@ -226,6 +268,9 @@ export default function ReceptionRegisterPage() {
                                             <option key={province} value={province}>{province}</option>
                                         ))}
                                     </select>
+                                    {errors.province && (
+                                        <p className="mt-1.5 text-xs text-red-500 font-medium">* {errors.province}</p>
+                                    )}
                                 </div>
                             </div>
 
@@ -260,19 +305,39 @@ export default function ReceptionRegisterPage() {
 
                 {/* Action Buttons */}
                 <div className="flex items-center justify-end gap-3 mt-2 pb-8">
-                    <button
-                        type="button"
-                        onClick={() => navigate('/reception')}
-                        className="px-6 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium bg-white hover:bg-gray-50 active:bg-gray-100 transition-all focus:outline-none focus:ring-2 focus:ring-gray-200"
-                    >
-                        ยกเลิก
-                    </button>
-                    <button
-                        type="submit"
-                        className="px-6 py-2.5 rounded-xl border border-transparent text-white font-medium bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-sm"
-                    >
-                        บันทึกและสร้างใบรับรถ
-                    </button>
+                    {returnTo === 'repair' ? (
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => navigate('/reception/repair', { state: { formData: prefilled } })}
+                                className="px-6 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium bg-white hover:bg-gray-50 active:bg-gray-100 transition-all focus:outline-none focus:ring-2 focus:ring-gray-200"
+                            >
+                                ยกเลิก
+                            </button>
+                            <button
+                                type="submit"
+                                className="px-6 py-2.5 rounded-xl border border-transparent text-white font-medium bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-sm"
+                            >
+                                อัพเดตข้อมูล
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => navigate('/reception')}
+                                className="px-6 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium bg-white hover:bg-gray-50 active:bg-gray-100 transition-all focus:outline-none focus:ring-2 focus:ring-gray-200"
+                            >
+                                ยกเลิก
+                            </button>
+                            <button
+                                type="submit"
+                                className="px-6 py-2.5 rounded-xl border border-transparent text-white font-medium bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-sm"
+                            >
+                                ถัดไป
+                            </button>
+                        </>
+                    )}
                 </div>
             </form>
         </div>

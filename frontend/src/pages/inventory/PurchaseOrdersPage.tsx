@@ -83,6 +83,14 @@ export default function PurchaseOrdersPage() {
   }, [orders, searchQuery, filterStatus, filterDate, filterSupplier])
 
   // MAIN LIST RENDER
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-500"></div>
+      </div>
+    )
+  }
+
   return (
     <div className="p-6 bg-[#F5F5F5] min-h-full flex flex-col">
       {/* Header section with Search & Filters */}

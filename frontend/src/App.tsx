@@ -37,6 +37,10 @@ import AccountantPage from './pages/accountant'
 import ReceptionLayout from './pages/reception/ReceptionLayout'
 import ReceptionIndex from './pages/reception'
 import ReceptionRegisterPage from './pages/reception/ReceptionRegisterPage'
+import ReceptionConfirmPage from './pages/reception/ReceptionConfirmPage'
+import ReceptionSuccessPage from './pages/reception/ReceptionSuccessPage'
+import ReceptionRepairPage from './pages/reception/ReceptionRepairPage'
+import ReceptionRepairSuccessPage from './pages/reception/ReceptionRepairSuccessPage'
 
 export default function App() {
   return (
@@ -82,6 +86,10 @@ export default function App() {
           <Route path="/reception" element={<ReceptionLayout />}>
             <Route index element={<ReceptionIndex />} />
             <Route path="register" element={<ReceptionRegisterPage />} />
+            <Route path="confirm" element={<ReceptionConfirmPage />} />
+            <Route path="success" element={<ReceptionSuccessPage />} />
+            <Route path="repair" element={<ReceptionRepairPage />} />
+            <Route path="repair-success" element={<ReceptionRepairSuccessPage />} />
           </Route>
 
           {/* roles อื่น — layouts จะสร้างเพิ่มในภายหลัง */}
