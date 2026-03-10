@@ -264,7 +264,7 @@ export default function PartsPage() {
                       <div className="flex flex-col">
                         <span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5">คงเหลือ</span>
                         <div className="flex items-baseline gap-1">
-                          <span className={`text-lg font-bold leading-none ${item.quantity === 0 ? 'text-red-500' : item.quantity < 10 ? 'text-amber-500' : 'text-gray-800'}`}>
+                          <span className={`text-lg font-bold leading-none ${item.quantity < 5 ? 'text-red-500' : item.quantity < 10 ? 'text-amber-500' : 'text-gray-800'}`}>
                             {item.quantity}
                           </span>
                           <span className="text-xs text-gray-500 font-medium pb-0.5">ชิ้น</span>
