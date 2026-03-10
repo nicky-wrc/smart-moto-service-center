@@ -4,6 +4,7 @@ import { mockSuppliers } from '../../data/suppliersMockData'
 import PartSelectionModal from '../../components/PartSelectionModal'
 import { type PartItem } from '../../data/partsMockData'
 import { mockPurchaseOrders, type PurchaseOrder } from '../../data/purchaseOrdersMockData'
+import { useActivityLog } from '../../hooks/useActivityLog'
 
 interface OrderItem extends PartItem {
     orderQuantity: number
@@ -24,6 +25,7 @@ const getTomorrowString = () => {
 
 export default function CreatePurchaseOrderPage() {
     const navigate = useNavigate()
+    const { addActivity } = useActivityLog()
 
     // Form State
     const [supplierId, setSupplierId] = useState<number | ''>(() => {
@@ -159,6 +161,17 @@ export default function CreatePurchaseOrderPage() {
         localStorage.removeItem('draft_po_remarks')
         localStorage.removeItem('draft_po_managerMessage')
         localStorage.removeItem('draft_po_items')
+
+        // Log recent global activity
+        addActivity({
+            id: newOrder.id,
+            type: 'po',
+            label: newOrder.id,
+            sub: newOrder.supplierName,
+            date: newOrder.createdAt,
+            badge: action === 'submit' ? 'รออนุมัติ' : 'สร้างใบสั่งซื้อฉบับร่าง',
+            badgeColor: action === 'submit' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600',
+        })
 
         // Show success modal instead of alert
         setValidationModal({
