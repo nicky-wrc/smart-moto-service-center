@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom'
+import { addReceptionHistory } from '../../utils/receptionHistory'
 
 interface RegistrationData {
     firstName: string
@@ -25,6 +26,7 @@ export default function ReceptionConfirmPage() {
     const navigate = useNavigate()
     const location = useLocation()
     const data: RegistrationData = location.state?.formData ?? {}
+    const returnTo = location.state?.returnTo // Pass through returnTo flag
 
     const fullName = `${data.firstName || ''} ${data.lastName || ''}`.trim() || '-'
     const licensePlate = [data.plateLine1, data.plateLine2, data.province].filter(Boolean).join(' ')
@@ -53,17 +55,32 @@ export default function ReceptionConfirmPage() {
         const existingCustomers = existingCustomersStr ? JSON.parse(existingCustomersStr) : []
         localStorage.setItem('smart_moto_customers', JSON.stringify([...existingCustomers, newCustomer]))
 
-        navigate('/reception/success', { state: { formData: data } })
+        // Save to reception history
+        addReceptionHistory({
+            activityType: 'ลงทะเบียนใหม่',
+            firstName: data.firstName,
+            lastName: data.lastName,
+            phone: data.phone,
+            model: data.model,
+            color: data.color,
+            plateLine1: data.plateLine1,
+            plateLine2: data.plateLine2,
+            province: data.province,
+            // No symptoms/tags for registration only
+        })
+
+        navigate('/reception/success', { state: { formData: data, returnTo } })
     }
 
     return (
-        <div className="p-6 max-w-3xl mx-auto min-h-full">
-            {/* Header */}
-            <div className="mb-6">
-                <button
-                    onClick={() => navigate(-1)}
-                    className="flex items-center text-sm font-medium text-gray-500 hover:text-amber-600 mb-3 transition-colors"
-                >
+        <div className="h-full flex flex-col bg-[#F5F5F5]">
+            <div className="p-6 w-full flex-1 flex flex-col">
+                {/* Header */}
+                <div className="mb-6">
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="flex items-center text-sm font-medium text-gray-500 hover:text-amber-600 mb-3 transition-colors"
+                    >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                     </svg>
@@ -120,20 +137,21 @@ export default function ReceptionConfirmPage() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex justify-end gap-3 mt-2 pb-8">
+                <div className="flex justify-end gap-4 mt-4 pb-8">
                     <button
                         onClick={() => navigate(-1)}
-                        className="px-6 py-2.5 rounded-xl border border-amber-400 text-amber-600 font-medium bg-white hover:bg-amber-50 active:bg-amber-100 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                        className="min-w-[180px] px-10 py-3.5 rounded-xl border-2 border-amber-400 text-amber-600 text-base font-semibold bg-white hover:bg-amber-50 active:bg-amber-100 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/30"
                     >
                         กลับไปแก้ไข
                     </button>
                     <button
                         onClick={handleConfirm}
-                        className="px-6 py-2.5 rounded-xl border border-transparent text-white font-medium bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-sm"
+                        className="min-w-[180px] px-10 py-3.5 rounded-xl border-2 border-transparent text-white text-base font-semibold bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-lg"
                     >
                         ยืนยันบันทึก
                     </button>
                 </div>
+            </div>
             </div>
         </div>
     )

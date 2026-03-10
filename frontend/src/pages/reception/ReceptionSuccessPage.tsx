@@ -4,7 +4,16 @@ export default function ReceptionSuccessPage() {
     const navigate = useNavigate()
     const location = useLocation()
     const data = location.state?.formData ?? {}
+    const returnTo = location.state?.returnTo // Check if we should return to search page
     const fullName = `${data.firstName || ''} ${data.lastName || ''}`.trim()
+
+    const handleBackToMain = () => {
+        if (returnTo === 'search') {
+            navigate('/reception/search')
+        } else {
+            navigate('/reception')
+        }
+    }
 
     return (
         <div className="p-6 max-w-xl mx-auto min-h-full flex flex-col items-center justify-center">
@@ -41,10 +50,10 @@ export default function ReceptionSuccessPage() {
 
                 <div className="flex flex-col sm:flex-row justify-between gap-3 px-8 pb-8">
                     <button
-                        onClick={() => navigate('/reception')}
+                        onClick={handleBackToMain}
                         className="w-full sm:w-auto px-6 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium bg-white hover:bg-gray-50 active:bg-gray-100 transition-all focus:outline-none focus:ring-2 focus:ring-gray-200"
                     >
-                        กลับหน้าหลัก
+                        {returnTo === 'search' ? 'กลับหน้าค้นหา' : 'กลับหน้าหลัก'}
                     </button>
                     <button
                         onClick={() => navigate('/reception/repair', { state: { formData: data } })}

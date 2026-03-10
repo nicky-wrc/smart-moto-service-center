@@ -133,7 +133,8 @@ export default function CreatePurchaseOrderPage() {
         }
     }
 
-    const handleSubmit = (action: 'draft' | 'submit') => {
+    const handleSubmit = async (action: 'draft' | 'submit') => {
+        // Validation
         if (!supplierId) {
             setValidationModal({
                 isOpen: true,
@@ -153,56 +154,120 @@ export default function CreatePurchaseOrderPage() {
             return
         }
 
-        const supplier = mockSuppliers.find(s => s.id === supplierId)
-        const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '')
-        const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0')
+        try {
+            // Prepare data for backend
+            const supplier = mockSuppliers.find(s => s.id === supplierId)
+            
+            const orderData = {
+                supplierId: supplierId as number,
+                deliveryDate: deliveryDate,
+                totalAmount: totalAmount,
+                status: action === 'submit' ? 'pending' : 'draft', // draft = บันทึกร่าง, pending = รออนุมัติ
+                remarks: remarks || null,
+                managerMessage: managerMessage || null,
+                items: orderItems.map(item => ({
+                    partId: item.id,
+                    partName: item.name,
+                    quantity: item.orderQuantity,
+                    unitPrice: item.price,
+                    totalPrice: item.price * item.orderQuantity
+                }))
+            }
 
-        const newOrder: PurchaseOrder = {
-            id: `PO-${dateStr}-${randomNum}`,
-            supplierId: supplierId as number,
-            supplierName: supplier?.companyName || 'Unknown Supplier',
-            createdAt: getTodayString(),
-            deliveryDate: deliveryDate,
-            totalAmount: totalAmount,
-            status: action === 'submit' ? 'pending' : 'draft',
-            items: orderItems,
-            remarks,
-            managerMessage
+            // TODO: Replace with actual API call when backend is ready
+            // const response = await fetch('/api/purchase-orders', {
+            //     method: 'POST',
+            //     headers: {
+            //         'Content-Type': 'application/json',
+            //         'Authorization': `Bearer ${localStorage.getItem('token')}`
+            //     },
+            //     body: JSON.stringify(orderData)
+            // })
+            // 
+            // if (!response.ok) {
+            //     throw new Error('Failed to create purchase order')
+            // }
+            // 
+            // const createdOrder = await response.json()
+
+            // MOCK: Simulate API response
+            const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '')
+            const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0')
+            
+            const newOrder: PurchaseOrder = {
+                id: `PO-${dateStr}-${randomNum}`,
+                supplierId: orderData.supplierId,
+                supplierName: supplier?.companyName || 'Unknown Supplier',
+                createdAt: getTodayString(),
+                deliveryDate: orderData.deliveryDate,
+                totalAmount: orderData.totalAmount,
+                status: orderData.status as 'draft' | 'pending',
+                items: orderItems,
+                remarks: orderData.remarks || '',
+                managerMessage: orderData.managerMessage || ''
+            }
+
+            // MOCK: Add to mock data (remove this when using real API)
+            mockPurchaseOrders.push(newOrder)
+
+            // Clear draft localStorage
+            localStorage.removeItem('draft_po_supplier')
+            localStorage.removeItem('draft_po_deliveryDate')
+            localStorage.removeItem('draft_po_remarks')
+            localStorage.removeItem('draft_po_managerMessage')
+            localStorage.removeItem('draft_po_items')
+
+            // Log activity
+            addActivity({
+                id: newOrder.id,
+                type: 'po',
+                label: newOrder.id,
+                sub: newOrder.supplierName,
+                date: newOrder.createdAt,
+                badge: action === 'submit' ? 'รออนุมัติ' : 'สร้างใบสั่งซื้อฉบับร่าง',
+                badgeColor: action === 'submit' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600',
+            })
+
+            // TODO: When backend is ready, send notification to owner role
+            // if (action === 'submit') {
+            //     await fetch('/api/notifications/purchase-order-approval', {
+            //         method: 'POST',
+            //         headers: {
+            //             'Content-Type': 'application/json',
+            //             'Authorization': `Bearer ${localStorage.getItem('token')}`
+            //         },
+            //         body: JSON.stringify({
+            //             orderId: newOrder.id,
+            //             recipientRole: 'owner',
+            //             message: `มีใบสั่งซื้อใหม่รออนุมัติ: ${newOrder.id} จำนวนเงิน ฿${newOrder.totalAmount.toLocaleString()}`
+            //         })
+            //     })
+            // }
+
+            // Show success modal
+            setValidationModal({
+                isOpen: true,
+                isError: false,
+                title: action === 'draft' ? 'บันทึกเป็นแบบร่างสำเร็จ!' : 'ส่งคำขอสั่งซื้อสำเร็จ!',
+                message: action === 'submit' 
+                    ? 'ระบบได้ส่งแจ้งเตือนไปยัง Owner เพื่ออนุมัติใบสั่งซื้อแล้ว กำลังกลับสู่หน้ารายการใบสั่งซื้อ...'
+                    : 'กำลังกลับสู่หน้ารายการใบสั่งซื้อ...'
+            })
+
+            // Auto redirect after success
+            setTimeout(() => {
+                navigate('/inventory/purchase-orders')
+            }, 2000)
+
+        } catch (error) {
+            console.error('Error creating purchase order:', error)
+            setValidationModal({
+                isOpen: true,
+                isError: true,
+                title: 'เกิดข้อผิดพลาด',
+                message: 'ไม่สามารถสร้างใบสั่งซื้อได้ กรุณาลองใหม่อีกครั้ง'
+            })
         }
-
-        // Add to top of the list
-        mockPurchaseOrders.unshift(newOrder)
-
-        // Clear local storage on submit
-        localStorage.removeItem('draft_po_supplier')
-        localStorage.removeItem('draft_po_deliveryDate')
-        localStorage.removeItem('draft_po_remarks')
-        localStorage.removeItem('draft_po_managerMessage')
-        localStorage.removeItem('draft_po_items')
-
-        // Log recent global activity
-        addActivity({
-            id: newOrder.id,
-            type: 'po',
-            label: newOrder.id,
-            sub: newOrder.supplierName,
-            date: newOrder.createdAt,
-            badge: action === 'submit' ? 'รออนุมัติ' : 'สร้างใบสั่งซื้อฉบับร่าง',
-            badgeColor: action === 'submit' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600',
-        })
-
-        // Show success modal instead of alert
-        setValidationModal({
-            isOpen: true,
-            isError: false,
-            title: action === 'draft' ? 'บันทึกเป็นแบบร่างสำเร็จ!' : 'ส่งคำขอสั่งซื้อสำเร็จ!',
-            message: 'กำลังกลับสู่หน้ารายการใบสั่งซื้อ...'
-        })
-
-        // Auto redirect after success
-        setTimeout(() => {
-            navigate('/inventory/purchase-orders')
-        }, 2000)
     }
 
     return (

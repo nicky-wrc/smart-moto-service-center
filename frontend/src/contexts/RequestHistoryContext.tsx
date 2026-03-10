@@ -39,7 +39,7 @@ export function RequestHistoryProvider({ children }: { children: ReactNode }) {
         setHistory((prev) => {
             // Replace if same id already exists
             const filtered = prev.filter((h) => h.id !== entry.id)
-            const updated = [entry, ...filtered]
+            const updated = [...filtered, entry]
             localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
             return updated
         })

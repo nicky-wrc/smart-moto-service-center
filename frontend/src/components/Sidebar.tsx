@@ -14,7 +14,19 @@ export default function Sidebar({ navItems }: SidebarProps) {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const isActive = (path: string) => location.pathname.startsWith(path)
+  const isActive = (path: string) => {
+    // ถ้า path มี sub-path (เช่น /reception/history) ต้อง match แบบเต็ม
+    // ถ้า path เป็น base (เช่น /reception) ต้อง match exact หรือ index route
+    const currentPath = location.pathname
+    
+    // หา nav item ที่มี path ยาวที่สุดที่ match กับ current path
+    const matchingItems = navItems.filter(item => currentPath.startsWith(item.path))
+    const longestMatch = matchingItems.reduce((longest, item) => 
+      item.path.length > longest.path.length ? item : longest
+    , { path: '' })
+    
+    return longestMatch.path === path
+  }
 
   return (
     <div className="flex flex-col items-center gap-4 w-16">

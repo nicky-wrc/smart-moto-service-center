@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useMemo, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import SearchBox from '../../components/SearchBox'
 
 type Motorcycle = {
@@ -63,26 +63,29 @@ const MOCK_CUSTOMERS: Customer[] = [
 
 export default function ReceptionSearchPage() {
     const navigate = useNavigate()
+    const location = useLocation()
     const [searchQuery, setSearchQuery] = useState('')
     const [showFilters, setShowFilters] = useState(false)
     const [allCustomers, setAllCustomers] = useState<Customer[]>(MOCK_CUSTOMERS)
 
-    useMemo(() => {
-        const existingCustomersStr = localStorage.getItem('smart_moto_customers')
-        if (existingCustomersStr) {
-            try {
-                const localCustomers = JSON.parse(existingCustomersStr)
-                // Filter out any local customers that might have duplicate IDs with mock data, just in case
-                const mockIds = new Set(MOCK_CUSTOMERS.map(c => c.id))
-                const uniqueLocalCustomers = localCustomers.filter((c: Customer) => !mockIds.has(c.id))
-
-                // Merge and set
-                setAllCustomers([...MOCK_CUSTOMERS, ...uniqueLocalCustomers])
-            } catch (e) {
-                console.error("Failed to parse local customers", e)
+    // Load customers from localStorage and auto-refresh when returning from register page
+    useEffect(() => {
+        const loadCustomers = () => {
+            const existingCustomersStr = localStorage.getItem('smart_moto_customers')
+            if (existingCustomersStr) {
+                try {
+                    const localCustomers = JSON.parse(existingCustomersStr)
+                    const mockIds = new Set(MOCK_CUSTOMERS.map(c => c.id))
+                    const uniqueLocalCustomers = localCustomers.filter((c: Customer) => !mockIds.has(c.id))
+                    setAllCustomers([...MOCK_CUSTOMERS, ...uniqueLocalCustomers])
+                } catch (e) {
+                    console.error("Failed to parse local customers", e)
+                }
             }
         }
-    }, [])
+        
+        loadCustomers()
+    }, [location]) // Reload when location changes (coming back from other pages)
 
     // Filters
     const [filterName, setFilterName] = useState('')
@@ -118,7 +121,7 @@ export default function ReceptionSearchPage() {
 
             return true
         })
-    }, [searchQuery, filterName, filterPhone, filterPlate, filterModel])
+    }, [allCustomers, searchQuery, filterName, filterPhone, filterPlate, filterModel])
 
     const handleSelectMotorcycle = (customer: Customer, motorcycle: Motorcycle) => {
         navigate('/reception/repair', {
@@ -133,7 +136,9 @@ export default function ReceptionSearchPage() {
                     plateLine1: motorcycle.plateLine1,
                     plateLine2: motorcycle.plateLine2,
                     province: motorcycle.province,
-                }
+                },
+                isExistingCustomer: true, // ลูกค้าเก่า
+                isNewMotorcycle: false, // รถที่มีในระบบ
             }
         })
     }
@@ -152,19 +157,22 @@ export default function ReceptionSearchPage() {
                     plateLine2: '',
                     province: '',
                 },
-                returnTo: 'newMoto' // This tells the register page to show "add new motorcycle" header and go to repair after saving
+                returnTo: 'newMoto', // This tells the register page to show "add new motorcycle" header and go to repair after saving
+                isExistingCustomer: true, // ลูกค้าเก่า
+                isNewMotorcycle: true, // เพิ่มรถคันใหม่
             }
         })
     }
 
     return (
-        <div className="p-6 max-w-5xl mx-auto min-h-full flex flex-col">
-            {/* Header */}
-            <div className="mb-6">
-                <button
-                    onClick={() => navigate(-1)}
-                    className="flex items-center text-sm font-medium text-gray-500 hover:text-amber-600 mb-3 transition-colors"
-                >
+        <div className="h-full flex flex-col bg-[#F5F5F5]">
+            <div className="p-6 w-full flex-1 flex flex-col">
+                {/* Header */}
+                <div className="mb-6">
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="flex items-center text-sm font-medium text-gray-500 hover:text-amber-600 mb-3 transition-colors"
+                    >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                     </svg>
@@ -260,32 +268,34 @@ export default function ReceptionSearchPage() {
                         <h3 className="text-lg font-semibold text-gray-800 mb-2">ไม่พบข้อมูลลูกค้า</h3>
                         <p className="text-gray-500 mb-6">ลองปรับเปลี่ยนคำค้นหาหรือเพิ่มตัวกรองใหม่</p>
                         <button
-                            onClick={() => navigate('/reception/register')}
+                            onClick={() => navigate('/reception/register', { state: { returnTo: 'search' } })}
                             className="text-amber-600 font-medium hover:text-amber-700 hover:underline"
                         >
                             หรือ เพิ่มลูกค้าใหม่
                         </button>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left">
-                            <thead className="bg-gray-50 text-gray-600 border-b border-gray-200 font-medium">
-                                <tr>
-                                    <th className="py-4 px-6 text-left">ชื่อ-นามสกุล</th>
-                                    <th className="py-4 px-6 text-left">เบอร์โทรศัพท์</th>
-                                    <th className="py-4 px-6 text-left">ป้ายทะเบียน</th>
-                                    <th className="py-4 px-6 text-left">รุ่นรถที่เคยเอาเข้าซ่อม</th>
-                                    <th className="py-4 px-6 text-center">จัดการ</th>
+                    <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
+                        <table className="w-full text-sm text-center min-w-[800px]">
+                            <thead className="sticky top-0 z-10">
+                                <tr className="bg-[#f8fafc] text-gray-600 border-b border-gray-200 font-medium">
+                                    <th className="py-4 px-6 text-left font-medium whitespace-nowrap">ชื่อ-นามสกุล</th>
+                                    <th className="py-4 px-6 text-left font-medium whitespace-nowrap">เบอร์โทรศัพท์</th>
+                                    <th className="py-4 px-6 text-left font-medium whitespace-nowrap">ป้ายทะเบียน</th>
+                                    <th className="py-4 px-6 text-left font-medium whitespace-nowrap">รุ่นรถที่เคยเอาเข้าซ่อม</th>
+                                    <th className="py-4 px-6 text-center font-medium whitespace-nowrap">จัดการ</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-gray-100 text-gray-700">
                                 {filteredCustomers.map((customer) => (
                                     <tr key={customer.id} className="hover:bg-gray-50/80 transition-colors">
-                                        <td className="py-4 px-6 text-gray-900 font-medium whitespace-nowrap align-top">
+                                        <td className="py-4 px-6 text-left font-medium text-gray-900 align-top">
                                             {customer.firstName} {customer.lastName}
                                         </td>
-                                        <td className="py-4 px-6 text-gray-600 whitespace-nowrap align-top">{customer.phone}</td>
-                                        <td className="py-4 px-6 align-top">
+                                        <td className="py-4 px-6 text-left text-gray-600 align-top">
+                                            {customer.phone}
+                                        </td>
+                                        <td className="py-4 px-6 text-left align-top">
                                             <div className="flex flex-col gap-2">
                                                 {customer.motorcycles.map(m => (
                                                     <div key={m.id} className="inline-flex w-fit items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
@@ -294,7 +304,7 @@ export default function ReceptionSearchPage() {
                                                 ))}
                                             </div>
                                         </td>
-                                        <td className="py-4 px-6 text-gray-600 align-top">
+                                        <td className="py-4 px-6 text-left text-gray-600 align-top">
                                             <div className="flex flex-col gap-2">
                                                 {customer.motorcycles.map(m => (
                                                     <div key={m.id} className="py-1 text-xs">
@@ -395,7 +405,7 @@ export default function ReceptionSearchPage() {
                                     </svg>
                                 </div>
                                 <div>
-                                    <span className="font-semibold text-gray-700 group-hover:text-emerald-700 transition-colors">เพิ่มรถยอดแจ้งซ่อมคันใหม่</span>
+                                    <span className="font-semibold text-gray-700 group-hover:text-emerald-700 transition-colors">เพิ่มรายละเอียดรถคันใหม่</span>
                                 </div>
                                 <p className="text-xs text-gray-500 text-center max-w-[280px]">
                                     ระบบจะให้กรอกรายละเอียดรถมอเตอร์ไซค์คันอื่นของลูกค้า และนำไปแจ้งซ่อมรายการใหม่ทันที
@@ -405,6 +415,7 @@ export default function ReceptionSearchPage() {
                     </div>
                 </div>
             )}
+            </div>
         </div>
     )
 }
