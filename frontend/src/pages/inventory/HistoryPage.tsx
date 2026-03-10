@@ -17,8 +17,9 @@ export default function HistoryPage() {
             setIsLoading(true)
             try {
                 const data = await partRequisitionService.getHistory()
-                // Use API data if available, otherwise fallback to local session history
-                if (isMounted) setHistoryData(data.length > 0 ? data : history)
+                // Use API data if available (real backend), otherwise fallback to local session history
+                // Note: when connected to real backend, history endpoint should return HistoryItem[]
+                if (isMounted) setHistoryData(data.length > 0 ? (data as unknown as HistoryItem[]) : history)
             } catch (error) {
                 console.error("Failed to load history:", error)
                 if (isMounted) setHistoryData(history)
@@ -126,11 +127,11 @@ export default function HistoryPage() {
                 {showFilters && (
                     <div className="relative mt-2 p-5 bg-white rounded-xl border border-gray-200 shadow-md">
                         {/* Triangle pointer */}
-                        <div className="absolute -top-[10px] right-[1270px] w-0 h-0 
+                        <div className="absolute -top-[10px] right-[1400px] w-0 h-0 
                             border-l-[10px] border-l-transparent 
                             border-r-[10px] border-r-transparent 
                             border-b-[10px] border-b-white z-20" />
-                        <div className="absolute -top-[12px] right-[1270px] w-0 h-0 
+                        <div className="absolute -top-[12px] right-[1400px] w-0 h-0 
                             border-l-[10px] border-l-transparent 
                             border-r-[10px] border-r-transparent 
                             border-b-[12px] border-b-gray-200 z-10" />
