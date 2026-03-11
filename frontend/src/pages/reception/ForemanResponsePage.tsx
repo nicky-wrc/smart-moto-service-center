@@ -1,92 +1,14 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import SearchBox from '../../components/SearchBox'
+import { useForemanResponseList } from '../../hooks/useForemanResponse'
+import type { ForemanResponse } from '../../types/foremanResponse.types'
 
-// Mock data - TODO: Replace with actual API call
-interface ForemanResponse {
-    id: string
-    queueNumber: string
-    firstName: string
-    lastName: string
-    phone: string
-    model: string
-    plateLine1: string
-    plateLine2: string
-    province: string
-    symptoms: string
-    tags: string[]
-    images?: string[]
-    
-    // Foreman's response
-    foremanAnalysis: string
-    estimatedCost: number
-    estimatedDuration: string // e.g., "2-3 วัน"
-    requiredParts: Array<{
-        name: string
-        quantity: number
-        unitPrice: number
-    }>
-    additionalNotes?: string
-    respondedAt: string // ISO timestamp
-    respondedBy: string // Foreman name
-    assessmentNumber: number // ครั้งที่ประเมิน
+// Helper function to format data for display
+const formatResponseData = (data: ForemanResponse) => {
+    // Return the full data since ForemanResponse already has the right structure
+    return data
 }
-
-// Mock data
-const mockForemanResponses: ForemanResponse[] = [
-    {
-        id: 'RH-001-1773169600001',
-        queueNumber: '001',
-        firstName: 'สมชาย',
-        lastName: 'ใจดี',
-        phone: '0812345678',
-        model: 'Honda Wave 125i',
-        plateLine1: 'กค',
-        plateLine2: '1234',
-        province: 'กรุงเทพมหานคร',
-        symptoms: 'เครื่องดังผิดปกติ มีควันขาวออกจากท่อ',
-        tags: ['เครื่องยนต์', 'ระบายความร้อน'],
-        images: [],
-        foremanAnalysis: 'ตรวจสอบแล้วพบว่ากระบอกสูบมีรอยขีดข่วน และลูกสูบสึกหรอ ต้องเปลี่ยนชุดลูกสูบและกระบอกสูบใหม่ รวมทั้งต้องทำการล้างคาร์บูเรเตอร์และปรับจูนเครื่องยนต์ใหม่',
-        estimatedCost: 4500,
-        estimatedDuration: '2-3 วัน',
-        requiredParts: [
-            { name: 'ชุดลูกสูบ Honda Wave 125i', quantity: 1, unitPrice: 2500 },
-            { name: 'ปะเก็นชุด', quantity: 1, unitPrice: 350 },
-            { name: 'น้ำมันเครื่อง 10W-40', quantity: 1, unitPrice: 250 },
-        ],
-        additionalNotes: 'แนะนำให้เปลี่ยนถ่ายน้ำมันเครื่องและตรวจเช็คระบบส่งกำลังด้วย',
-        respondedAt: '2026-03-11T09:30:00Z',
-        respondedBy: 'นายสมศักดิ์ ช่างดี',
-        assessmentNumber: 1
-    },
-    {
-        id: 'RH-002-1773169600002',
-        queueNumber: '002',
-        firstName: 'สมหญิง',
-        lastName: 'รักดี',
-        phone: '0898765432',
-        model: 'Yamaha Fino',
-        plateLine1: 'นข',
-        plateLine2: '5678',
-        province: 'นนทบุรี',
-        symptoms: 'เบรกไม่อั้น เหยียบลงไปนิ่มๆ',
-        tags: ['เบรก', 'ช่วงล่าง'],
-        images: [],
-        foremanAnalysis: 'พบว่าผ้าเบรกสึกหรอจนหมดและน้ำมันเบรกเหลือน้อย ต้องเปลี่ยนผ้าเบรกหน้า-หลัง และเติมน้ำมันเบรกใหม่ พร้อมปล่อยลม',
-        estimatedCost: 1200,
-        estimatedDuration: '1 วัน',
-        requiredParts: [
-            { name: 'ผ้าเบรกหน้า Yamaha Fino', quantity: 1, unitPrice: 350 },
-            { name: 'ผ้าเบรกหลัง Yamaha Fino', quantity: 1, unitPrice: 300 },
-            { name: 'น้ำมันเบรก DOT 3', quantity: 1, unitPrice: 150 },
-        ],
-        additionalNotes: 'เป็นปัญหาที่มีผลต่อความปลอดภัย แนะนำให้รีบซ่อม',
-        respondedAt: '2026-03-11T10:15:00Z',
-        respondedBy: 'นายสมศักดิ์ ช่างดี',
-        assessmentNumber: 2
-    }
-]
 
 export default function ForemanResponsePage() {
     const navigate = useNavigate()
@@ -96,29 +18,64 @@ export default function ForemanResponsePage() {
     const [filterPhone, setFilterPhone] = useState('')
     const [filterPlate, setFilterPlate] = useState('')
     const [filterModel, setFilterModel] = useState('')
+    const [currentPage, setCurrentPage] = useState(1)
 
-    // Filter responses
-    const filteredResponses = useMemo(() => {
-        return mockForemanResponses.filter(response => {
-            const q = search.toLowerCase()
-            const fullName = `${response.firstName} ${response.lastName}`
-            const plate = `${response.plateLine1} ${response.plateLine2} ${response.province}`
+    // Fetch data from API
+    const { data: apiResponses, total, loading, error } = useForemanResponseList({
+        page: currentPage,
+        limit: 10,
+        search: search || undefined,
+        status: 'PENDING_CUSTOMER', // Show only pending responses
+    })
 
-            const matchSearch = !q ||
-                fullName.toLowerCase().includes(q) ||
-                response.phone.includes(q) ||
-                response.queueNumber.includes(q) ||
-                plate.toLowerCase().includes(q) ||
-                response.model.toLowerCase().includes(q)
+    // Format responses for display
+    const formattedResponses = (apiResponses || []).map(formatResponseData)
 
-            const matchName = !filterName || fullName.toLowerCase().includes(filterName.toLowerCase())
-            const matchPhone = !filterPhone || response.phone.includes(filterPhone)
-            const matchPlate = !filterPlate || plate.toLowerCase().includes(filterPlate.toLowerCase())
-            const matchModel = !filterModel || response.model.toLowerCase().includes(filterModel.toLowerCase())
+    // Filter responses based on local filters
+    const filteredResponses = formattedResponses.filter(response => {
+        const q = search.toLowerCase()
+        const fullName = `${response.firstName} ${response.lastName}`
+        const plate = `${response.plateLine1} ${response.plateLine2} ${response.province}`
 
-            return matchSearch && matchName && matchPhone && matchPlate && matchModel
-        })
-    }, [search, filterName, filterPhone, filterPlate, filterModel])
+        const matchSearch = !q ||
+            fullName.toLowerCase().includes(q) ||
+            response.phone.includes(q) ||
+            response.queueNumber.includes(q) ||
+            plate.toLowerCase().includes(q) ||
+            response.model.toLowerCase().includes(q)
+
+        const matchName = !filterName || fullName.toLowerCase().includes(filterName.toLowerCase())
+        const matchPhone = !filterPhone || response.phone.includes(filterPhone)
+        const matchPlate = !filterPlate || plate.toLowerCase().includes(filterPlate.toLowerCase())
+        const matchModel = !filterModel || response.model.toLowerCase().includes(filterModel.toLowerCase())
+
+        return matchSearch && matchName && matchPhone && matchPlate && matchModel
+    })
+
+    // Loading state
+    if (loading && currentPage === 1) {
+        return (
+            <div className="h-full flex flex-col items-center justify-center bg-[#F5F5F5]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mb-4"></div>
+                <p className="text-gray-400">กำลังโหลดข้อมูล...</p>
+            </div>
+        )
+    }
+
+    // Error state
+    if (error) {
+        return (
+            <div className="h-full flex flex-col items-center justify-center bg-[#F5F5F5]">
+                <p className="text-red-500 mb-4">เกิดข้อผิดพลาด: {error.message}</p>
+                <button
+                    onClick={() => window.location.reload()}
+                    className="px-6 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600"
+                >
+                    ลองใหม่อีกครั้ง
+                </button>
+            </div>
+        )
+    }
 
     return (
         <div className="p-6 bg-[#F5F5F5] min-h-full flex flex-col">

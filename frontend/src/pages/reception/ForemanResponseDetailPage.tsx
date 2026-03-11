@@ -1,99 +1,13 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useForemanResponse, useCustomerDecision } from '../../hooks/useForemanResponse'
+import type { ForemanResponse } from '../../types/foremanResponse.types'
 
-// Mock data - same interface as ForemanResponsePage
-interface ForemanResponse {
-    id: string
-    queueNumber: string
-    firstName: string
-    lastName: string
-    phone: string
-    address?: string
-    model: string
-    color: string
-    plateLine1: string
-    plateLine2: string
-    province: string
-    symptoms: string
-    tags: string[]
-    images?: string[]
-    
-    foremanAnalysis: string
-    estimatedCost: number
-    estimatedDuration: string
-    requiredParts: Array<{
-        name: string
-        quantity: number
-        unitPrice: number
-    }>
-    additionalNotes?: string
-    respondedAt: string
-    respondedBy: string
-    assessmentNumber: number // ครั้งที่ประเมิน
-    customerDecision?: 'approved' | 'rejected' | null // สถานะการตัดสินใจของลูกค้า
+// Helper function to format customer data from API response
+const formatResponseData = (data: ForemanResponse) => {
+    // Return the full data since ForemanResponse already has the right structure
+    return data
 }
-
-// Mock data
-const mockForemanResponses: ForemanResponse[] = [
-    {
-        id: 'RH-001-1773169600001',
-        queueNumber: '001',
-        firstName: 'สมชาย',
-        lastName: 'ใจดี',
-        phone: '0812345678',
-        address: '123 ถนนสุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพฯ 10110',
-        model: 'Honda Wave 125i',
-        color: 'แดง',
-        plateLine1: 'กค',
-        plateLine2: '1234',
-        province: 'กรุงเทพมหานคร',
-        symptoms: 'เครื่องดังผิดปกติ มีควันขาวออกจากท่อ',
-        tags: ['เครื่องยนต์', 'ระบายความร้อน'],
-        images: [],
-        foremanAnalysis: 'ตรวจสอบแล้วพบว่ากระบอกสูบมีรอยขีดข่วน และลูกสูบสึกหรอ ต้องเปลี่ยนชุดลูกสูบและกระบอกสูบใหม่ รวมทั้งต้องทำการล้างคาร์บูเรเตอร์และปรับจูนเครื่องยนต์ใหม่',
-        estimatedCost: 4500,
-        estimatedDuration: '2-3 วัน',
-        requiredParts: [
-            { name: 'ชุดลูกสูบ Honda Wave 125i', quantity: 1, unitPrice: 2500 },
-            { name: 'ปะเก็นชุด', quantity: 1, unitPrice: 350 },
-            { name: 'น้ำมันเครื่อง 10W-40', quantity: 1, unitPrice: 250 },
-        ],
-        additionalNotes: 'แนะนำให้เปลี่ยนถ่ายน้ำมันเครื่องและตรวจเช็คระบบส่งกำลังด้วย',
-        respondedAt: '2026-03-11T09:30:00Z',
-        respondedBy: 'นายสมศักดิ์ ช่างดี',
-        assessmentNumber: 1,
-        customerDecision: null // ยังไม่มีการตัดสินใจ
-    },
-    {
-        id: 'RH-002-1773169600002',
-        queueNumber: '002',
-        firstName: 'สมหญิง',
-        lastName: 'รักดี',
-        phone: '0898765432',
-        address: '456 ถนนราชดำริ อำเภอเมือง จังหวัดนนทบุรี 11000',
-        model: 'Yamaha Fino',
-        color: 'ชมพู',
-        plateLine1: 'นข',
-        plateLine2: '5678',
-        province: 'นนทบุรี',
-        symptoms: 'เบรกไม่อั้น เหยียบลงไปนิ่มๆ',
-        tags: ['เบรก', 'ช่วงล่าง'],
-        images: [],
-        foremanAnalysis: 'พบว่าผ้าเบรกสึกหรอจนหมดและน้ำมันเบรกเหลือน้อย ต้องเปลี่ยนผ้าเบรกหน้า-หลัง และเติมน้ำมันเบรกใหม่ พร้อมปล่อยลม',
-        estimatedCost: 1200,
-        estimatedDuration: '1 วัน',
-        requiredParts: [
-            { name: 'ผ้าเบรกหน้า Yamaha Fino', quantity: 1, unitPrice: 350 },
-            { name: 'ผ้าเบรกหลัง Yamaha Fino', quantity: 1, unitPrice: 300 },
-            { name: 'น้ำมันเบรก DOT 3', quantity: 1, unitPrice: 150 },
-        ],
-        additionalNotes: 'เป็นปัญหาที่มีผลต่อความปลอดภัย แนะนำให้รีบซ่อม',
-        respondedAt: '2026-03-11T10:15:00Z',
-        respondedBy: 'นายสมศักดิ์ ช่างดี',
-        assessmentNumber: 2,
-        customerDecision: null // ยังไม่มีการตัดสินใจ
-    }
-]
 
 // Collapsible Card Component
 function CollapsibleCard({ 
@@ -152,15 +66,41 @@ export default function ForemanResponseDetailPage() {
     const navigate = useNavigate()
     const { id } = useParams<{ id: string }>()
     
+    // Fetch data from API
+    const { data: apiResponse, loading, error, refetch } = useForemanResponse(id)
+    const { submitDecision, loading: submitting } = useCustomerDecision()
+    
     // State for confirmation modal
     const [showConfirmModal, setShowConfirmModal] = useState(false)
     const [pendingDecision, setPendingDecision] = useState<'approved' | 'rejected' | null>(null)
-    const [customerDecision, setCustomerDecision] = useState<'approved' | 'rejected' | null>(null)
-    
-    // Find the response by ID
-    const response = mockForemanResponses.find(r => r.id === id)
 
-    if (!response) {
+    // Loading state
+    if (loading) {
+        return (
+            <div className="h-full flex flex-col items-center justify-center bg-[#F5F5F5]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mb-4"></div>
+                <p className="text-gray-400">กำลังโหลดข้อมูล...</p>
+            </div>
+        )
+    }
+
+    // Error state
+    if (error) {
+        return (
+            <div className="h-full flex flex-col items-center justify-center bg-[#F5F5F5]">
+                <p className="text-red-500 mb-4">เกิดข้อผิดพลาด: {error.message}</p>
+                <button
+                    onClick={() => navigate('/reception/foreman-response')}
+                    className="px-6 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600"
+                >
+                    ย้อนกลับ
+                </button>
+            </div>
+        )
+    }
+
+    // Not found
+    if (!apiResponse) {
         return (
             <div className="h-full flex flex-col items-center justify-center bg-[#F5F5F5]">
                 <p className="text-gray-400 mb-4">ไม่พบข้อมูลที่ระบุ</p>
@@ -168,11 +108,14 @@ export default function ForemanResponseDetailPage() {
                     onClick={() => navigate('/reception/foreman-response')}
                     className="px-6 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600"
                 >
-                    กลับไปหน้ารายการ
+                    ย้อนกลับ
                 </button>
             </div>
         )
     }
+
+    // Format response data
+    const response = formatResponseData(apiResponse)
 
     const fullName = `${response.firstName} ${response.lastName}`
     const licensePlate = `${response.plateLine1} ${response.plateLine2} ${response.province}`
@@ -196,16 +139,16 @@ export default function ForemanResponseDetailPage() {
     }
 
     const handleConfirmDecision = async () => {
-        if (!pendingDecision) return
+        if (!pendingDecision || !id) return
 
         try {
-            // TODO: Replace with actual API call
-            // await api.updateCustomerDecision(response.id, pendingDecision)
-            
-            console.log(`Customer decision: ${pendingDecision} for job ${response.id}`)
-            
-            // Update state instead of modifying response object
-            setCustomerDecision(pendingDecision)
+            // Call API to update customer decision
+            await submitDecision(id, {
+                decision: pendingDecision, // 'approved' or 'rejected'
+                decisionByUserId: 1, // TODO: Get from auth context
+                decisionBy: 'Reception User', // TODO: Get from auth context
+                notes: undefined,
+            })
             
             // Show success message
             alert(
@@ -217,6 +160,9 @@ export default function ForemanResponseDetailPage() {
             // Close modal and reset
             setShowConfirmModal(false)
             setPendingDecision(null)
+            
+            // Refresh data
+            refetch()
         } catch (error) {
             console.error('Error updating customer decision:', error)
             alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง')
@@ -240,14 +186,22 @@ export default function ForemanResponseDetailPage() {
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                         </svg>
-                        กลับไปหน้ารายการ
+                        ย้อนกลับ
                     </button>
                     <div className="flex items-start justify-between">
-                        <div>
-                            <h2 className="text-2xl font-semibold text-gray-800">การตอบกลับจากหัวหน้าช่าง</h2>
-                            <p className="text-gray-500 text-sm mt-1">ดูรายละเอียดการประเมินและใบเสนอราคา</p>
+                        <div className="flex items-center gap-3">
+                            <div>
+                                <h2 className="text-2xl font-semibold text-gray-800">การตอบกลับจากหัวหน้าช่าง</h2>
+                                <p className="text-gray-500 text-sm mt-1">ดูรายละเอียดการประเมินและใบเสนอราคา</p>
+                            </div>
+                            <span className="text-xs font-semibold px-3 py-1.5 border rounded-full bg-emerald-100 text-emerald-700 border-emerald-200 whitespace-nowrap">
+                                ประเมินครั้งที่ {response.assessmentNumber}
+                            </span>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col items-end gap-2">
+                            <span className="text-sm text-gray-400 flex items-center gap-1.5">
+                                {formatDate(response.respondedAt)}
+                            </span>
                             <span className="bg-[#1E1E1E] text-white text-sm font-medium px-4 py-2 rounded-lg">
                                 ลำดับการรับบริการที่ {response.queueNumber}
                             </span>
@@ -256,24 +210,9 @@ export default function ForemanResponseDetailPage() {
                 </div>
 
                 {/* Scrollable Content */}
-                <div className="flex-1 bg-white rounded-xl overflow-hidden">
-                    <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 220px)' }}>
+                <div className="bg-white rounded-xl overflow-hidden">
+                    <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 420px)' }}>
                         <div className="flex flex-col gap-5 p-6">
-                            
-                            {/* Status Tag & Timestamp */}
-                            <div className="flex items-center justify-between pb-4 border-b border-gray-100">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xs font-semibold px-3 py-1.5 border rounded-full bg-emerald-100 text-emerald-700 border-emerald-200">
-                                        ประเมินครั้งที่ {response.assessmentNumber}
-                                    </span>
-                                </div>
-                                <span className="text-sm text-gray-400 flex items-center gap-1.5">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                    </svg>
-                                    {formatDate(response.respondedAt)}
-                                </span>
-                            </div>
                             
                             {/* Personal Info Card - Collapsible */}
                             <CollapsibleCard
@@ -288,7 +227,6 @@ export default function ForemanResponseDetailPage() {
                                 <div className="flex flex-col gap-3.5">
                                     <InfoRow label="ชื่อ-นามสกุล" value={fullName} />
                                     <InfoRow label="เบอร์โทรศัพท์" value={response.phone} />
-                                    {response.address && <InfoRow label="ที่อยู่" value={response.address} />}
                                 </div>
                             </CollapsibleCard>
 
@@ -485,96 +423,97 @@ export default function ForemanResponseDetailPage() {
                                 </div>
                             </div>
 
-                    {/* Customer Decision Section */}
-                    {!customerDecision && !response.customerDecision && (
-                        <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl border-2 border-amber-200 p-6 mt-6">
-                            <div className="flex items-start gap-3 mb-4">
-                                <div className="flex-shrink-0 w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                    </svg>
-                                </div>
-                                <div className="flex-1">
-                                    <h3 className="text-lg font-bold text-gray-800 mb-1">รอการตัดสินใจจากลูกค้า</h3>
-                                    <p className="text-sm text-gray-600">กรุณาแจ้งลูกค้าเกี่ยวกับการวิเคราะห์และใบเสนอราคา และรอการตอบรับเพื่อดำเนินการซ่อมต่อไป</p>
-                                </div>
-                            </div>
-                            
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => handleDecisionClick('approved')}
-                                    className="flex-1 px-6 py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <span>ลูกค้าตกลง - เริ่มซ่อม</span>
-                                </button>
-                                <button
-                                    onClick={() => handleDecisionClick('rejected')}
-                                    className="flex-1 px-6 py-3.5 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <span>ลูกค้าไม่ตกลง - ยกเลิก</span>
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Customer Decision Status */}
-                    {(customerDecision || response.customerDecision) && (
-                        <div className={`rounded-2xl border-2 p-6 mt-6 ${
-                            (customerDecision || response.customerDecision) === 'approved' 
-                                ? 'bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200' 
-                                : 'bg-gradient-to-br from-red-50 to-rose-50 border-red-200'
-                        }`}>
-                            <div className="flex items-center gap-3">
-                                <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
-                                    (customerDecision || response.customerDecision) === 'approved' 
-                                        ? 'bg-emerald-500' 
-                                        : 'bg-red-500'
-                                }`}>
-                                    {(customerDecision || response.customerDecision) === 'approved' ? (
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                        </svg>
-                                    ) : (
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    )}
-                                </div>
-                                <div>
-                                    <h3 className={`text-lg font-bold ${
-                                        (customerDecision || response.customerDecision) === 'approved' 
-                                            ? 'text-emerald-800' 
-                                            : 'text-red-800'
-                                    }`}>
-                                        {(customerDecision || response.customerDecision) === 'approved' 
-                                            ? '✓ ลูกค้ายืนยันการซ่อมแล้ว' 
-                                            : '✗ ลูกค้าไม่ยืนยันการซ่อม'}
-                                    </h3>
-                                    <p className="text-sm text-gray-600 mt-0.5">
-                                        {(customerDecision || response.customerDecision) === 'approved' 
-                                            ? 'สามารถเริ่มดำเนินการซ่อมได้' 
-                                            : 'งานซ่อมถูกยกเลิก'}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-
                         </div>
                     </div>
                 </div>
+
+                {/* Customer Decision Section - Bottom */}
+                {!apiResponse.customerDecision && apiResponse.status === 'PENDING_CUSTOMER' && (
+                    <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl border-2 border-amber-200 p-5 mt-4">
+                        <div className="flex items-start gap-3 mb-3">
+                            <div className="flex-shrink-0 w-9 h-9 bg-amber-500 rounded-full flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-base font-semibold text-gray-800 mb-1">รอการตัดสินใจจากลูกค้า</h3>
+                                <p className="text-xs text-gray-600">กรุณาแจ้งลูกค้าเกี่ยวกับการวิเคราะห์และใบเสนอราคา และรอการตอบรับเพื่อดำเนินการซ่อมต่อไป</p>
+                            </div>
+                        </div>
+                        
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => handleDecisionClick('approved')}
+                                disabled={submitting}
+                                className="flex-1 px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>ลูกค้าตกลง - เริ่มซ่อม</span>
+                            </button>
+                            <button
+                                onClick={() => handleDecisionClick('rejected')}
+                                disabled={submitting}
+                                className="flex-1 px-5 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>ลูกค้าไม่ตกลง - ยกเลิก</span>
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Customer Decision Status - Bottom */}
+                {apiResponse.customerDecision && (
+                    <div className={`rounded-2xl border-2 p-5 mt-4 ${
+                        apiResponse.customerDecision === 'approved' 
+                            ? 'bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200' 
+                            : 'bg-gradient-to-br from-red-50 to-rose-50 border-red-200'
+                    }`}>
+                        <div className="flex items-center gap-3">
+                            <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center ${
+                                apiResponse.customerDecision === 'approved' 
+                                    ? 'bg-emerald-500' 
+                                    : 'bg-red-500'
+                            }`}>
+                                {apiResponse.customerDecision === 'approved' ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                )}
+                            </div>
+                            <div>
+                                <h3 className={`text-base font-bold ${
+                                    apiResponse.customerDecision === 'approved' 
+                                        ? 'text-emerald-800' 
+                                        : 'text-red-800'
+                                }`}>
+                                    {apiResponse.customerDecision === 'approved' 
+                                        ? '✓ ลูกค้ายืนยันการซ่อมแล้ว' 
+                                        : '✗ ลูกค้าไม่ยืนยันการซ่อม'}
+                                </h3>
+                                <p className="text-xs text-gray-600 mt-0.5">
+                                    {apiResponse.customerDecision === 'approved' 
+                                        ? 'สามารถเริ่มดำเนินการซ่อมได้' 
+                                        : 'งานซ่อมถูกยกเลิก'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Confirmation Modal */}
             {showConfirmModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
                     <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-fadeIn">
                         <div className="flex items-start gap-4 mb-4">
                             <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${
@@ -625,19 +564,21 @@ export default function ForemanResponseDetailPage() {
                         <div className="flex gap-3">
                             <button
                                 onClick={handleCancelModal}
-                                className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors"
+                                disabled={submitting}
+                                className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 ยกเลิก
                             </button>
                             <button
                                 onClick={handleConfirmDecision}
-                                className={`flex-1 px-4 py-2.5 text-white font-medium rounded-lg transition-colors ${
+                                disabled={submitting}
+                                className={`flex-1 px-4 py-2.5 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                                     pendingDecision === 'approved'
                                         ? 'bg-emerald-500 hover:bg-emerald-600'
                                         : 'bg-red-500 hover:bg-red-600'
                                 }`}
                             >
-                                {pendingDecision === 'approved' ? 'ยืนยันเริ่มซ่อม' : 'ยืนยันยกเลิก'}
+                                {submitting ? 'กำลังบันทึก...' : (pendingDecision === 'approved' ? 'ยืนยันเริ่มซ่อม' : 'ยืนยันยกเลิก')}
                             </button>
                         </div>
                     </div>
