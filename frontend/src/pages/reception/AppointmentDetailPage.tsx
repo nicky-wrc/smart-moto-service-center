@@ -67,21 +67,12 @@ export const AppointmentDetailPage = () => {
       const job: any = await appointmentsService.convertToJob(parseInt(id), convertData);
       console.log('✅ Job created:', job);
       
-      // Show success message - API returns job object with id and jobNo
+      // Show success message
       const jobNo = job?.jobNo || 'ไม่ทราบ';
-      alert(`✅ แปลงเป็นงานสำเร็จ!\n\nหมายเลขงาน: ${jobNo}\n\nระบบจะนำคุณไปยังหน้ารายละเอียดงาน`);
+      alert(`✅ แปลงเป็นงานสำเร็จ!\n\nหมายเลขงาน: ${jobNo}`);
       
-      // Redirect to job detail page
-      const jobId = job?.id;
-      if (jobId) {
-        // Wait a moment for database to update
-        setTimeout(() => {
-          navigate(`/workshop/jobs/${jobId}`);
-        }, 500);
-      } else {
-        // Fallback: redirect to queue
-        navigate('/workshop/queue');
-      }
+      // Redirect back to appointments list
+      navigate('/reception/appointments');
     } catch (err: any) {
       console.error('❌ Error converting to job:', err);
       setError(

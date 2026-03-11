@@ -14,19 +14,26 @@ export class JobsService {
 
   async create(createJobDto: CreateJobDto, userId: number) {
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const count = await this.prisma.job.count({
+    const prefix = `JOB-${dateStr}-`;
+    
+    // Find the highest existing jobNo for today to avoid unique constraint violations
+    const lastJob = await this.prisma.job.findFirst({
       where: {
-        createdAt: {
-          gte: new Date(
-            new Date().getFullYear(),
-            new Date().getMonth(),
-            new Date().getDate(),
-          ),
-        },
+        jobNo: { startsWith: prefix },
       },
+      orderBy: { jobNo: 'desc' },
+      select: { jobNo: true },
     });
-    const runNo = (count + 1).toString().padStart(4, '0');
-    const jobNo = `JOB-${dateStr}-${runNo}`;
+    
+    let nextNum = 1;
+    if (lastJob?.jobNo) {
+      const lastNum = parseInt(lastJob.jobNo.replace(prefix, ''), 10);
+      if (!isNaN(lastNum)) {
+        nextNum = lastNum + 1;
+      }
+    }
+    const runNo = nextNum.toString().padStart(4, '0');
+    const jobNo = `${prefix}${runNo}`;
 
     return this.prisma.job.create({
       data: {
@@ -104,6 +111,13 @@ export class JobsService {
             scheduledDate: true,
           },
         },
+        quotation: {
+          include: {
+            _count: {
+              select: { items: true },
+            },
+          },
+        },
       },
       orderBy: [{ jobType: 'asc' }, { createdAt: 'desc' }],
     });
@@ -144,6 +158,15 @@ export class JobsService {
         checklistItems: true,
         outsources: true,
         payment: true,
+        quotation: {
+          include: {
+            items: {
+              include: {
+                part: { select: { id: true, name: true } },
+              },
+            },
+          },
+        },
       },
     });
   }
@@ -209,7 +232,7 @@ export class JobsService {
       data: {
         technicianId,
         ...(job.status === JobStatus.PENDING
-          ? { status: JobStatus.IN_PROGRESS, startedAt: new Date() }
+          ? { status: JobStatus.PENDING }
           : {}),
       },
       include: {
@@ -298,10 +321,11 @@ export class JobsService {
 
     if (
       job.status !== JobStatus.PENDING &&
-      job.status !== JobStatus.WAITING_PARTS
+      job.status !== JobStatus.WAITING_PARTS &&
+      job.status !== JobStatus.READY
     ) {
       throw new BadRequestException(
-        `Cannot start job with status ${job.status}. Job must be PENDING or WAITING_PARTS to start.`,
+        `Cannot start job with status ${job.status}. Job must be PENDING, READY or WAITING_PARTS to start.`,
       );
     }
 

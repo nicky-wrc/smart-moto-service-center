@@ -64,6 +64,23 @@ export default function ReceptionSearchPage() {
     }, [allCustomers, searchQuery, filterName, filterPhone, filterPlate, filterModel])
 
     const handleSelectMotorcycle = (customer: Customer, motorcycle: Motorcycle) => {
+        // Parse licensePlate string "กกก จังหวัด 1234" into parts
+        const plateParts = (motorcycle.licensePlate || '').split(' ')
+        let plateLine1 = ''
+        let province = ''
+        let plateLine2 = ''
+        
+        if (plateParts.length >= 3) {
+            plateLine1 = plateParts[0]
+            province = plateParts[1]
+            plateLine2 = plateParts.slice(2).join(' ')
+        } else if (plateParts.length === 2) {
+            plateLine1 = plateParts[0]
+            plateLine2 = plateParts[1]
+        } else {
+            plateLine1 = motorcycle.licensePlate || ''
+        }
+
         navigate('/reception/repair', {
             state: {
                 formData: {
@@ -71,11 +88,13 @@ export default function ReceptionSearchPage() {
                     lastName: customer.lastName,
                     phone: customer.phoneNumber,
                     address: customer.address || '',
-                    model: `${motorcycle.brand} ${motorcycle.model}`,
-                    color: motorcycle.color,
-                    plateLine1: motorcycle.licensePlate,
-                    plateLine2: '',
-                    province: '',
+                    model: motorcycle.model ? `${motorcycle.brand || ''} ${motorcycle.model}`.trim() : '',
+                    color: motorcycle.color || '',
+                    plateLine1,
+                    plateLine2,
+                    province,
+                    customerId: customer.id,
+                    motorcycleId: motorcycle.id,
                 },
                 isExistingCustomer: true,
                 isNewMotorcycle: false,

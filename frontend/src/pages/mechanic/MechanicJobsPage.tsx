@@ -4,16 +4,16 @@ import { api } from '../../lib/api'
 import { useAuth } from '../../context/AuthContext'
 
 const STATUS_LABEL: Record<string, string> = {
-  PENDING: 'รอเริ่ม', IN_PROGRESS: 'กำลังซ่อม', WAITING_PARTS: 'รออะไหล่',
-  QC_PENDING: 'รอตรวจ', CLEANING: 'ล้างรถ', READY_FOR_DELIVERY: 'พร้อมส่งมอบ',
+  READY: 'รอเริ่ม', IN_PROGRESS: 'กำลังซ่อม', WAITING_PARTS: 'รออะไหล่',
+  QC_PENDING: 'รอตรวจ', CLEANING: 'คืนของ', READY_FOR_DELIVERY: 'พร้อมส่งมอบ',
   COMPLETED: 'เสร็จแล้ว', PAID: 'ชำระแล้ว', CANCELLED: 'ยกเลิก',
 }
 
 const columns = [
-  { status: 'PENDING',       label: 'รอเริ่ม',    dot: 'bg-stone-300' },
+  { status: 'READY',         label: 'รอเริ่ม',    dot: 'bg-stone-300' },
   { status: 'IN_PROGRESS',   label: 'กำลังซ่อม',  dot: 'bg-[#F8981D]' },
   { status: 'QC_PENDING',    label: 'รอตรวจ',     dot: 'bg-[#44403C]' },
-  { status: 'CLEANING',      label: 'ล้างรถ',     dot: 'bg-green-400' },
+  { status: 'CLEANING',      label: 'คืนของ',     dot: 'bg-green-400' },
 ]
 
 export default function MechanicJobsPage() {
@@ -98,6 +98,11 @@ export default function MechanicJobsPage() {
                             <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-[#F8981D]/10 text-[#F8981D]">{tag}</span>
                           ))}
                         </div>
+                      )}
+                      {(job.quotation?._count?.items > 0) && (
+                        <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
+                          <span className="text-gray-300">⊙</span> {job.quotation._count.items} อะไหล่
+                        </p>
                       )}
                       <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-gray-50">
                         <span className="text-xs text-gray-400">{job.reception?.name || '-'}</span>

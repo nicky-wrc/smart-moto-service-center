@@ -34,6 +34,8 @@ const STATUS_MAP: Record<string, string> = {
   WAITING_PARTS: 'รอสั่งซื้อ',
   DEEP_INSPECTION: 'ตรวจเชิงลึก',
   QC_PENDING: 'รอตรวจ',
+  CLEANING: 'ล้างรถ',
+  READY_FOR_DELIVERY: 'พร้อมส่งมอบ',
   COMPLETED: 'เสร็จสิ้น',
   PAID: 'ชำระแล้ว',
 }
@@ -355,6 +357,9 @@ export default function JobDetailPage() {
           tags: [],
           photos: [],
           mechanicId: jobData.technicianId ?? undefined,
+          motorcycleId: jobData.motorcycleId,
+          customerId: jobData.motorcycle?.owner?.id ?? jobData.motorcycle?.ownerId,
+          diagnosisNotes: jobData.diagnosisNotes ?? null,
           mechanicReport: jobData.diagnosisNotes
             ? {
                 note: jobData.diagnosisNotes,
@@ -624,7 +629,29 @@ export default function JobDetailPage() {
         <QuotationPreviewModal
           title="ใบประเมินราคา (ร่าง)"
           onClose={() => { setStockQuotPreview(false); setStockChecked(false) }}
-          onConfirm={() => { setQuotationSent(true); setStockQuotPreview(false) }}
+          onConfirm={async () => {
+            try {
+              // 1. Create quotation with items
+              const quotationPayload = {
+                customerId: job.customerId,
+                motorcycleId: job.motorcycleId,
+                items: selectedParts.map((sp: any) => ({
+                  itemType: 'PART',
+                  itemName: sp.part.name,
+                  quantity: sp.qty,
+                  unitPrice: sp.part.unitPrice,
+                  partId: sp.part.id,
+                })),
+                notes: foremanNote || undefined,
+              }
+              const quotation = await api.post('/quotations', quotationPayload)
+              // 2. Link quotation to job and update status
+              await api.patch(`/jobs/${id}`, { status: 'WAITING_APPROVAL', diagnosisNotes: foremanNote || undefined, tags, quotationId: (quotation as any).id })
+              setQuotationSent(true)
+              setStockQuotPreview(false)
+              setJob((prev: any) => prev ? { ...prev, status: 'รอลูกค้าอนุมัติ' } : prev)
+            } catch (err) { console.error('Failed to send quotation:', err); alert('ส่งใบประเมินราคาไม่สำเร็จ') }
+          }}
           confirmLabel="ส่งใบประเมินราคา"
         >
           <div className="grid grid-cols-2 gap-3">
@@ -715,7 +742,15 @@ export default function JobDetailPage() {
         <QuotationPreviewModal
           title="ใบประเมินราคา — ตรวจเชิงลึก"
           onClose={() => setDeepQuotPreview(false)}
-          onConfirm={() => { setDeepSent(true); setDeepQuotPreview(false) }}
+          onConfirm={async () => {
+            try {
+              await api.patch(`/jobs/${id}/request-inspection`, { inspectionFee: 1000, notes: foremanNote || 'ตรวจเชิงลึก (รื้อ/ผ่าเครื่อง)' })
+              if (tags.length > 0) await api.patch(`/jobs/${id}`, { tags })
+              setDeepSent(true)
+              setDeepQuotPreview(false)
+              setJob((prev: any) => prev ? { ...prev, status: 'ตรวจเชิงลึก' } : prev)
+            } catch (err) { console.error('Failed to request inspection:', err); alert('ส่งคำขอตรวจเชิงลึกไม่สำเร็จ') }
+          }}
           confirmLabel="ส่งใบประเมินราคา"
         >
           <div className="grid grid-cols-2 gap-3">
@@ -940,7 +975,14 @@ export default function JobDetailPage() {
           description="งานจะถูกส่งต่อขั้นตอนทำความสะอาด และระบบจะออกใบเสนอราคาเรียกเก็บเงิน"
           confirmLabel="ยืนยันผ่าน"
           onCancel={() => setConfirmAction(null)}
-          onConfirm={() => { setQcSubmitted(true); setConfirmAction(null) }}
+          onConfirm={async () => {
+            try {
+              await api.patch(`/jobs/${id}/qc`, { passed: true, notes: qcNote || 'ผ่านการตรวจ QC' })
+              setQcSubmitted(true)
+              setConfirmAction(null)
+              setJob((prev: any) => prev ? { ...prev, status: 'เสร็จสิ้น' } : prev)
+            } catch (err) { console.error('QC pass failed:', err); alert('บันทึก QC ไม่สำเร็จ'); setConfirmAction(null) }
+          }}
         />
       )}
       {confirmAction === 'qcFail' && (
@@ -949,7 +991,14 @@ export default function JobDetailPage() {
           description="งานจะถูกส่งกลับให้ช่างแก้ไขตามหมายเหตุที่ระบุ"
           confirmLabel="ส่งกลับ"
           onCancel={() => setConfirmAction(null)}
-          onConfirm={() => { setQcSubmitted(true); setConfirmAction(null) }}
+          onConfirm={async () => {
+            try {
+              await api.patch(`/jobs/${id}/qc`, { passed: false, notes: qcNote || 'ไม่ผ่าน QC — ส่งกลับช่างแก้ไข' })
+              setQcSubmitted(true)
+              setConfirmAction(null)
+              setJob((prev: any) => prev ? { ...prev, status: 'กำลังดำเนินงาน' } : prev)
+            } catch (err) { console.error('QC fail failed:', err); alert('บันทึก QC ไม่สำเร็จ'); setConfirmAction(null) }
+          }}
         />
       )}
 
@@ -980,11 +1029,11 @@ export default function JobDetailPage() {
         </div>
 
         {/* ─── Content ─── */}
-        <div className="flex-1 p-5 overflow-hidden">
-          <div className="h-full grid gap-5" style={{ gridTemplateColumns: '1fr 360px' }}>
+        <div className="flex-1 p-5 overflow-y-auto">
+          <div className="grid gap-5" style={{ gridTemplateColumns: '1fr 360px' }}>
 
             {/* ─── LEFT: info + symptom + photos ─── */}
-            <div className="flex flex-col gap-2.5 overflow-hidden">
+            <div className="flex flex-col gap-2.5">
 
               {/* Customer + Vehicle */}
               <div className="grid grid-cols-2 gap-3 shrink-0">
@@ -1009,6 +1058,19 @@ export default function JobDetailPage() {
                   className="flex-1 min-h-0 w-full border border-gray-100 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-700 resize-none outline-none leading-relaxed"
                 />
               </div>
+
+              {/* Mechanic finding report */}
+              {job.diagnosisNotes && (
+                <div className="bg-amber-50 rounded-xl border border-amber-200 px-4 py-3 shadow-sm shrink-0">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    <p className="text-sm font-semibold text-amber-700 uppercase tracking-wide">รายงานจากช่าง</p>
+                  </div>
+                  <p className="text-sm text-amber-800 whitespace-pre-wrap leading-relaxed">{job.diagnosisNotes}</p>
+                </div>
+              )}
 
               {/* Foreman note */}
               <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm flex flex-col flex-1 min-h-0">
@@ -1063,7 +1125,7 @@ export default function JobDetailPage() {
             </div>
 
             {/* ─── RIGHT: tags + workflow ─── */}
-            <div className="flex flex-col gap-4 overflow-y-auto">
+            <div className="flex flex-col gap-4">
 
               {/* Tags (toggle predefined) */}
               <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
@@ -1091,7 +1153,7 @@ export default function JobDetailPage() {
                 </div>
               </div>
 
-              {/* Mechanic assignment — shown when customer already approved */}
+              {/* Mechanic assignment — shown only when customer approved and ready to repair */}
               {job.status === 'พร้อมซ่อม' && (() => {
                 const allSkills = [...new Set(mechanicsList.flatMap((m: Mechanic) => m.skills))]
                 const filtered = mechanicsList.filter((m: Mechanic) => {
@@ -1193,7 +1255,15 @@ export default function JobDetailPage() {
                         </div>
 
                         <button
-                          onClick={() => { if (selectedMechanics.length > 0) setAssignConfirmed(true) }}
+                          onClick={async () => {
+                          if (selectedMechanics.length === 0) return
+                          try {
+                            await api.patch(`/jobs/${id}/assign`, { technicianId: selectedMechanics[0] })
+                            if (tags.length > 0) await api.patch(`/jobs/${id}`, { tags })
+                            setAssignConfirmed(true)
+                            setJob((prev: any) => prev ? { ...prev, mechanicId: selectedMechanics[0] } : prev)
+                          } catch (err) { console.error('Assign failed:', err); alert('มอบหมายช่างไม่สำเร็จ') }
+                        }}
                           disabled={selectedMechanics.length === 0}
                           className="w-full bg-[#F8981D] hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium py-2.5 rounded-xl transition-colors border-none cursor-pointer"
                         >
@@ -1221,6 +1291,51 @@ export default function JobDetailPage() {
                   </div>
                 )
               })()}
+
+              {/* Customer approval — shown when waiting for customer */}
+              {job.status === 'รอลูกค้าอนุมัติ' && (
+                <div className="bg-white rounded-xl border border-amber-200 p-4 shadow-sm flex flex-col gap-3">
+                  <p className="text-sm text-amber-600 uppercase tracking-wide font-semibold">รอลูกค้าอนุมัติ</p>
+                  <p className="text-sm text-gray-500">ใบประเมินราคาถูกส่งแล้ว รอลูกค้าตอบกลับ</p>
+                  <button
+                    onClick={async () => {
+                      try {
+                        await api.patch(`/jobs/${id}`, { status: 'READY' })
+                        setJob((prev: any) => prev ? { ...prev, status: 'พร้อมซ่อม' } : prev)
+                        alert('อนุมัติเรียบร้อย — งานพร้อมซ่อม')
+                      } catch (err) { console.error(err); alert('อัพเดทสถานะไม่สำเร็จ') }
+                    }}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2.5 rounded-xl transition-colors border-none cursor-pointer"
+                  >
+                    ลูกค้าอนุมัติ — พร้อมซ่อม
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        await api.patch(`/jobs/${id}`, { status: 'WAITING_PARTS' })
+                        setJob((prev: any) => prev ? { ...prev, status: 'รอสั่งซื้อ' } : prev)
+                        alert('อนุมัติเรียบร้อย — รอสั่งซื้ออะไหล่')
+                      } catch (err) { console.error(err); alert('อัพเดทสถานะไม่สำเร็จ') }
+                    }}
+                    className="w-full bg-stone-600 hover:bg-stone-700 text-white text-sm font-medium py-2.5 rounded-xl transition-colors border-none cursor-pointer"
+                  >
+                    ลูกค้าอนุมัติ — ต้องสั่งอะไหล่ก่อน
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!confirm('ยืนยันยกเลิกงานนี้?')) return
+                      try {
+                        await api.patch(`/jobs/${id}/cancel`, { reason: 'ลูกค้าไม่อนุมัติ' })
+                        setJob((prev: any) => prev ? { ...prev, status: 'ยกเลิก' } : prev)
+                        alert('ยกเลิกงานเรียบร้อย')
+                      } catch (err) { console.error(err); alert('ยกเลิกงานไม่สำเร็จ') }
+                    }}
+                    className="w-full bg-white hover:bg-red-50 text-red-500 text-sm font-medium py-2.5 rounded-xl transition-colors border border-red-200 cursor-pointer"
+                  >
+                    ลูกค้าไม่อนุมัติ — ยกเลิกงาน
+                  </button>
+                </div>
+              )}
 
               {/* Workflow — shown only while still in assessment phase */}
               {['รอประเมิน', 'ตรวจเชิงลึก', 'รอลูกค้าอนุมัติ', 'รอสั่งซื้อ'].includes(job.status) && (

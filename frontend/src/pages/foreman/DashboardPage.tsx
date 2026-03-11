@@ -41,28 +41,7 @@ function BarTooltip({ active, payload, label }: TooltipProps) {
   )
 }
 
-type TooltipProps = { active?: boolean; payload?: { name: string; value: number }[]; label?: string }
 
-function DonutTooltip({ active, payload }: TooltipProps) {
-  if (!active || !payload?.length) return null
-  const { name, value } = payload[0]
-  return (
-    <div className="bg-white border border-gray-100 rounded-xl shadow-lg px-3 py-2 text-xs">
-      <span className="font-semibold text-[#1E1E1E]">{name}</span>
-      <span className="ml-2 text-gray-400">{value} งาน</span>
-    </div>
-  )
-}
-
-function BarTooltip({ active, payload, label }: TooltipProps) {
-  if (!active || !payload?.length) return null
-  return (
-    <div className="bg-white border border-gray-100 rounded-xl shadow-lg px-3 py-2 text-xs">
-      <span className="font-semibold text-[#1E1E1E]">{label}</span>
-      <span className="ml-2 text-gray-400">{payload[0].value} งาน</span>
-    </div>
-  )
-}
 
 export default function DashboardPage() {
   const navigate = useNavigate()

@@ -34,6 +34,9 @@ export interface RepairRequestDTO {
   symptoms: string
   tags: string[] // e.g., ['เครื่องยนต์', 'ระบบเบรก']
   images?: string[] // Base64 encoded images or URLs
+  jobType?: string // 'NORMAL' | 'DEEP_INSPECTION'
+  fuelLevel?: number // 0-100
+  valuables?: string // ของมีค่าในรถ
   
   // Context Information
   activityType: 'แจ้งซ่อมครั้งแรก' | 'แจ้งซ่อมรถที่มีในระบบ' | 'แจ้งซ่อมรถคันใหม่'
@@ -165,13 +168,17 @@ class ReceptionApiService {
       }
 
       // Create Repair Request (Job)
-      const jobRes = await apiClient.post<any>('/jobs', {
-        motorcycleId,
+      const jobPayload = {
+        motorcycleId: Number(motorcycleId),
         symptom: data.symptoms,
-        jobType: data.activityType === 'แจ้งซ่อมครั้งแรก' ? 'NORMAL' : 'NORMAL', 
-        images: data.images || [],
+        jobType: data.jobType || 'NORMAL',
+        fuelLevel: data.fuelLevel ?? undefined,
+        valuables: data.valuables || undefined,
+        images: (data.images || []).filter(img => !img.startsWith('blob:')),
         tags: data.tags || []
-      });
+      };
+      console.log('Creating job with payload:', JSON.stringify(jobPayload, null, 2));
+      const jobRes = await apiClient.post<any>('/jobs', jobPayload);
 
       return this.mapJobToUI(jobRes, customerId!);
       

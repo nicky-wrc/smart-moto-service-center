@@ -22,6 +22,7 @@ import { ServiceCatalogModule } from './service-catalog/service-catalog.module';
 import { SuppliersModule } from './suppliers/suppliers.module';
 import { PurchaseOrdersModule } from './purchase-orders/purchase-orders.module';
 import { PurchaseReceivesModule } from './purchase-receives/purchase-receives.module';
+import { ForemanResponsesModule } from './foreman-responses/foreman-responses.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { PurchaseReceivesModule } from './purchase-receives/purchase-receives.mo
     SuppliersModule,
     PurchaseOrdersModule,
     PurchaseReceivesModule,
+    ForemanResponsesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

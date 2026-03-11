@@ -32,185 +32,130 @@ export interface UpdatePurchaseOrderStatusDTO {
 class PurchaseOrderApiService {
   private baseUrl = '/api/purchase-orders' // TODO: Update with actual API URL
 
-  /**
-   * Create a new purchase order
-   * @param data Purchase order data
-   * @returns Created purchase order
-   */
   async create(data: CreatePurchaseOrderDTO): Promise<PurchaseOrder> {
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // const response = await fetch(this.baseUrl, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     'Authorization': `Bearer ${localStorage.getItem('token')}`
-      //   },
-      //   body: JSON.stringify(data)
-      // })
-      // 
-      // if (!response.ok) {
-      //   throw new Error(`Failed to create purchase order: ${response.statusText}`)
-      // }
-      // 
-      // return await response.json()
-
-      // MOCK: Simulate API response
-      throw new Error('API not implemented yet. Use mock data.')
+      const response = await fetch(this.baseUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(data)
+      })
+      
+      if (!response.ok) {
+        throw new Error(`Failed to create purchase order: ${response.statusText}`)
+      }
+      
+      return await response.json()
     } catch (error) {
       console.error('Error creating purchase order:', error)
       throw error
     }
   }
 
-  /**
-   * Get all purchase orders
-   * @returns List of purchase orders
-   */
   async getAll(): Promise<PurchaseOrder[]> {
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // const response = await fetch(this.baseUrl, {
-      //   method: 'GET',
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('token')}`
-      //   }
-      // })
-      // 
-      // if (!response.ok) {
-      //   throw new Error(`Failed to fetch purchase orders: ${response.statusText}`)
-      // }
-      // 
-      // return await response.json()
-
-      // MOCK: Simulate API response
-      throw new Error('API not implemented yet. Use mock data.')
+      const response = await fetch(this.baseUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch purchase orders: ${response.statusText}`)
+      }
+      
+      return await response.json()
     } catch (error) {
       console.error('Error fetching purchase orders:', error)
       throw error
     }
   }
 
-  /**
-   * Get a single purchase order by ID
-   * @param id Purchase order ID
-   * @returns Purchase order details
-   */
   async getById(id: string): Promise<PurchaseOrder> {
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // const response = await fetch(`${this.baseUrl}/${id}`, {
-      //   method: 'GET',
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('token')}`
-      //   }
-      // })
-      // 
-      // if (!response.ok) {
-      //   throw new Error(`Failed to fetch purchase order: ${response.statusText}`)
-      // }
-      // 
-      // return await response.json()
-
-      // MOCK: Simulate API response
-      throw new Error('API not implemented yet. Use mock data.')
+      const response = await fetch(`${this.baseUrl}/${id}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch purchase order: ${response.statusText}`)
+      }
+      
+      return await response.json()
     } catch (error) {
       console.error('Error fetching purchase order:', error)
       throw error
     }
   }
 
-  /**
-   * Update purchase order status (Owner approval/rejection)
-   * @param id Purchase order ID
-   * @param data Status update data
-   * @returns Updated purchase order
-   */
   async updateStatus(id: string, data: UpdatePurchaseOrderStatusDTO): Promise<PurchaseOrder> {
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // const response = await fetch(`${this.baseUrl}/${id}/status`, {
-      //   method: 'PATCH',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     'Authorization': `Bearer ${localStorage.getItem('token')}`
-      //   },
-      //   body: JSON.stringify(data)
-      // })
-      // 
-      // if (!response.ok) {
-      //   throw new Error(`Failed to update purchase order status: ${response.statusText}`)
-      // }
-      // 
-      // return await response.json()
-
-      // MOCK: Simulate API response
-      throw new Error('API not implemented yet. Use mock data.')
+      const response = await fetch(`${this.baseUrl}/${id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(data)
+      })
+      
+      if (!response.ok) {
+        throw new Error(`Failed to update purchase order status: ${response.statusText}`)
+      }
+      
+      return await response.json()
     } catch (error) {
       console.error('Error updating purchase order status:', error)
       throw error
     }
   }
 
-  /**
-   * Cancel a purchase order (only pending orders can be cancelled)
-   * @param id Purchase order ID
-   * @returns Updated purchase order
-   */
   async cancel(id: string): Promise<PurchaseOrder> {
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // const response = await fetch(`${this.baseUrl}/${id}/cancel`, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('token')}`
-      //   }
-      // })
-      // 
-      // if (!response.ok) {
-      //   throw new Error(`Failed to cancel purchase order: ${response.statusText}`)
-      // }
-      // 
-      // return await response.json()
-
-      // MOCK: Simulate API response
-      throw new Error('API not implemented yet. Use mock data.')
+      const response = await fetch(`${this.baseUrl}/${id}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
+      
+      if (!response.ok) {
+        throw new Error(`Failed to cancel purchase order: ${response.statusText}`)
+      }
+      
+      return await response.json()
     } catch (error) {
       console.error('Error cancelling purchase order:', error)
       throw error
     }
   }
 
-  /**
-   * Send approval notification to owner role
-   * @param orderId Purchase order ID
-   * @returns Success status
-   */
   async sendApprovalNotification(orderId: string): Promise<{ success: boolean }> {
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // const response = await fetch('/api/notifications/purchase-order-approval', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     'Authorization': `Bearer ${localStorage.getItem('token')}`
-      //   },
-      //   body: JSON.stringify({
-      //     orderId,
-      //     recipientRole: 'owner',
-      //     type: 'purchase_order_approval_request'
-      //   })
-      // })
-      // 
-      // if (!response.ok) {
-      //   throw new Error(`Failed to send notification: ${response.statusText}`)
-      // }
-      // 
-      // return await response.json()
-
-      // MOCK: Simulate success
-      console.log(`[MOCK] Notification sent for PO: ${orderId}`)
-      return { success: true }
+      const response = await fetch('/api/notifications/purchase-order-approval', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          orderId,
+          recipientRole: 'owner',
+          type: 'purchase_order_approval_request'
+        })
+      })
+      
+      if (!response.ok) {
+        throw new Error(`Failed to send notification: ${response.statusText}`)
+      }
+      
+      return await response.json()
     } catch (error) {
       console.error('Error sending notification:', error)
       throw error

@@ -130,21 +130,6 @@ export default function ReceptionRegisterPage() {
             newErrors.phone = 'กรอกเบอร์โทรศัพท์ 10 หลักเท่านั้น'
         }
 
-        // Check for duplicate customer (exact match: firstName + lastName + phone)
-        if (!isExistingCustomer) { // Only check if this is a new customer registration
-            const existingCustomersStr = localStorage.getItem('smart_moto_customers')
-            if (existingCustomersStr) {
-                const existingCustomers = JSON.parse(existingCustomersStr)
-                const isDuplicate = existingCustomers.some((customer: { firstName: string; lastName: string; phone: string }) => 
-                    customer.firstName === formData.firstName &&
-                    customer.lastName === formData.lastName &&
-                    customer.phone === formData.phone
-                )
-                if (isDuplicate) {
-                    newErrors.phone = 'ลูกค้าท่านนี้มีอยู่ในระบบแล้ว (ชื่อ-นามสกุล-เบอร์โทรซ้ำ)'
-                }
-            }
-        }
 
         // Validate motorcycle info
         if (!formData.model) newErrors.model = 'โปรดระบุรุ่นรถ'
@@ -170,25 +155,7 @@ export default function ReceptionRegisterPage() {
 
         if (!formData.province) newErrors.province = 'โปรดระบุจังหวัดของป้ายทะเบียน'
 
-        // Check for duplicate license plate (exact match: plateLine1 + plateLine2 + province)
-        if (formData.plateLine1 && formData.plateLine2 && formData.province) {
-            const existingCustomersStr = localStorage.getItem('smart_moto_customers')
-            if (existingCustomersStr) {
-                const existingCustomers = JSON.parse(existingCustomersStr)
-                const isDuplicatePlate = existingCustomers.some((customer: { motorcycles?: Array<{ plateLine1: string; plateLine2: string; province: string }> }) => 
-                    customer.motorcycles && customer.motorcycles.some((moto) =>
-                        moto.plateLine1 === formData.plateLine1 &&
-                        moto.plateLine2 === formData.plateLine2 &&
-                        moto.province === formData.province
-                    )
-                )
-                if (isDuplicatePlate) {
-                    newErrors.plateLine1 = 'ป้ายทะเบียนนี้ถูกเพิ่มเข้าประวัติแล้ว'
-                    newErrors.plateLine2 = 'ป้ายทะเบียนนี้ถูกเพิ่มเข้าประวัติแล้ว'
-                    newErrors.province = 'ป้ายทะเบียนนี้ถูกเพิ่มเข้าประวัติแล้ว'
-                }
-            }
-        }
+
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors)

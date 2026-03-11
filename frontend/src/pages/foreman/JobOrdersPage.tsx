@@ -5,8 +5,10 @@ import { api } from '../../lib/api'
 /* ── Map backend JobStatus → Thai label ── */
 const STATUS_LABEL: Record<string, string> = {
   PENDING: 'รอประเมิน',
-  IN_PROGRESS: 'กำลังดำเนินงาน',
+  WAITING_APPROVAL: 'รอลูกค้าอนุมัติ',
   WAITING_PARTS: 'รอสั่งซื้อ',
+  READY: 'พร้อมซ่อม',
+  IN_PROGRESS: 'กำลังดำเนินงาน',
   QC_PENDING: 'รอตรวจ',
   CLEANING: 'ล้างรถ',
   READY_FOR_DELIVERY: 'พร้อมส่งมอบ',
@@ -16,18 +18,20 @@ const STATUS_LABEL: Record<string, string> = {
 }
 
 const columns = [
-  { status: 'PENDING',       label: 'รอประเมิน',       dot: 'bg-[#F8981D]' },
-  { status: 'WAITING_PARTS', label: 'รอสั่งซื้อ',      dot: 'bg-stone-400' },
-  { status: 'IN_PROGRESS',   label: 'กำลังดำเนินงาน',  dot: 'bg-[#F8981D]' },
-  { status: 'QC_PENDING',    label: 'รอตรวจ',          dot: 'bg-[#44403C]/60' },
-  { status: 'CLEANING',      label: 'ล้างรถ',          dot: 'bg-stone-300' },
-  { status: 'READY_FOR_DELIVERY', label: 'พร้อมส่งมอบ', dot: 'bg-[#44403C]' },
+  { status: 'PENDING',            label: 'รอประเมิน',         dot: 'bg-[#F8981D]' },
+  { status: 'WAITING_APPROVAL',   label: 'รอลูกค้าอนุมัติ',    dot: 'bg-amber-400' },
+  { status: 'WAITING_PARTS',      label: 'รอสั่งซื้อ',         dot: 'bg-stone-400' },
+  { status: 'READY',              label: 'พร้อมซ่อม',         dot: 'bg-green-400' },
+  { status: 'IN_PROGRESS',        label: 'กำลังดำเนินงาน',    dot: 'bg-[#F8981D]' },
+  { status: 'QC_PENDING',         label: 'รอตรวจ',            dot: 'bg-[#44403C]/60' },
 ]
 
 const statusConfig: Record<string, { bg: string; text: string }> = {
   PENDING:              { bg: 'bg-[#F8981D]/15', text: 'text-[#F8981D]' },
-  IN_PROGRESS:          { bg: 'bg-[#F8981D]/15', text: 'text-[#F8981D]' },
+  WAITING_APPROVAL:     { bg: 'bg-amber-100',    text: 'text-amber-600' },
   WAITING_PARTS:        { bg: 'bg-stone-100',    text: 'text-stone-500' },
+  READY:                { bg: 'bg-green-100',    text: 'text-green-600' },
+  IN_PROGRESS:          { bg: 'bg-[#F8981D]/15', text: 'text-[#F8981D]' },
   QC_PENDING:           { bg: 'bg-[#44403C]/10', text: 'text-[#44403C]' },
   CLEANING:             { bg: 'bg-stone-100',    text: 'text-stone-500' },
   READY_FOR_DELIVERY:   { bg: 'bg-[#44403C]/10', text: 'text-[#44403C]' },

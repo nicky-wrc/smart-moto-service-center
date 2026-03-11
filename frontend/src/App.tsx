@@ -67,6 +67,10 @@ import ReceptionHistoryPage from './pages/reception/ReceptionHistoryPage'
 import ReceptionHistoryDetailPage from './pages/reception/ReceptionHistoryDetailPage'
 import ForemanResponsePage from './pages/reception/ForemanResponsePage'
 import ForemanResponseDetailPage from './pages/reception/ForemanResponseDetailPage'
+import { AppointmentsPage } from './pages/reception/AppointmentsPage'
+import { CreateAppointmentPage } from './pages/reception/CreateAppointmentPage'
+import { AppointmentDetailPage } from './pages/reception/AppointmentDetailPage'
+import { AppointmentCalendarPage } from './pages/reception/AppointmentCalendarPage'
 
 export default function App() {
   return (
@@ -174,6 +178,10 @@ export default function App() {
             <Route path="foreman-response/:id" element={<ForemanResponseDetailPage />} />
             <Route path="history" element={<ReceptionHistoryPage />} />
             <Route path="history/:id" element={<ReceptionHistoryDetailPage />} />
+            <Route path="appointments" element={<AppointmentsPage />} />
+            <Route path="appointments/new" element={<CreateAppointmentPage />} />
+            <Route path="appointments/calendar" element={<AppointmentCalendarPage />} />
+            <Route path="appointments/:id" element={<AppointmentDetailPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

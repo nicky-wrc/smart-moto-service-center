@@ -545,6 +545,8 @@ enum Role {
 
 enum JobStatus {
   PENDING
+  WAITING_APPROVAL
+  READY
   IN_PROGRESS
   WAITING_PARTS
   QC_PENDING

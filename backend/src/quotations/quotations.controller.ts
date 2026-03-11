@@ -33,7 +33,7 @@ export class QuotationsController {
   constructor(private readonly quotationsService: QuotationsService) {}
 
   @Post()
-  @Roles('SERVICE_ADVISOR', 'CASHIER', 'ADMIN', 'MANAGER')
+  @Roles('SERVICE_ADVISOR', 'CASHIER', 'ADMIN', 'MANAGER', 'FOREMAN', 'TECHNICIAN')
   @ApiOperation({ summary: 'สร้าง Quotation ใหม่' })
   create(@Body() data: CreateQuotationDto, @CurrentUser() user: UserPayload) {
     return this.quotationsService.create({

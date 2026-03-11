@@ -283,21 +283,25 @@ export class AppointmentsService {
       throw new BadRequestException('Symptom is required');
     }
 
-    // Generate job number
+    // Generate job number (find max existing jobNo for today)
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const count = await this.prisma.job.count({
-      where: {
-        createdAt: {
-          gte: new Date(
-            new Date().getFullYear(),
-            new Date().getMonth(),
-            new Date().getDate(),
-          ),
-        },
-      },
+    const prefix = `JOB-${dateStr}-`;
+    
+    const lastJob = await this.prisma.job.findFirst({
+      where: { jobNo: { startsWith: prefix } },
+      orderBy: { jobNo: 'desc' },
+      select: { jobNo: true },
     });
-    const runNo = (count + 1).toString().padStart(4, '0');
-    const jobNo = `JOB-${dateStr}-${runNo}`;
+    
+    let nextNum = 1;
+    if (lastJob?.jobNo) {
+      const lastNum = parseInt(lastJob.jobNo.replace(prefix, ''), 10);
+      if (!isNaN(lastNum)) {
+        nextNum = lastNum + 1;
+      }
+    }
+    const runNo = nextNum.toString().padStart(4, '0');
+    const jobNo = `${prefix}${runNo}`;
 
     // Create job and link to appointment
     const job = await this.prisma.job.create({
