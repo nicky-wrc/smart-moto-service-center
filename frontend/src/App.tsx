@@ -1,42 +1,35 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useState } from 'react'
+import reactLogo from './assets/react.svg'
+import viteLogo from '/vite.svg'
+import './App.css'
 
-// Inventory (พนักงานคงคลัง)
-import InventoryLayout from './pages/inventory/InventoryLayout'
-import InventoryIndex from './pages/inventory'
-import RequestsPage from './pages/inventory/RequestsPage'
-import PartsPage from './pages/inventory/PartsPage'
-import PurchaseOrdersPage from './pages/inventory/PurchaseOrdersPage'
-import ReportsPage from './pages/inventory/ReportsPage'
+function App() {
+  const [count, setCount] = useState(0)
 
-// Other roles (placeholder — layouts TBD)
-import MechanicPage from './pages/mechanic'
-import ForemanPage from './pages/foreman'
-import OwnerPage from './pages/owner'
-import AccountantPage from './pages/accountant'
-import ReceptionPage from './pages/reception'
-
-export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route index element={<Navigate to="/inventory/requests" replace />} />
-
-        {/* พนักงานคงคลัง */}
-        <Route path="/inventory" element={<InventoryLayout />}>
-          <Route index element={<InventoryIndex />} />
-          <Route path="requests" element={<RequestsPage />} />
-          <Route path="parts" element={<PartsPage />} />
-          <Route path="purchase-orders" element={<PurchaseOrdersPage />} />
-          <Route path="reports" element={<ReportsPage />} />
-        </Route>
-
-        {/* roles อื่น — layouts จะสร้างเพิ่มในภายหลัง */}
-        <Route path="/reception/*" element={<ReceptionPage />} />
-        <Route path="/foreman/*" element={<ForemanPage />} />
-        <Route path="/mechanic/*" element={<MechanicPage />} />
-        <Route path="/accountant/*" element={<AccountantPage />} />
-        <Route path="/owner/*" element={<OwnerPage />} />
-      </Routes>
-    </BrowserRouter>
+    <>
+      <div>
+        <a href="https://vite.dev" target="_blank">
+          <img src={viteLogo} className="logo" alt="Vite logo" />
+        </a>
+        <a href="https://react.dev" target="_blank">
+          <img src={reactLogo} className="logo react" alt="React logo" />
+        </a>
+      </div>
+      <h1>Vite + React</h1>
+      <div className="card">
+        <button onClick={() => setCount((count) => count + 1)}>
+          count is {count}
+        </button>
+        <p>
+          Edit <code>src/App.tsx</code> and save to test HMR
+        </p>
+      </div>
+      <p className="read-the-docs">
+        Click on the Vite and React logos to learn more
+      </p>
+    </>
   )
 }
+
+export default App
