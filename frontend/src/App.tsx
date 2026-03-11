@@ -44,6 +44,8 @@ import ReceptionRepairSuccessPage from './pages/reception/ReceptionRepairSuccess
 import ReceptionSearchPage from './pages/reception/ReceptionSearchPage'
 import ReceptionHistoryPage from './pages/reception/ReceptionHistoryPage'
 import ReceptionHistoryDetailPage from './pages/reception/ReceptionHistoryDetailPage'
+import ForemanResponsePage from './pages/reception/ForemanResponsePage'
+import ForemanResponseDetailPage from './pages/reception/ForemanResponseDetailPage'
 
 export default function App() {
   return (
@@ -94,6 +96,8 @@ export default function App() {
             <Route path="search" element={<ReceptionSearchPage />} />
             <Route path="repair" element={<ReceptionRepairPage />} />
             <Route path="repair-success" element={<ReceptionRepairSuccessPage />} />
+            <Route path="foreman-response" element={<ForemanResponsePage />} />
+            <Route path="foreman-response/:id" element={<ForemanResponseDetailPage />} />
             <Route path="history" element={<ReceptionHistoryPage />} />
             <Route path="history/:id" element={<ReceptionHistoryDetailPage />} />
           </Route>
