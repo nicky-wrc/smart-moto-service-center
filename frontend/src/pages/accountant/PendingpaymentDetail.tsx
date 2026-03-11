@@ -1,26 +1,102 @@
-import { useParams } from "react-router-dom"
+import { useParams, useNavigate } from "react-router-dom"
 import { FaCarAlt } from "react-icons/fa";
 import { FaPhone } from "react-icons/fa6";
 import { FaRegFileLines } from "react-icons/fa6";
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import html2canvas from "html2canvas"
 import { jsPDF } from "jspdf"
 import { FaClipboardCheck } from "react-icons/fa";
 import { IoPrint } from "react-icons/io5";
 import { FiDownload } from "react-icons/fi";
+import { paymentsService, type Payment } from '../../services/payments'
 
+type JobDisplayData = {
+  jobNo: string
+  customer: { name: string; vehicle: string; phone: string }
+  parts: Array<{ name: string; price: number; qty: number }>
+}
+
+function mapPaymentToJobData(p: Payment): JobDisplayData {
+  const parts: JobDisplayData['parts'] = []
+  if (p.job?.laborTimes) {
+    for (const lt of p.job.laborTimes) {
+      parts.push({ name: lt.serviceName, price: Number(lt.laborCost), qty: 1 })
+    }
+  }
+  if (p.job?.outsources) {
+    for (const os of p.job.outsources) {
+      parts.push({ name: os.description, price: Number(os.cost), qty: 1 })
+    }
+  }
+  if (p.job?.partRequisitions) {
+    for (const req of p.job.partRequisitions) {
+      if (req.status === 'APPROVED' && req.items) {
+        for (const ri of req.items) {
+          parts.push({ name: ri.part.name, price: Number(ri.unitPrice), qty: ri.quantity })
+        }
+      }
+    }
+  }
+  // If no items found, use subtotal
+  if (parts.length === 0 && Number(p.subtotal) > 0) {
+    parts.push({ name: 'ค่าบริการ', price: Number(p.subtotal), qty: 1 })
+  }
+  return {
+    jobNo: p.job?.jobNo ?? p.paymentNo,
+    customer: {
+      name: p.customer ? `${p.customer.firstName} ${p.customer.lastName}` : '-',
+      vehicle: p.job?.motorcycle
+        ? `${p.job.motorcycle.brand} ${p.job.motorcycle.model} ทะเบียน ${p.job.motorcycle.licensePlate}`
+        : '-',
+      phone: p.customer?.phoneNumber ?? '-',
+    },
+    parts,
+  }
+}
 
 function PendingpaymentDetail() {
-
   const { id } = useParams()
+  const navigate = useNavigate()
   const [paymentMethod, setPaymentMethod] = useState("cash")
   const [openModal, setOpenModal] = useState(false)
   const [received, setReceived] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [paymentData, setPaymentData] = useState<Payment | null>(null)
+  const [jobData, setJobData] = useState<JobDisplayData>({
+    jobNo: '',
+    customer: { name: '-', vehicle: '-', phone: '-' },
+    parts: [],
+  })
+
+  useEffect(() => {
+    paymentsService.get(Number(id))
+      .then(p => {
+        setPaymentData(p)
+        setJobData(mapPaymentToJobData(p))
+      })
+      .catch(err => console.error('Failed to load payment:', err))
+      .finally(() => setLoading(false))
+  }, [id])
+
+  const subtotal = jobData.parts.reduce((sum, item) => sum + item.price * item.qty, 0)
+  const vat = subtotal * 0.07
+  const total = subtotal + vat
+
+  const handleConfirmPayment = async () => {
+    if (!paymentData) return
+    try {
+      await paymentsService.process(paymentData.id, {
+        paymentMethod: paymentMethod === 'cash' ? 'CASH' : 'TRANSFER',
+        amountReceived: received ? Number(received) : undefined,
+      })
+      setOpenModal(true)
+    } catch (err) {
+      console.error('Payment failed:', err)
+      alert('เกิดข้อผิดพลาดในการชำระเงิน')
+    }
+  }
 
   const buildSectionHTML = (label: string) => {
-    const subtotal = jobData.parts.reduce((s, p) => s + p.price * p.qty, 0)
-    const vat = subtotal * 0.07
-    const total = subtotal + vat
     const today = new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })
     const year = new Date().getFullYear()
     const pm = paymentMethod === 'cash' ? 'เงินสด' : 'QR Code'
@@ -154,22 +230,16 @@ function PendingpaymentDetail() {
     pdf.save(`ใบเสร็จ-${jobData.jobNo}.pdf`)
   }
 
-  const jobData = {
-    jobNo: id,
-    customer: {
-      name: "ธาดา รัตนพันธ์",
-      vehicle: "PCX ทะเบียน 999 กรุงเทพ",
-      phone: "081-234-5678"
-    },
-    parts: [
-      { name: "ล้อ",    price: 10000, qty: 4 },
-      { name: "ผ้าเบรก", price: 1500,  qty: 2 },
-    ]
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-[#F8981D] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-gray-400">กำลังโหลดข้อมูล...</p>
+        </div>
+      </div>
+    )
   }
-
-  const subtotal = jobData.parts.reduce((sum, item) => sum + item.price * item.qty, 0)
-  const vat = subtotal * 0.07
-  const total = subtotal + vat
 
   return (
     <div className="w-full h-full bg-[#F5F5F5] p-5">
@@ -326,7 +396,7 @@ function PendingpaymentDetail() {
           {/* Confirm button */}
           <div className="px-6 pb-6">
             <button
-              onClick={() => setOpenModal(true)}
+              onClick={handleConfirmPayment}
               className="w-full bg-[#F8981D] text-white py-3 rounded-xl font-semibold text-sm cursor-pointer border-none hover:bg-orange-500 transition-colors"
             >
               ยืนยันการชำระเงิน
@@ -364,7 +434,7 @@ function PendingpaymentDetail() {
                 <FiDownload size={16} /> ดาวน์โหลด
               </button>
               <button
-                onClick={() => setOpenModal(false)}
+                onClick={() => { setOpenModal(false); navigate('/accountant/pendingpayment') }}
                 className="px-6 py-2.5 rounded-xl text-sm border border-gray-200 text-gray-500 cursor-pointer bg-white hover:bg-gray-50">
                 เสร็จสิ้น
               </button>

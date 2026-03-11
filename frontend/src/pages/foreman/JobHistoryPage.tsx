@@ -1,51 +1,49 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { api } from '../../lib/api'
 
-type HistoryJob = {
-  id: number
-  brand: string
-  model: string
-  licensePlate: string
-  customerName: string
-  symptom: string
-  mechanic: string
-  startedAt: string
-  completedAt: string
-  tags: string[]
+const STATUS_LABEL: Record<string, string> = {
+  COMPLETED: 'เสร็จสิ้น', PAID: 'ชำระแล้ว',
 }
-
-const mockHistoryJobs: HistoryJob[] = [
-  {
-    id: 11, brand: 'Kawasaki', model: 'Ninja 250', licensePlate: 'ฎฏ 1122',
-    customerName: 'อมร ศักดิ์ดี', symptom: 'ช่วงล่างแข็ง เปลี่ยนโช้คอัพ',
-    mechanic: 'สมชาย ช่างดี', startedAt: '07/03/2026  13:00 น.',
-    completedAt: '08/03/2026  09:00 น.', tags: ['ช่วงล่าง'],
-  },
-  {
-    id: 12, brand: 'Yamaha', model: 'NMAX 155', licensePlate: 'ฐฑ 3344',
-    customerName: 'สุดา วงศ์งาม', symptom: 'เบรกหน้าไม่กิน น้ำมันเบรกรั่ว',
-    mechanic: 'วิชัย รักงาน', startedAt: '07/03/2026  10:00 น.',
-    completedAt: '07/03/2026  16:30 น.', tags: ['เบรก'],
-  },
-  {
-    id: 13, brand: 'Honda', model: 'Forza 300', licensePlate: 'ฒณ 5566',
-    customerName: 'วีระ จันทร์ดี', symptom: 'เปลี่ยนหัวเทียน ล้างหัวฉีด',
-    mechanic: 'ประยุทธ์ มือทอง', startedAt: '07/03/2026  09:00 น.',
-    completedAt: '07/03/2026  14:00 น.', tags: ['เชื้อเพลิง', 'บำรุงรักษา'],
-  },
-]
 
 export default function JobHistoryPage() {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
+  const [jobs, setJobs] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    api.get<any[]>('/jobs').then(data => {
+      const completed = data.filter(j => ['COMPLETED', 'PAID'].includes(j.status))
+      setJobs(completed)
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [])
 
   const q = search.trim().toLowerCase()
-  const jobs = q
-    ? mockHistoryJobs.filter((j) =>
-        [j.brand, j.model, j.licensePlate, j.customerName, j.mechanic, j.symptom]
+  const filtered = q
+    ? jobs.filter((j) => {
+        const brand = j.motorcycle?.brand ?? ''
+        const model = j.motorcycle?.model ?? ''
+        const plate = j.motorcycle?.licensePlate ?? ''
+        const customer = `${j.motorcycle?.owner?.firstName ?? ''} ${j.motorcycle?.owner?.lastName ?? ''}`
+        const mechanic = j.technician?.name ?? ''
+        const symptom = j.symptom ?? ''
+        return [brand, model, plate, customer, mechanic, symptom]
           .some((v) => v.toLowerCase().includes(q))
-      )
-    : mockHistoryJobs
+      })
+    : jobs
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-[#F8981D] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-gray-400">กำลังโหลดข้อมูล...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -79,16 +77,20 @@ export default function JobHistoryPage() {
               <th className="text-left text-xs font-semibold text-gray-400 px-3 py-3">อาการ</th>
               <th className="text-left text-xs font-semibold text-gray-400 px-3 py-3">แท็ก</th>
               <th className="text-left text-xs font-semibold text-gray-400 px-3 py-3">ช่าง</th>
-              <th className="text-left text-xs font-semibold text-gray-400 pl-3 pr-5 py-3 w-40">วันที่เสร็จ</th>
+              <th className="text-left text-xs font-semibold text-gray-400 pl-3 pr-5 py-3 w-40">สถานะ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {jobs.length === 0 && (
+            {filtered.length === 0 && (
               <tr>
                 <td colSpan={7} className="text-center text-sm text-gray-400 py-12">ไม่มีรายการ</td>
               </tr>
             )}
-            {jobs.map((job) => (
+            {filtered.map((job) => {
+              const mechanicName = job.technician?.name ?? '-'
+              const customerName = `${job.motorcycle?.owner?.firstName ?? ''} ${job.motorcycle?.owner?.lastName ?? ''}`.trim() || '-'
+              const completedDate = job.updatedAt ? new Date(job.updatedAt).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'
+              return (
               <tr
                 key={job.id}
                 onClick={() => navigate(`/foreman/jobs/${job.id}`)}
@@ -96,20 +98,20 @@ export default function JobHistoryPage() {
               >
                 <td className="pl-5 pr-3 py-3.5">
                   <div className="w-8 h-8 rounded-lg bg-[#44403C] text-white text-xs font-semibold flex items-center justify-center">
-                    {job.id}
+                    {job.jobNo?.replace(/\D/g, '').slice(-3) || job.id}
                   </div>
                 </td>
                 <td className="px-3 py-3.5">
-                  <p className="font-medium text-[#1E1E1E]">{job.brand} {job.model}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{job.licensePlate}</p>
+                  <p className="font-medium text-[#1E1E1E]">{job.motorcycle?.brand} {job.motorcycle?.model}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{job.motorcycle?.licensePlate}</p>
                 </td>
-                <td className="px-3 py-3.5 text-gray-600">{job.customerName}</td>
+                <td className="px-3 py-3.5 text-gray-600">{customerName}</td>
                 <td className="px-3 py-3.5 max-w-50">
                   <p className="text-gray-500 italic truncate">"{job.symptom}"</p>
                 </td>
                 <td className="px-3 py-3.5">
                   <div className="flex gap-1.5 flex-wrap">
-                    {job.tags.map((tag) => (
+                    {(job.tags || []).map((tag: string) => (
                       <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-[#F8981D]/10 text-[#F8981D]">
                         {tag}
                       </span>
@@ -119,17 +121,20 @@ export default function JobHistoryPage() {
                 <td className="px-3 py-3.5">
                   <div className="flex items-center gap-1.5">
                     <div className="w-6 h-6 rounded-full bg-[#44403C] text-white text-xs flex items-center justify-center font-semibold shrink-0">
-                      {job.mechanic[0]}
+                      {mechanicName[0]}
                     </div>
-                    <span className="text-xs text-gray-600">{job.mechanic}</span>
+                    <span className="text-xs text-gray-600">{mechanicName}</span>
                   </div>
                 </td>
                 <td className="pl-3 pr-5 py-3.5 text-xs text-gray-400">
-                  <p className="text-gray-500">{job.completedAt.split('  ')[0]}</p>
-                  <p>{job.completedAt.split('  ')[1]}</p>
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${job.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-600'}`}>
+                    {STATUS_LABEL[job.status] || job.status}
+                  </span>
+                  <p className="text-xs text-gray-400 mt-1">{completedDate}</p>
                 </td>
               </tr>
-            ))}
+              )
+            })}
           </tbody>
         </table>
         </div>

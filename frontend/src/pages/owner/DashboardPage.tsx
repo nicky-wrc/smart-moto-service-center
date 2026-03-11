@@ -1,68 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer,
 } from 'recharts'
-
-// ─── Mock data ────────────────────────────────────────────────────────────────
-
-const hourlyData = [
-  { time: '08:00', revenue: 1200,  cost: 700,  profit: 500  },
-  { time: '09:00', revenue: 3400,  cost: 1900, profit: 1500 },
-  { time: '10:00', revenue: 2800,  cost: 1600, profit: 1200 },
-  { time: '11:00', revenue: 4100,  cost: 2300, profit: 1800 },
-  { time: '12:00', revenue: 1500,  cost: 900,  profit: 600  },
-  { time: '13:00', revenue: 3200,  cost: 1800, profit: 1400 },
-  { time: '14:00', revenue: 2600,  cost: 1500, profit: 1100 },
-  { time: '15:00', revenue: 5200,  cost: 3000, profit: 2200 },
-  { time: '16:00', revenue: 3800,  cost: 2100, profit: 1700 },
-  { time: '17:00', revenue: 2100,  cost: 1200, profit: 900  },
-  { time: '18:00', revenue: 900,   cost: 500,  profit: 400  },
-]
-
-const weeklyData = [
-  { time: 'จ',  revenue: 12400, cost: 7200,  profit: 5200 },
-  { time: 'อ',  revenue: 8900,  cost: 5100,  profit: 3800 },
-  { time: 'พ',  revenue: 15600, cost: 9300,  profit: 6300 },
-  { time: 'พฤ', revenue: 11200, cost: 6800,  profit: 4400 },
-  { time: 'ศ',  revenue: 18900, cost: 10500, profit: 8400 },
-  { time: 'ส',  revenue: 9400,  cost: 5600,  profit: 3800 },
-  { time: 'อา', revenue: 21300, cost: 12100, profit: 9200 },
-]
-
-const yearlyData = [
-  { time: 'ม.ค.', revenue: 285000, cost: 168000, profit: 117000 },
-  { time: 'ก.พ.', revenue: 312000, cost: 184000, profit: 128000 },
-  { time: 'มี.ค.', revenue: 356000, cost: 208000, profit: 148000 },
-  { time: 'เม.ย.', revenue: 298000, cost: 175000, profit: 123000 },
-  { time: 'พ.ค.', revenue: 341000, cost: 199000, profit: 142000 },
-  { time: 'มิ.ย.', revenue: 375000, cost: 218000, profit: 157000 },
-  { time: 'ก.ค.', revenue: 320000, cost: 187000, profit: 133000 },
-  { time: 'ส.ค.', revenue: 389000, cost: 226000, profit: 163000 },
-  { time: 'ก.ย.', revenue: 334000, cost: 195000, profit: 139000 },
-  { time: 'ต.ค.', revenue: 398000, cost: 231000, profit: 167000 },
-  { time: 'พ.ย.', revenue: 412000, cost: 239000, profit: 173000 },
-  { time: 'ธ.ค.', revenue: 356000, cost: 208000, profit: 148000 },
-]
-
-// Generate mock daily data between two dates
-function generateRangeData(from: string, to: string) {
-  const result: { time: string; revenue: number; cost: number; profit: number }[] = []
-  const start = new Date(from)
-  const end   = new Date(to)
-  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-    const day = d.getDate()
-    const revenue = 8000 + ((day * 1337) % 16000)
-    const cost    = Math.round(revenue * (0.54 + ((day * 17) % 12) / 100))
-    result.push({
-      time: `${d.getDate()}/${d.getMonth() + 1}`,
-      revenue,
-      cost,
-      profit: revenue - cost,
-    })
-  }
-  return result
-}
+import { api } from '../../lib/api'
+import { paymentsService } from '../../services/payments'
 
 // ─── Tooltip ─────────────────────────────────────────────────────────────────
 
@@ -93,44 +35,192 @@ function fmtY(n: number) {
   return `${n}`
 }
 
-// ─── Pending / stock summary data ────────────────────────────────────────────
+const STATUS_LABEL: Record<string, string> = {
+  PENDING: 'รอประเมิน',
+  IN_PROGRESS: 'กำลังดำเนินการ',
+  WAITING_PARTS: 'รอสั่งซื้อ',
+  COMPLETED: 'รอตรวจ',
+}
 
-const pendingBreakdown = [
-  { label: 'รอประเมิน',       count: 1, color: '#F8981D' },
-  { label: 'รอลูกค้าอนุมัติ', count: 1, color: '#d6d3d1' },
-  { label: 'กำลังดำเนินการ',  count: 3, color: '#44403C' },
-  { label: 'รอตรวจ',          count: 1, color: '#78716c' },
-]
-
-const stockAlerts = [
-  { name: 'โซ่ขับเคลื่อน 428H', qty: 4, unit: 'เส้น' },
-  { name: 'สเตอร์หน้า Honda',    qty: 5, unit: 'ชิ้น' },
-  { name: 'แบตเตอรี่ 12V 5Ah',  qty: 5, unit: 'ก้อน' },
-]
+const STATUS_COLORS: Record<string, string> = {
+  PENDING: '#F8981D',
+  IN_PROGRESS: '#44403C',
+  WAITING_PARTS: '#d6d3d1',
+  COMPLETED: '#78716c',
+}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 type Mode = 'daily' | 'weekly' | 'yearly' | 'custom'
 
-const today = new Date().toISOString().split('T')[0]
+const todayStr = new Date().toISOString().split('T')[0]
 const weekAgo = new Date(Date.now() - 6 * 86400000).toISOString().split('T')[0]
 
 export default function DashboardPage() {
   const [mode, setMode] = useState<Mode>('daily')
   const [fromDate, setFromDate] = useState(weekAgo)
-  const [toDate, setToDate]     = useState(today)
+  const [toDate, setToDate]     = useState(todayStr)
+  const [loading, setLoading] = useState(true)
 
-  const chartData =
-    mode === 'daily'  ? hourlyData :
-    mode === 'weekly' ? weeklyData :
-    mode === 'yearly' ? yearlyData :
-    generateRangeData(fromDate, toDate)
+  // Data states
+  const [chartData, setChartData] = useState<{time: string; revenue: number; cost: number; profit: number}[]>([])
+  const [pendingBreakdown, setPendingBreakdown] = useState<{label: string; count: number; color: string}[]>([])
+  const [stockAlerts, setStockAlerts] = useState<{name: string; qty: number; unit: string}[]>([])
+  const [pendingPayments, setPendingPayments] = useState<{id: string; customer: string; total: number}[]>([])
+  const [todayRevenue, setTodayRevenue] = useState(0)
+  const [todayProfit, setTodayProfit] = useState(0)
+  const [todayMargin, setTodayMargin] = useState(0)
+  const [pendingAmount, setPendingAmount] = useState(0)
+  const [pendingCount, setPendingCount] = useState(0)
+
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        const [jobs, payments, parts] = await Promise.all([
+          api.get<any[]>('/jobs'),
+          paymentsService.list(),
+          api.get<any[]>('/parts'),
+        ])
+
+        // ─── Pending breakdown ───
+        const activeStatuses = ['PENDING', 'IN_PROGRESS', 'WAITING_PARTS', 'COMPLETED']
+        const breakdown = activeStatuses
+          .map(st => ({
+            label: STATUS_LABEL[st] || st,
+            count: jobs.filter(j => j.status === st).length,
+            color: STATUS_COLORS[st] || '#9ca3af',
+          }))
+          .filter(b => b.count > 0)
+        setPendingBreakdown(breakdown)
+
+        // ─── Stock alerts ───
+        const lowStock = parts
+          .filter((p: any) => p.stockQuantity <= p.reorderPoint && p.isActive)
+          .slice(0, 5)
+          .map((p: any) => ({ name: p.name, qty: p.stockQuantity, unit: p.unit || 'ชิ้น' }))
+        setStockAlerts(lowStock)
+
+        // ─── Pending payments ───
+        const pendPay = payments
+          .filter(p => p.paymentStatus === 'PENDING')
+          .map(p => ({
+            id: p.paymentNo || `P${p.id}`,
+            customer: p.customer ? `${p.customer.firstName} ${p.customer.lastName}` : '-',
+            total: Number(p.totalAmount) || 0,
+          }))
+        setPendingPayments(pendPay)
+        setPendingAmount(pendPay.reduce((s, p) => s + p.total, 0))
+        setPendingCount(pendPay.length)
+
+        // ─── Today stats ───
+        const todayDate = new Date().toISOString().split('T')[0]
+        const paidToday = payments.filter(p =>
+          p.paymentStatus === 'PAID' && (p.paidAt ?? p.createdAt).startsWith(todayDate)
+        )
+        const rev = paidToday.reduce((s, p) => s + Number(p.totalAmount), 0)
+        const cost = rev * 0.57 // estimated
+        const prof = rev - cost
+        setTodayRevenue(rev)
+        setTodayProfit(prof)
+        setTodayMargin(rev > 0 ? Math.round((prof / rev) * 100) : 0)
+
+        // ─── Chart data ───
+        buildChart(mode, payments, fromDate, toDate)
+      } catch (err) {
+        console.error('Dashboard load error:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchAll()
+  }, [])
+
+  function buildChart(m: Mode, payments: any[], from: string, to: string) {
+    const paid = payments.filter((p: any) => p.paymentStatus === 'PAID')
+    if (m === 'daily') {
+      // Hourly breakdown for today
+      const today = new Date().toISOString().split('T')[0]
+      const todayPaid = paid.filter((p: any) => (p.paidAt ?? p.createdAt).startsWith(today))
+      const hours = Array.from({ length: 11 }, (_, i) => {
+        const h = 8 + i
+        const hStr = `${String(h).padStart(2, '0')}:00`
+        const rev = todayPaid
+          .filter((p: any) => {
+            const paidDate = p.paidAt ?? p.createdAt
+            const hour = new Date(paidDate).getHours()
+            return hour === h
+          })
+          .reduce((s: number, p: any) => s + Number(p.totalAmount), 0)
+        const cost = Math.round(rev * 0.57)
+        return { time: hStr, revenue: rev, cost, profit: rev - cost }
+      })
+      setChartData(hours)
+    } else if (m === 'weekly') {
+      const DAY_LABELS = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส']
+      const now = new Date()
+      const days = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(now)
+        d.setDate(d.getDate() - (6 - i))
+        const dayStr = d.toISOString().split('T')[0]
+        const rev = paid
+          .filter((p: any) => (p.paidAt ?? p.createdAt).startsWith(dayStr))
+          .reduce((s: number, p: any) => s + Number(p.totalAmount), 0)
+        const cost = Math.round(rev * 0.57)
+        return { time: DAY_LABELS[d.getDay()], revenue: rev, cost, profit: rev - cost }
+      })
+      setChartData(days)
+    } else if (m === 'yearly') {
+      const MONTH_LABELS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
+      const year = new Date().getFullYear()
+      const months = Array.from({ length: 12 }, (_, i) => {
+        const monthStr = `${year}-${String(i + 1).padStart(2, '0')}`
+        const rev = paid
+          .filter((p: any) => (p.paidAt ?? p.createdAt).startsWith(monthStr))
+          .reduce((s: number, p: any) => s + Number(p.totalAmount), 0)
+        const cost = Math.round(rev * 0.57)
+        return { time: MONTH_LABELS[i], revenue: rev, cost, profit: rev - cost }
+      })
+      setChartData(months)
+    } else {
+      // Custom range
+      const result: typeof chartData = []
+      const start = new Date(from)
+      const end = new Date(to)
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const dayStr = d.toISOString().split('T')[0]
+        const rev = paid
+          .filter((p: any) => (p.paidAt ?? p.createdAt).startsWith(dayStr))
+          .reduce((s: number, p: any) => s + Number(p.totalAmount), 0)
+        const cost = Math.round(rev * 0.57)
+        result.push({ time: `${d.getDate()}/${d.getMonth() + 1}`, revenue: rev, cost, profit: rev - cost })
+      }
+      setChartData(result)
+    }
+  }
+
+  // Re-build chart when mode/dates change
+  useEffect(() => {
+    if (!loading) {
+      paymentsService.list().then(payments => buildChart(mode, payments, fromDate, toDate))
+    }
+  }, [mode, fromDate, toDate])
 
   const totalRevenue = chartData.reduce((s, r) => s + r.revenue, 0)
   const totalCost    = chartData.reduce((s, r) => s + r.cost, 0)
   const totalProfit  = chartData.reduce((s, r) => s + r.profit, 0)
   const margin       = totalRevenue > 0 ? Math.round((totalProfit / totalRevenue) * 100) : 0
   const totalPending = pendingBreakdown.reduce((s, p) => s + p.count, 0)
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-[#F8981D] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-gray-400">กำลังโหลดข้อมูล...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="h-full flex flex-col gap-4 p-5 overflow-hidden">
@@ -139,13 +229,13 @@ export default function DashboardPage() {
       <div className="grid grid-cols-4 gap-4 shrink-0">
         <div className="bg-[#44403C] rounded-2xl px-5 py-4 shadow-sm">
           <p className="text-xs text-white/50 font-medium">รายได้วันนี้</p>
-          <p className="text-3xl font-black text-white mt-1 leading-none">21,300</p>
-          <p className="text-xs text-white/30 mt-0.5">฿ · +12% จากเมื่อวาน</p>
+          <p className="text-3xl font-black text-white mt-1 leading-none">{todayRevenue.toLocaleString()}</p>
+          <p className="text-xs text-white/30 mt-0.5">฿</p>
         </div>
         <div className="bg-[#F8981D] rounded-2xl px-5 py-4 shadow-sm">
           <p className="text-xs text-white/70 font-medium">กำไรวันนี้</p>
-          <p className="text-3xl font-black text-white mt-1 leading-none">9,200</p>
-          <p className="text-xs text-white/50 mt-0.5">฿ · Margin 43%</p>
+          <p className="text-3xl font-black text-white mt-1 leading-none">{todayProfit.toLocaleString()}</p>
+          <p className="text-xs text-white/50 mt-0.5">฿ · Margin {todayMargin}%</p>
         </div>
         <div className="bg-white border border-gray-100 rounded-2xl px-5 py-4 shadow-sm">
           <p className="text-xs text-gray-400 font-medium">งานค้างทั้งหมด</p>
@@ -154,8 +244,8 @@ export default function DashboardPage() {
         </div>
         <div className="bg-white border border-gray-100 rounded-2xl px-5 py-4 shadow-sm">
           <p className="text-xs text-gray-400 font-medium">ยอดรอชำระ</p>
-          <p className="text-3xl font-black text-[#1E1E1E] mt-1 leading-none">5,600</p>
-          <p className="text-xs text-gray-300 mt-0.5">฿ · 2 ใบงาน</p>
+          <p className="text-3xl font-black text-[#1E1E1E] mt-1 leading-none">{pendingAmount.toLocaleString()}</p>
+          <p className="text-xs text-gray-300 mt-0.5">฿ · {pendingCount} ใบงาน</p>
         </div>
       </div>
 
@@ -164,11 +254,9 @@ export default function DashboardPage() {
 
         {/* LEFT: Line chart */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col overflow-hidden min-h-0">
-          {/* Chart header */}
           <div className="px-5 py-3 border-b border-gray-100 shrink-0 flex items-center justify-between gap-3">
             <p className="text-sm font-semibold text-[#1E1E1E] shrink-0">รายได้ / ต้นทุน / กำไร</p>
             <div className="flex items-center gap-2 flex-wrap justify-end">
-              {/* Mode tabs */}
               <div className="flex bg-stone-100 rounded-full p-0.5 gap-0.5">
                 {(['daily', 'weekly', 'yearly', 'custom'] as Mode[]).map(m => (
                   <button key={m} onClick={() => setMode(m)}
@@ -177,14 +265,13 @@ export default function DashboardPage() {
                   </button>
                 ))}
               </div>
-              {/* Custom date range */}
               {mode === 'custom' && (
                 <div className="flex items-center gap-1.5 text-xs text-gray-500">
                   <input type="date" value={fromDate} max={toDate}
                     onChange={e => setFromDate(e.target.value)}
                     className="border border-gray-200 rounded-lg px-2 py-1 text-xs outline-none focus:border-[#F8981D] bg-white cursor-pointer" />
                   <span>–</span>
-                  <input type="date" value={toDate} min={fromDate} max={today}
+                  <input type="date" value={toDate} min={fromDate} max={todayStr}
                     onChange={e => setToDate(e.target.value)}
                     className="border border-gray-200 rounded-lg px-2 py-1 text-xs outline-none focus:border-[#F8981D] bg-white cursor-pointer" />
                 </div>
@@ -192,48 +279,21 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Chart area */}
           <div className="flex-1 min-h-0 px-2 pt-3 pb-1">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f4" vertical={false} />
-                <XAxis
-                  dataKey="time"
-                  tick={{ fontSize: 11, fill: '#a8a29e' }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tickFormatter={fmtY}
-                  tick={{ fontSize: 11, fill: '#a8a29e' }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={44}
-                />
+                <XAxis dataKey="time" tick={{ fontSize: 11, fill: '#a8a29e' }} axisLine={false} tickLine={false} />
+                <YAxis tickFormatter={fmtY} tick={{ fontSize: 11, fill: '#a8a29e' }} axisLine={false} tickLine={false} width={44} />
                 <Tooltip content={<CustomTooltip />} />
-                <Legend
-                  wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }}
-                  formatter={(value) => <span style={{ color: '#78716c' }}>{value}</span>}
-                />
-                <Line
-                  type="monotone" dataKey="revenue" name="รายได้"
-                  stroke="#44403C" strokeWidth={2} dot={false} activeDot={{ r: 4 }}
-                />
-                <Line
-                  type="monotone" dataKey="cost" name="ต้นทุน"
-                  stroke="#d6d3d1" strokeWidth={1.5} strokeDasharray="4 3"
-                  dot={false} activeDot={{ r: 4 }}
-                />
-                <Line
-                  type="monotone" dataKey="profit" name="กำไร"
-                  stroke="#F8981D" strokeWidth={2.5}
-                  dot={false} activeDot={{ r: 5, fill: '#F8981D' }}
-                />
+                <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }} formatter={(value) => <span style={{ color: '#78716c' }}>{value}</span>} />
+                <Line type="monotone" dataKey="revenue" name="รายได้" stroke="#44403C" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                <Line type="monotone" dataKey="cost" name="ต้นทุน" stroke="#d6d3d1" strokeWidth={1.5} strokeDasharray="4 3" dot={false} activeDot={{ r: 4 }} />
+                <Line type="monotone" dataKey="profit" name="กำไร" stroke="#F8981D" strokeWidth={2.5} dot={false} activeDot={{ r: 5, fill: '#F8981D' }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
 
-          {/* Totals bar */}
           <div className="shrink-0 px-5 py-2.5 border-t border-gray-50 flex items-center justify-end gap-6">
             <div className="text-right">
               <div className="text-xs text-gray-400">รายได้รวม</div>
@@ -262,6 +322,7 @@ export default function DashboardPage() {
               <p className="text-sm font-semibold text-[#1E1E1E]">งานค้าง</p>
             </div>
             <div className="px-4 py-3 flex flex-col gap-2.5">
+              {pendingBreakdown.length === 0 && <p className="text-xs text-gray-400 text-center py-2">ไม่มีงานค้าง</p>}
               {pendingBreakdown.map(item => (
                 <div key={item.label} className="flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
@@ -279,6 +340,7 @@ export default function DashboardPage() {
               <p className="text-sm font-semibold text-[#1E1E1E]">สต๊อกใกล้หมด</p>
             </div>
             <div className="px-4 py-3 flex flex-col gap-2.5">
+              {stockAlerts.length === 0 && <p className="text-xs text-gray-400 text-center py-2">ไม่มีอะไหล่ใกล้หมด</p>}
               {stockAlerts.map(item => (
                 <div key={item.name} className="flex items-center gap-2">
                   <span className="text-xs text-gray-600 flex-1 truncate">{item.name}</span>
@@ -294,10 +356,8 @@ export default function DashboardPage() {
               <p className="text-sm font-semibold text-[#1E1E1E]">ใบงานรอชำระ</p>
             </div>
             <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
-              {[
-                { id: '0000001', customer: 'ธาดา รถ',     total: 3500 },
-                { id: '0000002', customer: 'สมชาย การ์ด', total: 2100 },
-              ].map(item => (
+              {pendingPayments.length === 0 && <p className="text-xs text-gray-400 text-center py-4">ไม่มีรายการรอชำระ</p>}
+              {pendingPayments.map(item => (
                 <div key={item.id} className="flex items-center gap-3 px-4 py-2.5">
                   <span className="text-xs text-gray-300 font-mono shrink-0">#{item.id}</span>
                   <span className="text-xs text-gray-600 flex-1 truncate">{item.customer}</span>

@@ -1,41 +1,45 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { mockJobs } from './jobs'
+import { api } from '../../lib/api'
 import { QuotationA4Document } from '../../components/QuotationA4Document'
 import { QuotationPreviewModal } from '../../components/QuotationPreviewModal'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import type { Part, SelectedPart } from './types'
 
-// ─── Parts Catalog ────────────────────────────────────────────────────────────
+// ─── Parts Catalog (fetched from API) ─────────────────────────────────────────
 
-const mockPartsCatalog: Part[] = [
-  { id: 1,  name: 'ผ้าเบรกหน้า',          partNumber: 'BR-F-001',  stock: 8,  unit: 'ชุด',  unitPrice: 850  },
-  { id: 2,  name: 'ผ้าเบรกหลัง',          partNumber: 'BR-R-001',  stock: 5,  unit: 'ชุด',  unitPrice: 750  },
-  { id: 3,  name: 'น้ำมันเบรก DOT4',      partNumber: 'OL-B-004',  stock: 12, unit: 'ขวด', unitPrice: 180  },
-  { id: 4,  name: 'หัวเทียน NGK CR7HSA',  partNumber: 'SP-NGK-01', stock: 0,  unit: 'หัว',  unitPrice: 120  },
-  { id: 5,  name: 'สายพานขับเคลื่อน',     partNumber: 'BL-DR-001', stock: 3,  unit: 'เส้น', unitPrice: 1200 },
-  { id: 6,  name: 'น้ำมันเครื่อง 10W-40', partNumber: 'OL-E-010',  stock: 20, unit: 'ลิตร', unitPrice: 220  },
-  { id: 7,  name: 'ไส้กรองอากาศ',         partNumber: 'FL-AR-001', stock: 0,  unit: 'ชิ้น', unitPrice: 350  },
-  { id: 8,  name: 'ไส้กรองน้ำมัน',        partNumber: 'FL-OL-001', stock: 7,  unit: 'ชิ้น', unitPrice: 90   },
-  { id: 9,  name: 'โซ่ขับ',               partNumber: 'CH-DR-001', stock: 2,  unit: 'เส้น', unitPrice: 980  },
-  { id: 10, name: 'แบตเตอรี่ 12V 5Ah',   partNumber: 'BT-12V-05', stock: 4,  unit: 'ก้อน', unitPrice: 1800 },
+let partsCatalog: Part[] = []
+
+// visual style rotation for parts
+const partColors = [
+  { bg: 'bg-blue-50',   stroke: '#93c5fd' },
+  { bg: 'bg-amber-50',  stroke: '#fbbf24' },
+  { bg: 'bg-orange-50', stroke: '#fb923c' },
+  { bg: 'bg-zinc-100',  stroke: '#a1a1aa' },
+  { bg: 'bg-green-50',  stroke: '#86efac' },
+  { bg: 'bg-purple-50', stroke: '#c084fc' },
 ]
-
-// visual style per part
-const partVisual: Record<number, { bg: string; stroke: string }> = {
-  1:  { bg: 'bg-blue-50',   stroke: '#93c5fd' },
-  2:  { bg: 'bg-blue-50',   stroke: '#93c5fd' },
-  3:  { bg: 'bg-amber-50',  stroke: '#fbbf24' },
-  4:  { bg: 'bg-orange-50', stroke: '#fb923c' },
-  5:  { bg: 'bg-zinc-100',  stroke: '#a1a1aa' },
-  6:  { bg: 'bg-amber-50',  stroke: '#fbbf24' },
-  7:  { bg: 'bg-green-50',  stroke: '#86efac' },
-  8:  { bg: 'bg-green-50',  stroke: '#86efac' },
-  9:  { bg: 'bg-zinc-100',  stroke: '#a1a1aa' },
-  10: { bg: 'bg-purple-50', stroke: '#c084fc' },
+const partVisual: Record<number, { bg: string; stroke: string }> = {}
+function getPartVisual(id: number) {
+  if (!partVisual[id]) partVisual[id] = partColors[id % partColors.length]
+  return partVisual[id]
 }
 
-import { mockMechanics } from './mechanics'
+// ─── Status mapping ───────────────────────────────────────────────────────────
+const STATUS_MAP: Record<string, string> = {
+  PENDING: 'รอประเมิน',
+  WAITING_APPROVAL: 'รอลูกค้าอนุมัติ',
+  READY: 'พร้อมซ่อม',
+  IN_PROGRESS: 'กำลังดำเนินงาน',
+  WAITING_PARTS: 'รอสั่งซื้อ',
+  DEEP_INSPECTION: 'ตรวจเชิงลึก',
+  QC_PENDING: 'รอตรวจ',
+  COMPLETED: 'เสร็จสิ้น',
+  PAID: 'ชำระแล้ว',
+}
+
+type Mechanic = { id: number; name: string; avatar: string; jobs: number; skills: string[] }
+let mechanicsList: Mechanic[] = []
 
 // ─── Predefined Tags ──────────────────────────────────────────────────────────
 
@@ -73,7 +77,7 @@ function PartsModal({
     setModalQty((prev) => ({ ...prev, [id]: q }))
   }
 
-  const filtered = mockPartsCatalog.filter(
+  const filtered = partsCatalog.filter(
     (p) =>
       p.name.includes(search) || p.partNumber.toLowerCase().includes(search.toLowerCase())
   )
@@ -283,7 +287,97 @@ function JobTypeDropdown({ value, onChange }: { value: JobType; onChange: (v: Jo
 export default function JobDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const job = mockJobs.find((j) => j.id === Number(id))
+
+  // ─── API data ───────────────────────────────────────────────────────────────
+  const [job, setJob] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [jobData, usersData, partsData] = await Promise.all([
+          api.get<any>(`/jobs/${id}`),
+          api.get<any[]>('/users'),
+          api.get<any[]>('/parts'),
+        ])
+
+        // Map API users to Mechanic shape
+        const techs = usersData.filter((u: any) =>
+          ['TECHNICIAN', 'FOREMAN'].includes(u.role)
+        )
+        const allJobs = await api.get<any[]>('/jobs')
+        mechanicsList = techs.map((u: any) => {
+          const activeJobs = allJobs.filter((j: any) =>
+            j.technicianId === u.id &&
+            !['COMPLETED', 'PAID', 'CANCELLED'].includes(j.status)
+          ).length
+          return {
+            id: u.id,
+            name: u.name,
+            avatar: u.name?.[0] ?? '?',
+            jobs: activeJobs,
+            skills: [],
+          }
+        })
+
+        // Map API parts to Part shape
+        partsCatalog = partsData.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          partNumber: p.partNo || `P-${p.id}`,
+          stock: p.stockQuantity ?? 0,
+          unit: p.unit || 'ชิ้น',
+          unitPrice: Number(p.unitPrice) || 0,
+        }))
+
+        // Map API job to internal shape matching old mock data properties
+        const statusKey = jobData.status as string
+        const mapped: any = {
+          id: jobData.id,
+          jobNo: jobData.jobNo,
+          receptionist: jobData.reception?.name ?? '-',
+          brand: jobData.motorcycle?.brand ?? '',
+          model: jobData.motorcycle?.model ?? '',
+          licensePlate: jobData.motorcycle?.licensePlate ?? '',
+          province: '',
+          symptom: jobData.symptom ?? '',
+          receivedAt: jobData.createdAt
+            ? new Date(jobData.createdAt).toLocaleDateString('th-TH', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+              }) + '  ' + new Date(jobData.createdAt).toLocaleTimeString('th-TH', {
+                hour: '2-digit', minute: '2-digit',
+              }) + ' น.'
+            : '-',
+          status: STATUS_MAP[statusKey] || statusKey,
+          customerName:
+            `${jobData.motorcycle?.owner?.firstName ?? ''} ${jobData.motorcycle?.owner?.lastName ?? ''}`.trim() || '-',
+          customerPhone: jobData.motorcycle?.owner?.phoneNumber ?? '-',
+          tags: [],
+          photos: [],
+          mechanicId: jobData.technicianId ?? undefined,
+          mechanicReport: jobData.diagnosisNotes
+            ? {
+                note: jobData.diagnosisNotes,
+                photos: [],
+                reportedAt: jobData.updatedAt
+                  ? new Date(jobData.updatedAt).toLocaleDateString('th-TH', {
+                      day: '2-digit', month: '2-digit', year: 'numeric',
+                    }) + '  ' + new Date(jobData.updatedAt).toLocaleTimeString('th-TH', {
+                      hour: '2-digit', minute: '2-digit',
+                    }) + ' น.'
+                  : '-',
+              }
+            : undefined,
+        }
+        setJob(mapped)
+      } catch (err) {
+        console.error('Failed to load job details:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [id])
 
   // Mechanic assignment (for พร้อมซ่อม status)
   const [selectedMechanics, setSelectedMechanics] = useState<number[]>([])
@@ -292,7 +386,8 @@ export default function JobDetailPage() {
   const [mechanicSkillFilter, setMechanicSkillFilter] = useState('')
 
   // Tags (editable)
-  const [tags, setTags] = useState(job?.tags ?? [])
+  const [tags, setTags] = useState<string[]>([])
+  useEffect(() => { if (job?.tags) setTags(job.tags) }, [job])
 
   // Foreman note
   const [foremanNote, setForemanNote] = useState('')
@@ -356,6 +451,14 @@ export default function JobDetailPage() {
   const [mrLightboxOpen, setMrLightboxOpen] = useState(false)
   const [mrLightboxIdx, setMrLightboxIdx] = useState(0)
 
+  if (loading) return (
+    <div className="flex items-center justify-center h-full">
+      <div className="text-center">
+        <div className="w-8 h-8 border-2 border-[#F8981D] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-sm text-gray-400">กำลังโหลดข้อมูล...</p>
+      </div>
+    </div>
+  )
   if (!job) return <div className="p-6 text-sm text-gray-400">ไม่พบใบงาน</div>
 
   // Tag helpers
@@ -477,7 +580,7 @@ export default function JobDetailPage() {
           />
           {job.mechanicReport.photos.length > 1 && (
             <div className="flex gap-3 mt-5" onClick={(e) => e.stopPropagation()}>
-              {job.mechanicReport.photos.map((p, i) => (
+              {job.mechanicReport.photos.map((p: string, i: number) => (
                 <button
                   key={i}
                   onClick={() => setMrLightboxIdx(i)}
@@ -924,7 +1027,7 @@ export default function JobDetailPage() {
                   รูปภาพ <span className="text-gray-300 ml-1">({job.photos.length + foremanPhotos.length})</span>
                 </p>
                 <div className="flex gap-2 flex-wrap">
-                  {job.photos.map((photo, i) => (
+                  {(job.photos || []).map((photo: string, i: number) => (
                     <button
                       key={`orig-${i}`}
                       onClick={() => { setLightboxIdx(i); setLightboxOpen(true) }}
@@ -990,8 +1093,8 @@ export default function JobDetailPage() {
 
               {/* Mechanic assignment — shown when customer already approved */}
               {job.status === 'พร้อมซ่อม' && (() => {
-                const allSkills = [...new Set(mockMechanics.flatMap((m) => m.skills))]
-                const filtered = mockMechanics.filter((m) => {
+                const allSkills = [...new Set(mechanicsList.flatMap((m: Mechanic) => m.skills))]
+                const filtered = mechanicsList.filter((m: Mechanic) => {
                   const matchSearch = !mechanicSearch || m.name.toLowerCase().includes(mechanicSearch.toLowerCase())
                   const matchSkill  = !mechanicSkillFilter || m.skills.includes(mechanicSkillFilter)
                   return matchSearch && matchSkill
@@ -1031,15 +1134,15 @@ export default function JobDetailPage() {
                           >
                             ทั้งหมด
                           </button>
-                          {allSkills.map((skill) => (
+                          {allSkills.map((skill: string) => (
                             <button
-                              key={skill}
-                              onClick={() => setMechanicSkillFilter(mechanicSkillFilter === skill ? '' : skill)}
+                              key={skill as string}
+                              onClick={() => setMechanicSkillFilter(mechanicSkillFilter === skill ? '' : skill as string)}
                               className={`text-xs px-2.5 py-1 rounded-full border transition-colors cursor-pointer ${
                                 mechanicSkillFilter === skill ? 'bg-[#F8981D] text-white border-[#F8981D]' : 'bg-white text-gray-400 border-gray-200 hover:border-[#F8981D] hover:text-[#F8981D]'
                               }`}
                             >
-                              {skill}
+                              {skill as string}
                             </button>
                           ))}
                         </div>
@@ -1049,7 +1152,7 @@ export default function JobDetailPage() {
                           {filtered.length === 0 && (
                             <p className="text-center text-xs text-gray-400 py-3">ไม่พบช่างที่ตรงกัน</p>
                           )}
-                          {filtered.map((m) => {
+                          {filtered.map((m: Mechanic) => {
                             const isSelected = selectedMechanics.includes(m.id)
                             return (
                               <button
@@ -1102,7 +1205,7 @@ export default function JobDetailPage() {
                         <p className="text-sm font-medium text-[#44403C]">มอบหมายงานแล้ว</p>
                         <div className="flex flex-col gap-1.5">
                           {selectedMechanics.map((id) => {
-                            const m = mockMechanics.find((x) => x.id === id)!
+                            const m = mechanicsList.find((x: Mechanic) => x.id === id)!
                             return (
                               <div key={id} className="flex items-center gap-2">
                                 <div className="w-6 h-6 rounded-full bg-[#44403C] text-white text-xs flex items-center justify-center font-semibold shrink-0">
@@ -1267,7 +1370,7 @@ export default function JobDetailPage() {
                       <p className="text-sm text-amber-800 leading-relaxed">{job.mechanicReport.note}</p>
                       {job.mechanicReport.photos.length > 0 && (
                         <div className="flex gap-2 flex-wrap">
-                          {job.mechanicReport.photos.map((p, i) => (
+                          {job.mechanicReport.photos.map((p: string, i: number) => (
                             <button
                               key={i}
                               onClick={() => { setMrLightboxIdx(i); setMrLightboxOpen(true) }}

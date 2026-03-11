@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip, ResponsiveContainer, Legend } from 'recharts'
+import { api } from '../../lib/api'
+import { paymentsService, type Payment } from '../../services/payments'
 
 type Period = 'daily' | 'weekly' | 'monthly' | 'custom'
 
@@ -18,119 +20,6 @@ type MonthRow = { label: string; jobs: number; revenue: number; cost: number; pr
 type HourSlot = { hour: string; revenue: number; cost: number; profit: number }
 type TooltipPayload = { name: string; value: number; color: string }
 type ChartTooltipProps = { active?: boolean; payload?: TooltipPayload[]; label?: string }
-
-// ─── Mock data ────────────────────────────────────────────────────────────────
-
-const todayJobs: JobOrder[] = [
-  {
-    id: 101, jobNo: 'JB-0101', customer: 'สมชาย ใจดี', vehicle: 'Honda PCX 160', licensePlate: 'กก 999',
-    time: '08:30', mechanic: 'วิชัย', status: 'เสร็จแล้ว',
-    services: [{ name: 'เปลี่ยนผ้าเบรกหน้า', price: 450 }, { name: 'ตรวจเช็กระบบเบรก', price: 200 }],
-    parts: [{ name: 'ผ้าเบรกหน้า Honda PCX', qty: 1, unitCost: 280, unitPrice: 450 }],
-    revenue: 1100, cost: 580, profit: 520,
-  },
-  {
-    id: 102, jobNo: 'JB-0102', customer: 'วิภา รักสะอาด', vehicle: 'Yamaha NMAX 155', licensePlate: 'คง 5678',
-    time: '09:15', mechanic: 'สมชาย', status: 'เสร็จแล้ว',
-    services: [{ name: 'เปลี่ยนน้ำมันเครื่อง', price: 220 }, { name: 'เปลี่ยนไส้กรองน้ำมัน', price: 120 }],
-    parts: [
-      { name: 'น้ำมันเครื่อง 10W-40 (1L)', qty: 2, unitCost: 120, unitPrice: 220 },
-      { name: 'ไส้กรองน้ำมัน', qty: 1, unitCost: 60, unitPrice: 120 },
-    ],
-    revenue: 780, cost: 420, profit: 360,
-  },
-  {
-    id: 103, jobNo: 'JB-0103', customer: 'ประเสริฐ มั่นคง', vehicle: 'Honda Wave 125i', licensePlate: 'จฉ 9012',
-    time: '10:00', mechanic: 'ณัฐพล', status: 'เสร็จแล้ว',
-    services: [{ name: 'ซ่อมระบบไฟหน้า', price: 350 }, { name: 'เปลี่ยนหลอดไฟ', price: 130 }],
-    parts: [{ name: 'หลอดไฟหน้า HS1 35W', qty: 1, unitCost: 65, unitPrice: 130 }],
-    revenue: 480, cost: 265, profit: 215,
-  },
-  {
-    id: 104, jobNo: 'JB-0104', customer: 'นภา สุขสันต์', vehicle: 'Suzuki Burgman 200', licensePlate: 'ชซ 3456',
-    time: '11:30', mechanic: 'วิชัย', status: 'เสร็จแล้ว',
-    services: [{ name: 'เปลี่ยนสายพาน', price: 650 }, { name: 'ตรวจเช็กเครื่องยนต์', price: 300 }],
-    parts: [{ name: 'สายพาน Yamaha NMAX', qty: 1, unitCost: 380, unitPrice: 650 }],
-    revenue: 1600, cost: 880, profit: 720,
-  },
-  {
-    id: 105, jobNo: 'JB-0105', customer: 'ธนพล วิริยะ', vehicle: 'Honda Click 125i', licensePlate: 'ญฐ 7890',
-    time: '13:00', mechanic: 'ประยุทธ์', status: 'เสร็จแล้ว',
-    services: [{ name: 'เปลี่ยนโซ่และสเตอร์', price: 1070 }],
-    parts: [
-      { name: 'โซ่ขับเคลื่อน 428H', qty: 1, unitCost: 420, unitPrice: 750 },
-      { name: 'สเตอร์หน้า Honda', qty: 1, unitCost: 180, unitPrice: 320 },
-    ],
-    revenue: 1070, cost: 600, profit: 470,
-  },
-  {
-    id: 106, jobNo: 'JB-0106', customer: 'มาลี สวัสดี', vehicle: 'Yamaha Aerox 155', licensePlate: 'ดต 1234',
-    time: '14:00', mechanic: 'กิตติพงษ์', status: 'เสร็จแล้ว',
-    services: [{ name: 'เปลี่ยนแบตเตอรี่', price: 950 }, { name: 'ตรวจระบบไฟฟ้า', price: 200 }],
-    parts: [{ name: 'แบตเตอรี่ 12V 5Ah', qty: 1, unitCost: 550, unitPrice: 950 }],
-    revenue: 1150, cost: 650, profit: 500,
-  },
-  {
-    id: 107, jobNo: 'JB-0107', customer: 'อรุณ ดีใจ', vehicle: 'Honda PCX 160', licensePlate: 'ขข 1111',
-    time: '15:30', mechanic: 'อภิสิทธิ์', status: 'เสร็จแล้ว',
-    services: [{ name: 'เปลี่ยนยางนอก', price: 1200 }, { name: 'ถ่วงล้อ', price: 150 }],
-    parts: [{ name: 'ยางนอก 90/90-17', qty: 1, unitCost: 680, unitPrice: 1200 }],
-    revenue: 1350, cost: 780, profit: 570,
-  },
-  {
-    id: 108, jobNo: 'JB-0108', customer: 'สุนีย์ มีสุข', vehicle: 'Honda Wave 125i', licensePlate: 'คค 2222',
-    time: '16:30', mechanic: 'สมชาย', status: 'เสร็จแล้ว',
-    services: [{ name: 'เปลี่ยนหัวเทียน', price: 160 }, { name: 'เปลี่ยนไส้กรองอากาศ', price: 180 }, { name: 'ล้างคาร์บูเรเตอร์', price: 250 }],
-    parts: [
-      { name: 'หัวเทียน NGK CR7E', qty: 1, unitCost: 85, unitPrice: 160 },
-      { name: 'ไส้กรองอากาศ Honda Wave', qty: 1, unitCost: 95, unitPrice: 180 },
-    ],
-    revenue: 870, cost: 480, profit: 390,
-  },
-]
-
-const hourlySlots: HourSlot[] = (() => {
-  const slots: Record<string, HourSlot> = {}
-  for (let h = 8; h <= 17; h++) {
-    const key = `${String(h).padStart(2, '0')}:00`
-    slots[key] = { hour: key, revenue: 0, cost: 0, profit: 0 }
-  }
-  todayJobs.forEach(j => {
-    const h = parseInt(j.time.split(':')[0])
-    const key = `${String(h).padStart(2, '0')}:00`
-    if (slots[key]) {
-      slots[key].revenue += j.revenue
-      slots[key].cost    += j.cost
-      slots[key].profit  += j.profit
-    }
-  })
-  return Object.values(slots)
-})()
-
-const weeklyDays: DayRow[] = [
-  { label: 'จ 03/03', date: '03/03/2026', jobs: 7,  revenue: 15600, cost: 9300,  profit: 6300 },
-  { label: 'อ 04/03', date: '04/03/2026', jobs: 4,  revenue: 11200, cost: 6800,  profit: 4400 },
-  { label: 'พ 05/03', date: '05/03/2026', jobs: 9,  revenue: 18900, cost: 10500, profit: 8400 },
-  { label: 'พฤ 06/03', date: '06/03/2026', jobs: 3, revenue: 9400,  cost: 5600,  profit: 3800 },
-  { label: 'ศ 07/03', date: '07/03/2026', jobs: 10, revenue: 21300, cost: 12100, profit: 9200 },
-  { label: 'ส 08/03', date: '08/03/2026', jobs: 5,  revenue: 12400, cost: 7200,  profit: 5200 },
-  { label: 'อา 09/03', date: '09/03/2026', jobs: 8, revenue: 8400,  cost: 4655,  profit: 3745 },
-]
-
-const monthlyRows: MonthRow[] = [
-  { label: 'เม.ย. 2025',  jobs: 98,  revenue: 248000, cost: 146000, profit: 102000 },
-  { label: 'พ.ค. 2025',   jobs: 115, revenue: 292000, cost: 172000, profit: 120000 },
-  { label: 'มิ.ย. 2025',  jobs: 107, revenue: 271000, cost: 160000, profit: 111000 },
-  { label: 'ก.ค. 2025',   jobs: 122, revenue: 308000, cost: 181000, profit: 127000 },
-  { label: 'ส.ค. 2025',   jobs: 119, revenue: 300000, cost: 177000, profit: 123000 },
-  { label: 'ก.ย. 2025',   jobs: 103, revenue: 261000, cost: 154000, profit: 107000 },
-  { label: 'ต.ค. 2025',   jobs: 112, revenue: 285000, cost: 168000, profit: 117000 },
-  { label: 'พ.ย. 2025',   jobs: 128, revenue: 312000, cost: 184000, profit: 128000 },
-  { label: 'ธ.ค. 2025',   jobs: 156, revenue: 398000, cost: 226000, profit: 172000 },
-  { label: 'ม.ค. 2026',   jobs: 104, revenue: 267000, cost: 158000, profit: 109000 },
-  { label: 'ก.พ. 2026',   jobs: 133, revenue: 334000, cost: 196000, profit: 138000 },
-  { label: 'มี.ค. 2026',  jobs: 55,  revenue: 106100, cost: 61855,  profit: 44245 },
-]
 
 // ─── Tooltip ─────────────────────────────────────────────────────────────────
 
@@ -245,13 +134,130 @@ function JobDetailModal({ job, onClose }: { job: JobOrder; onClose: () => void }
   )
 }
 
+// ─── Helper: build data from payments ─────────────────────────────────────────
+
+const MONTH_LABELS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
+const DAY_LABELS = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส']
+
+function buildHourlySlots(payments: Payment[]): HourSlot[] {
+  const todayStr = new Date().toISOString().split('T')[0]
+  const todayPaid = payments.filter(p => p.paymentStatus === 'PAID' && (p.paidAt ?? p.createdAt).startsWith(todayStr))
+  return Array.from({ length: 10 }, (_, i) => {
+    const h = 8 + i
+    const key = `${String(h).padStart(2, '0')}:00`
+    const rev = todayPaid
+      .filter(p => new Date(p.paidAt ?? p.createdAt).getHours() === h)
+      .reduce((s, p) => s + Number(p.totalAmount), 0)
+    const cost = Math.round(rev * 0.57)
+    return { hour: key, revenue: rev, cost, profit: rev - cost }
+  })
+}
+
+function buildWeeklyDays(payments: Payment[], jobs: any[]): DayRow[] {
+  const now = new Date()
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(now)
+    d.setDate(d.getDate() - (6 - i))
+    const dayStr = d.toISOString().split('T')[0]
+    const dayPaid = payments.filter(p => p.paymentStatus === 'PAID' && (p.paidAt ?? p.createdAt).startsWith(dayStr))
+    const rev = dayPaid.reduce((s, p) => s + Number(p.totalAmount), 0)
+    const cost = Math.round(rev * 0.57)
+    const dayJobs = jobs.filter(j => j.createdAt?.startsWith(dayStr)).length
+    return {
+      label: `${DAY_LABELS[d.getDay()]} ${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`,
+      date: dayStr,
+      jobs: dayJobs || dayPaid.length,
+      revenue: rev, cost, profit: rev - cost,
+    }
+  })
+}
+
+function buildMonthlyRows(payments: Payment[], jobs: any[]): MonthRow[] {
+  const now = new Date()
+  return Array.from({ length: 12 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1)
+    const monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    const monthPaid = payments.filter(p => p.paymentStatus === 'PAID' && (p.paidAt ?? p.createdAt).startsWith(monthStr))
+    const rev = monthPaid.reduce((s, p) => s + Number(p.totalAmount), 0)
+    const cost = Math.round(rev * 0.57)
+    const monthJobs = jobs.filter(j => j.createdAt?.startsWith(monthStr)).length
+    return {
+      label: `${MONTH_LABELS[d.getMonth()]} ${d.getFullYear()}`,
+      jobs: monthJobs || monthPaid.length,
+      revenue: rev, cost, profit: rev - cost,
+    }
+  })
+}
+
+function buildJobOrders(jobs: any[], payments: Payment[]): JobOrder[] {
+  const todayStr = new Date().toISOString().split('T')[0]
+  return jobs
+    .filter(j => ['COMPLETED', 'PAID'].includes(j.status) && j.createdAt?.startsWith(todayStr))
+    .map(j => {
+      const payment = payments.find(p => p.jobId === j.id)
+      const revenue = Number(payment?.totalAmount) || 0
+      const cost = Math.round(revenue * 0.57)
+      const services: JobService[] = (j.laborTimes ?? []).map((lt: any) => ({ name: lt.serviceName, price: Number(lt.laborCost) }))
+      const parts: JobPart[] = (j.partRequisitions ?? []).flatMap((req: any) =>
+        (req.items ?? []).map((ri: any) => ({
+          name: ri.part?.name ?? '-',
+          qty: ri.quantity,
+          unitCost: Math.round(Number(ri.unitPrice) * 0.6),
+          unitPrice: Number(ri.unitPrice),
+        }))
+      )
+      if (services.length === 0 && revenue > 0) {
+        services.push({ name: 'ค่าบริการ', price: revenue })
+      }
+      return {
+        id: j.id,
+        jobNo: j.jobNo ?? `JB-${j.id}`,
+        customer: `${j.motorcycle?.owner?.firstName ?? ''} ${j.motorcycle?.owner?.lastName ?? ''}`.trim() || '-',
+        vehicle: `${j.motorcycle?.brand ?? ''} ${j.motorcycle?.model ?? ''}`.trim(),
+        licensePlate: j.motorcycle?.licensePlate ?? '-',
+        time: new Date(j.createdAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+        mechanic: j.technician?.name ?? '-',
+        status: 'เสร็จแล้ว',
+        services, parts,
+        revenue, cost, profit: revenue - cost,
+      }
+    })
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function ReportsPage() {
   const [period, setPeriod]           = useState<Period>('daily')
   const [selectedJob, setSelectedJob] = useState<JobOrder | null>(null)
-  const [customFrom, setCustomFrom]   = useState('2026-03-01')
-  const [customTo, setCustomTo]       = useState('2026-03-09')
+  const [customFrom, setCustomFrom]   = useState(new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0])
+  const [customTo, setCustomTo]       = useState(new Date().toISOString().split('T')[0])
+  const [loading, setLoading]         = useState(true)
+
+  // Data
+  const [todayJobs, setTodayJobs]       = useState<JobOrder[]>([])
+  const [hourlySlots, setHourlySlots]   = useState<HourSlot[]>([])
+  const [weeklyDays, setWeeklyDays]     = useState<DayRow[]>([])
+  const [monthlyRows, setMonthlyRows]   = useState<MonthRow[]>([])
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [jobs, payments] = await Promise.all([
+          api.get<any[]>('/jobs'),
+          paymentsService.list(),
+        ])
+        setTodayJobs(buildJobOrders(jobs, payments))
+        setHourlySlots(buildHourlySlots(payments))
+        setWeeklyDays(buildWeeklyDays(payments, jobs))
+        setMonthlyRows(buildMonthlyRows(payments, jobs))
+      } catch (err) {
+        console.error('Failed to load report data:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
 
   // Aggregate helpers
   const sumRevenue = (arr: { revenue: number }[]) => arr.reduce((s, r) => s + r.revenue, 0)
@@ -259,12 +265,9 @@ export default function ReportsPage() {
   const sumProfit  = (arr: { profit: number }[])  => arr.reduce((s, r) => s + r.profit, 0)
   const sumJobs    = (arr: { jobs: number }[])    => arr.reduce((s, r) => s + r.jobs, 0)
 
-  // Summary for each period
   const dailySummary  = { revenue: sumRevenue(todayJobs), cost: sumCost(todayJobs), profit: sumProfit(todayJobs), jobs: todayJobs.length }
   const weeklySummary = { revenue: sumRevenue(weeklyDays), cost: sumCost(weeklyDays), profit: sumProfit(weeklyDays), jobs: sumJobs(weeklyDays) }
   const monthlySummary= { revenue: sumRevenue(monthlyRows), cost: sumCost(monthlyRows), profit: sumProfit(monthlyRows), jobs: sumJobs(monthlyRows) }
-
-  // Custom — reuse weekly days as sample filtered data (in real app: filter by date)
   const customSummary = weeklySummary
 
   const activeSummary =
@@ -272,15 +275,15 @@ export default function ReportsPage() {
     period === 'weekly'  ? weeklySummary :
     period === 'monthly' ? monthlySummary : customSummary
 
-  const margin = Math.round((activeSummary.profit / activeSummary.revenue) * 100)
+  const margin = activeSummary.revenue > 0 ? Math.round((activeSummary.profit / activeSummary.revenue) * 100) : 0
+  const todayDate = new Date().toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' })
 
   const periodLabel =
-    period === 'daily'   ? 'วันนี้ (09/03/2026)' :
-    period === 'weekly'  ? '7 วันย้อนหลัง (03–09 มี.ค. 2026)' :
-    period === 'monthly' ? '12 เดือนย้อนหลัง (เม.ย. 2025 – มี.ค. 2026)' :
+    period === 'daily'   ? `วันนี้ (${todayDate})` :
+    period === 'weekly'  ? '7 วันย้อนหลัง' :
+    period === 'monthly' ? '12 เดือนย้อนหลัง' :
     `${customFrom} ถึง ${customTo}`
 
-  // PDF export
   const handleExportPDF = () => {
     const tableRows =
       period === 'daily'
@@ -312,12 +315,23 @@ export default function ReportsPage() {
       </div>
       <table><thead><tr><th>${colLabel}</th><th class="r">ใบงาน</th><th class="r">รายได้ (฿)</th><th class="r">ต้นทุน (฿)</th><th class="r">กำไร (฿)</th><th class="r">Margin</th></tr></thead>
       <tbody>${tableRows.map(r => {
-        const m = Math.round((r.profit / r.revenue) * 100)
+        const m = r.revenue > 0 ? Math.round((r.profit / r.revenue) * 100) : 0
         return `<tr><td>${r.date}</td><td class="r">${r.jobs}</td><td class="r">${r.revenue.toLocaleString()}</td><td class="r" style="color:#ef4444">${r.cost.toLocaleString()}</td><td class="r" style="color:#F8981D;font-weight:600">${r.profit.toLocaleString()}</td><td class="r">${m}%</td></tr>`
       }).join('')}</tbody>
       <tfoot><tr><td>รวม</td><td class="r">${activeSummary.jobs}</td><td class="r">${activeSummary.revenue.toLocaleString()}</td><td class="r" style="color:#ef4444">${activeSummary.cost.toLocaleString()}</td><td class="r" style="color:#F8981D">${activeSummary.profit.toLocaleString()}</td><td class="r">${margin}%</td></tr></tfoot>
       </table><div class="footer">เอกสารนี้สร้างโดยระบบ Smart Moto Service Center</div></body></html>`)
     w.document.close(); w.focus(); setTimeout(() => { w.print(); w.close() }, 400)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-[#F8981D] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-gray-400">กำลังโหลดข้อมูล...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -386,7 +400,7 @@ export default function ReportsPage() {
       {period === 'daily' && (
         <>
           <div className="bg-white rounded-2xl border border-stone-100 p-5 shrink-0">
-            <p className="text-sm font-medium text-stone-400 mb-4">รายได้รายชั่วโมง (09/03/2026)</p>
+            <p className="text-sm font-medium text-stone-400 mb-4">รายได้รายชั่วโมง ({todayDate})</p>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={hourlySlots} barGap={4}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f4" />
@@ -404,6 +418,7 @@ export default function ReportsPage() {
           <div>
             <p className="text-sm font-medium text-stone-400 mb-3">ใบงานวันนี้ · กดเพื่อดูรายละเอียด</p>
             <div className="flex flex-col gap-2">
+              {todayJobs.length === 0 && <p className="text-center text-sm text-stone-400 py-6">ไม่มีใบงานวันนี้</p>}
               {todayJobs.map(job => (
                 <button key={job.id} onClick={() => setSelectedJob(job)}
                   className="bg-white rounded-2xl border border-stone-100 px-5 py-4 flex items-center gap-4 text-left w-full cursor-pointer hover:border-[#F8981D]/40 hover:shadow-sm transition-all">
@@ -435,7 +450,7 @@ export default function ReportsPage() {
         </>
       )}
 
-      {/* ── WEEKLY ── 7-day chart + table */}
+      {/* ── WEEKLY */}
       {period === 'weekly' && (
         <>
           <div className="bg-white rounded-2xl border border-stone-100 p-5 shrink-0">
@@ -457,7 +472,7 @@ export default function ReportsPage() {
         </>
       )}
 
-      {/* ── MONTHLY ── 12-month chart + table */}
+      {/* ── MONTHLY */}
       {period === 'monthly' && (
         <>
           <div className="bg-white rounded-2xl border border-stone-100 p-5 shrink-0">
@@ -479,12 +494,11 @@ export default function ReportsPage() {
         </>
       )}
 
-      {/* ── CUSTOM ── table only (filtered by date range) */}
+      {/* ── CUSTOM */}
       {period === 'custom' && (
         <SummaryTable rows={weeklyDays.map(r => ({ label: r.date, jobs: r.jobs, revenue: r.revenue, cost: r.cost, profit: r.profit }))} colLabel="วันที่" />
       )}
 
-      {/* Job detail modal */}
       {selectedJob && <JobDetailModal job={selectedJob} onClose={() => setSelectedJob(null)} />}
     </div>
     </div>
@@ -500,7 +514,7 @@ function SummaryTable({ rows, colLabel }: { rows: SummaryRow[]; colLabel: string
   const totalCost    = rows.reduce((s, r) => s + r.cost, 0)
   const totalProfit  = rows.reduce((s, r) => s + r.profit, 0)
   const totalJobs    = rows.reduce((s, r) => s + r.jobs, 0)
-  const margin       = Math.round((totalProfit / totalRevenue) * 100)
+  const margin       = totalRevenue > 0 ? Math.round((totalProfit / totalRevenue) * 100) : 0
   return (
     <div className="rounded-2xl border border-stone-200 overflow-hidden bg-white">
       <table className="w-full text-sm">
@@ -516,7 +530,7 @@ function SummaryTable({ rows, colLabel }: { rows: SummaryRow[]; colLabel: string
         </thead>
         <tbody className="divide-y divide-stone-50">
           {rows.map((row, i) => {
-            const m = Math.round((row.profit / row.revenue) * 100)
+            const m = row.revenue > 0 ? Math.round((row.profit / row.revenue) * 100) : 0
             return (
               <tr key={i} className="hover:bg-stone-50/60 transition-colors">
                 <td className="px-5 py-3.5 font-medium text-stone-700">{row.label}</td>

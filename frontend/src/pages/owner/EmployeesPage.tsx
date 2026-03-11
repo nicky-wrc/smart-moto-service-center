@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { api } from '../../lib/api'
 import Pagination from '../../components/Pagination'
 
 type Role = 'พนักงานรับรถ' | 'พนักงานคงคลัง' | 'พนักงานบัญชี' | 'หัวหน้าช่าง' | 'ช่าง'
@@ -25,24 +26,21 @@ const roleConfig: Record<Role, { color: string; salaryType: SalaryType }> = {
   'ช่าง':          { color: 'bg-[#F8981D]/8 text-[#F8981D]/80',  salaryType: 'commission' },
 }
 
-const initialEmployees: Employee[] = [
-  { id: 1,  name: 'พีพี สุขใจ',       role: 'พนักงานรับรถ',  salaryType: 'fixed',      baseSalary: 15000, phone: '081-111-1111', startDate: '01/01/2025', active: true },
-  { id: 2,  name: 'นิค ยิ้มแย้ม',     role: 'พนักงานรับรถ',  salaryType: 'fixed',      baseSalary: 15000, phone: '081-222-2222', startDate: '01/03/2025', active: true },
-  { id: 3,  name: 'บอย สต๊อกเก่ง',    role: 'พนักงานคงคลัง', salaryType: 'fixed',      baseSalary: 16000, phone: '082-333-3333', startDate: '01/06/2024', active: true },
-  { id: 4,  name: 'มิ้น บัญชีดี',     role: 'พนักงานบัญชี',  salaryType: 'fixed',      baseSalary: 18000, phone: '083-444-4444', startDate: '01/09/2024', active: true },
-  { id: 5,  name: 'สมชาย มือโปร',      role: 'หัวหน้าช่าง',   salaryType: 'commission', baseSalary: 25000, commissionPerJob: 500, jobsDone: 2, phone: '084-555-5555', startDate: '01/01/2023', active: true },
-  { id: 6,  name: 'วิชัย ไวรถ',        role: 'ช่าง',           salaryType: 'commission', baseSalary: 18000, commissionPerJob: 300, jobsDone: 1, phone: '085-666-6666', startDate: '01/04/2024', active: true },
-  { id: 7,  name: 'ประยุทธ์ ช่างซ่อม', role: 'ช่าง',           salaryType: 'commission', baseSalary: 18000, commissionPerJob: 300, jobsDone: 1, phone: '086-777-7777', startDate: '01/07/2024', active: true },
-  { id: 8,  name: 'กิตติพงษ์ รวดเร็ว', role: 'ช่าง',           salaryType: 'commission', baseSalary: 18000, commissionPerJob: 300, jobsDone: 2, phone: '087-888-8888', startDate: '01/02/2025', active: true },
-  { id: 9,  name: 'ณัฐพล แม่นยำ',      role: 'ช่าง',           salaryType: 'commission', baseSalary: 18000, commissionPerJob: 300, jobsDone: 2, phone: '088-999-9999', startDate: '01/03/2025', active: true },
-  { id: 10, name: 'อภิสิทธิ์ ดีงาม',   role: 'ช่าง',           salaryType: 'commission', baseSalary: 18000, commissionPerJob: 300, jobsDone: 1, phone: '089-000-0000', startDate: '01/01/2025', active: true },
-]
+const ROLE_MAP: Record<string, Role> = {
+  RECEPTION: 'พนักงานรับรถ',
+  INVENTORY: 'พนักงานคงคลัง',
+  ACCOUNTANT: 'พนักงานบัญชี',
+  FOREMAN: 'หัวหน้าช่าง',
+  TECHNICIAN: 'ช่าง',
+  ADMIN: 'หัวหน้าช่าง',
+  OWNER: 'หัวหน้าช่าง',
+}
 
 const roles: Role[] = ['พนักงานรับรถ', 'พนักงานคงคลัง', 'พนักงานบัญชี', 'หัวหน้าช่าง', 'ช่าง']
 const emptyForm = { name: '', role: 'ช่าง' as Role, baseSalary: 18000, commissionPerJob: 300, phone: '', startDate: '' }
 
 export default function EmployeesPage() {
-  const [employees, setEmployees] = useState<Employee[]>(initialEmployees)
+  const [employees, setEmployees] = useState<Employee[]>([])
   const [search, setSearch]       = useState('')
   const [filterRole, setFilterRole] = useState<Role | 'ทั้งหมด'>('ทั้งหมด')
   const [showCreate, setShowCreate] = useState(false)
@@ -50,6 +48,43 @@ export default function EmployeesPage() {
   const [editSalary, setEditSalary] = useState<{ id: number; base: number; com: number } | null>(null)
   const [page, setPage]     = useState(1)
   const [perPage, setPerPage] = useState(10)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const [users, jobs] = await Promise.all([
+          api.get<any[]>('/users'),
+          api.get<any[]>('/jobs'),
+        ])
+        const mapped: Employee[] = users.map((u: any) => {
+          const role: Role = ROLE_MAP[u.role] ?? 'ช่าง'
+          const cfg = roleConfig[role]
+          const jobsDone = jobs.filter((j: any) =>
+            j.technicianId === u.id && ['COMPLETED', 'PAID'].includes(j.status)
+          ).length
+          return {
+            id: u.id,
+            name: u.name,
+            role,
+            salaryType: cfg.salaryType,
+            baseSalary: cfg.salaryType === 'commission' ? 18000 : 15000,
+            commissionPerJob: cfg.salaryType === 'commission' ? 300 : undefined,
+            jobsDone: cfg.salaryType === 'commission' ? jobsDone : undefined,
+            phone: u.phone ?? '-',
+            startDate: u.createdAt ? new Date(u.createdAt).toLocaleDateString('th-TH') : '-',
+            active: true,
+          }
+        })
+        setEmployees(mapped)
+      } catch (err) {
+        console.error('Failed to load employees:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchEmployees()
+  }, [])
 
   const filtered = employees.filter(e => {
     const matchSearch = e.name.includes(search) || e.role.includes(search)
