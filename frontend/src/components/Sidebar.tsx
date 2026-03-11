@@ -14,25 +14,37 @@ export default function Sidebar({ navItems }: SidebarProps) {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const isActive = (path: string) => location.pathname.startsWith(path)
+  const isActive = (path: string) => {
+    // ถ้า path มี sub-path (เช่น /reception/history) ต้อง match แบบเต็ม
+    // ถ้า path เป็น base (เช่น /reception) ต้อง match exact หรือ index route
+    const currentPath = location.pathname
+    
+    // หา nav item ที่มี path ยาวที่สุดที่ match กับ current path
+    const matchingItems = navItems.filter(item => currentPath.startsWith(item.path))
+    const longestMatch = matchingItems.reduce((longest, item) => 
+      item.path.length > longest.path.length ? item : longest
+    , { path: '' })
+    
+    return longestMatch.path === path
+  }
 
   return (
-    <div className="flex flex-col items-center gap-4 pt-4 w-16">
+    <div className="flex flex-col items-center gap-4 w-20">
       {navItems.map((item) => (
         <div key={item.path} className="relative group">
           <button
             onClick={() => navigate(item.path)}
             className={`
-              w-10 h-10 flex items-center justify-center rounded-lg transition-colors
+              w-10 h-10 flex items-center justify-center rounded-lg transition-colors cursor-pointer
               ${isActive(item.path)
-                ? 'bg-[#F8981D] text-white'
+                ? 'bg-[#F8981D] text-white [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]'
                 : 'text-[#F8981D] hover:bg-white/10'
               }
             `}
           >
             {item.icon}
           </button>
-          <div className="absolute left-12 top-1/2 -translate-y-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+          <div className="absolute left-12 top-1/2 -translate-y-1/2 px-2 py-1 bg-gray-800 text-white text-sm rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]">
             {item.label}
           </div>
         </div>

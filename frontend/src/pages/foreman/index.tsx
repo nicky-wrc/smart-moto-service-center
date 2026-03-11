@@ -1,8 +1,5 @@
-export default function ForemanPage() {
-  return (
-    <div className="p-6">
-      <h2 className="text-xl font-semibold text-gray-700 mb-4">ประเมินและมอบหมายงาน</h2>
-      <p className="text-gray-400 text-sm">เนื้อหาจะแสดงที่นี่</p>
-    </div>
-  )
+import { Navigate } from 'react-router-dom'
+
+export default function ForemanIndex() {
+  return <Navigate to="/foreman/jobs" replace />
 }
