@@ -11,7 +11,10 @@ interface AppLayoutProps {
 
 export default function AppLayout({ navItems, pageTitles, defaultTitle }: AppLayoutProps) {
     const location = useLocation()
-    const title = Object.entries(pageTitles).find(([path]) => location.pathname.startsWith(path))?.[1] ?? defaultTitle
+    
+    // Sort paths by length (longest first) to match more specific paths first
+    const sortedPaths = Object.entries(pageTitles).sort((a, b) => b[0].length - a[0].length)
+    const title = sortedPaths.find(([path]) => location.pathname.startsWith(path))?.[1] ?? defaultTitle
 
     return (
         <div className="min-h-screen bg-[#44403C] pb-4 pr-4 flex items-stretch font-[Kanit]">
