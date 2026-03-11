@@ -24,6 +24,7 @@ import type { UserPayload } from '../common/decorators/user.decorator';
 import { CreatePartDto } from './dto/create-part.dto';
 import { UpdatePartDto } from './dto/update-part.dto';
 import { AdjustStockDto } from './dto/adjust-stock.dto';
+import { CreateReceiptDto } from './dto/create-receipt.dto';
 
 @ApiTags('Parts')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -110,5 +111,29 @@ export class PartsController {
   @ApiOperation({ summary: 'ลบ Part (Soft delete - set isActive = false)' })
   remove(@Param('id') id: string) {
     return this.partsService.remove(+id);
+  }
+
+  @Post('receipts')
+  @Roles('STOCK_KEEPER', 'ADMIN', 'MANAGER')
+  @ApiOperation({ summary: 'บันทึกรับของเข้า (Goods Receipt)' })
+  createReceipt(
+    @Body() dto: CreateReceiptDto,
+    @CurrentUser() user: UserPayload,
+  ) {
+    return this.partsService.createReceipt(dto, user.userId);
+  }
+
+  @Get('receipts')
+  @Roles('STOCK_KEEPER', 'ADMIN', 'MANAGER')
+  @ApiOperation({ summary: 'ดูประวัติการรับของเข้า' })
+  @ApiQuery({ name: 'dateFrom', required: false, type: String })
+  @ApiQuery({ name: 'dateTo', required: false, type: String })
+  @ApiQuery({ name: 'supplier', required: false, type: String })
+  getReceipts(
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+    @Query('supplier') supplier?: string,
+  ) {
+    return this.partsService.getReceipts({ dateFrom, dateTo, supplier });
   }
 }

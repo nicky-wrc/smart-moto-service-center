@@ -35,7 +35,7 @@ export class UsersController {
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth('JWT-auth')
-  @Roles('ADMIN', 'MANAGER')
+  @Roles('ADMIN', 'MANAGER', 'FOREMAN', 'SERVICE_ADVISOR')
   @ApiOperation({ summary: 'ดูรายชื่อ Users ทั้งหมด' })
   findAll() {
     return this.usersService.findAll();

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { api } from '../../lib/api'
 import Pagination from '../../components/Pagination'
 
 type Part = {
@@ -11,23 +12,7 @@ type Part = {
   price: number
 }
 
-const initialParts: Part[] = [
-  { id: 1,  name: 'ผ้าเบรกหน้า Honda PCX',     category: 'เบรก',         qty: 12, unit: 'ชุด', cost: 280,  price: 450  },
-  { id: 2,  name: 'ผ้าเบรกหลัง Honda PCX',     category: 'เบรก',         qty: 8,  unit: 'ชุด', cost: 250,  price: 400  },
-  { id: 3,  name: 'น้ำมันเครื่อง 10W-40 (1L)',  category: 'น้ำมัน',       qty: 45, unit: 'ขวด', cost: 120,  price: 220  },
-  { id: 4,  name: 'น้ำมันเครื่อง 20W-50 (1L)',  category: 'น้ำมัน',       qty: 30, unit: 'ขวด', cost: 110,  price: 200  },
-  { id: 5,  name: 'สายพาน Yamaha NMAX',         category: 'เครื่องยนต์',  qty: 6,  unit: 'เส้น', cost: 380,  price: 650  },
-  { id: 6,  name: 'หัวเทียน NGK CR7E',           category: 'เครื่องยนต์',  qty: 20, unit: 'หัว', cost: 85,   price: 160  },
-  { id: 7,  name: 'ไส้กรองอากาศ Honda Wave',    category: 'กรอง',         qty: 15, unit: 'ชิ้น', cost: 95,   price: 180  },
-  { id: 8,  name: 'ไส้กรองน้ำมัน',              category: 'กรอง',         qty: 22, unit: 'ชิ้น', cost: 60,   price: 120  },
-  { id: 9,  name: 'โซ่ขับเคลื่อน 428H',         category: 'ช่วงล่าง',    qty: 4,  unit: 'เส้น', cost: 420,  price: 750  },
-  { id: 10, name: 'สเตอร์หน้า Honda',            category: 'ช่วงล่าง',    qty: 7,  unit: 'ชิ้น', cost: 180,  price: 320  },
-  { id: 11, name: 'ยางใน 275-17',                category: 'ยาง',          qty: 10, unit: 'เส้น', cost: 150,  price: 280  },
-  { id: 12, name: 'ยางนอก 90/90-17',             category: 'ยาง',          qty: 8,  unit: 'เส้น', cost: 680,  price: 1200 },
-  { id: 13, name: 'แบตเตอรี่ 12V 5Ah',          category: 'ไฟฟ้า',        qty: 5,  unit: 'ก้อน', cost: 550,  price: 950  },
-  { id: 14, name: 'หลอดไฟหน้า HS1 35W',         category: 'ไฟฟ้า',        qty: 18, unit: 'หลอด', cost: 65,   price: 130  },
-  { id: 15, name: 'น้ำมันเบรก DOT3 (500ml)',     category: 'น้ำมัน',       qty: 12, unit: 'ขวด', cost: 95,   price: 180  },
-]
+// Parts fetched from API
 
 const categories = ['ทั้งหมด', 'เบรก', 'น้ำมัน', 'เครื่องยนต์', 'กรอง', 'ช่วงล่าง', 'ยาง', 'ไฟฟ้า']
 const unitOptions = ['ชิ้น', 'ชุด', 'ขวด', 'เส้น', 'หัว', 'ก้อน', 'หลอด', 'อัน', 'ถุง', 'กล่อง']
@@ -74,13 +59,30 @@ function UnitDropdown({ value, onChange }: { value: string; onChange: (v: string
 }
 
 export default function StockPage() {
-  const [parts, setParts] = useState<Part[]>(initialParts)
+  const [parts, setParts] = useState<Part[]>([])
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('ทั้งหมด')
   const [editId, setEditId] = useState<number | null>(null)
   const [editPrice, setEditPrice] = useState<{ price: number; cost: number; unit: string }>({ price: 0, cost: 0, unit: '' })
   const [page, setPage]       = useState(1)
   const [perPage, setPerPage] = useState(10)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    api.get<any[]>('/parts').then(data => {
+      const mapped: Part[] = data.map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        category: p.category || 'ทั่วไป',
+        qty: p.stockQuantity ?? 0,
+        unit: p.unit || 'ชิ้น',
+        cost: Math.round(Number(p.unitPrice) * 0.6),
+        price: Number(p.unitPrice) || 0,
+      }))
+      setParts(mapped)
+    }).catch(err => console.error(err))
+      .finally(() => setLoading(false))
+  }, [])
 
   const filtered = parts.filter(p => {
     const matchSearch = p.name.includes(search) || p.category.includes(search)

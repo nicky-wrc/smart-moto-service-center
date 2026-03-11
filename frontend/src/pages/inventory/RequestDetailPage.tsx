@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import type { PartRequest } from '../../data/requestsMockData'
-import { mockParts } from '../../data/partsMockData'
+import { partService } from '../../services/partService'
 import { useRequestHistory } from '../../contexts/RequestHistoryContext'
 import { partRequisitionService } from '../../services/partRequisitionService'
 import { useActivityLog } from '../../hooks/useActivityLog'
@@ -34,7 +34,7 @@ export default function RequestDetailPage() {
                     if (data) setRequest(data)
                     else setErrorMsg(`ไม่พบรายการคำร้องขอเบิกหมายเลข #${id}`)
                 }
-            } catch {
+            } catch (err) {
                 if (isMounted) setErrorMsg('เกิดข้อผิดพลาดในการโหลดข้อมูล')
             } finally {
                 if (isMounted) setIsLoading(false)
@@ -215,7 +215,7 @@ export default function RequestDetailPage() {
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden">
                         {/* Header */}
                         <div className="px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
-                            <p className="text-sm font-semibold text-[#F8981D] uppercase tracking-widest mb-0.5">RevUp</p>
+                            <p className="text-sm font-semibold text-[#F8981D] uppercase tracking-widest mb-0.5">Smart Moto Service Center</p>
                             <h2 className="text-base font-bold text-[#1E1E1E]">
                                 {confirmAction === 'approve' ? 'ยืนยันการอนุมัติเบิกสินค้า' : 'ยืนยันการไม่อนุมัติเบิกสินค้า'}
                             </h2>
@@ -398,11 +398,16 @@ export default function RequestDetailPage() {
                                                 )}
                                             </button>
                                             <button
-                                                onClick={() => {
-                                                    const part = mockParts.find(p => p.partCode === item.partCode)
+                                                onClick={async () => {
+                                                try {
+                                                    const result = await partService.getParts({ limit: 1000 })
+                                                    const part = result.data.find((p: any) => p.partCode === item.partCode)
                                                     if (part) navigate(`/inventory/parts/${part.id}`)
                                                     else alert('ไม่พบข้อมูลอะไหล่ในระบบ')
-                                                }}
+                                                } catch {
+                                                    alert('ไม่สามารถโหลดข้อมูลอะไหล่ได้')
+                                                }
+                                            }}
                                                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-[#255B91] text-white rounded hover:bg-[#1a3f66] transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
                                             >
                                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">

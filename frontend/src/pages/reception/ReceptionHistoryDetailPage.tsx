@@ -36,71 +36,7 @@ export default function ReceptionHistoryDetailPage() {
 
     // Load history and find the entry
     const allHistory = getReceptionHistory()
-    
-    // Also check mock data if not found
-    const MOCK_HISTORY = [
-        {
-            id: 'RH-001',
-            activityType: 'แจ้งซ่อมครั้งแรก',
-            firstName: 'สมชาย', lastName: 'ใจดี',
-            phone: '0812345678',
-            model: 'Honda Wave 110i', color: 'แดง',
-            plateLine1: '1กข', plateLine2: '1234', province: 'กรุงเทพมหานคร',
-            symptoms: 'เครื่องยนต์ดับบ่อย น้ำมันรั่ว',
-            tags: ['เครื่องยนต์', 'เชื้อเพลิง'],
-            images: [],
-            createdAt: '10/03/2569 09:15',
-        },
-        {
-            id: 'RH-002',
-            activityType: 'ลงทะเบียนใหม่',
-            firstName: 'สมหญิง', lastName: 'รักดี',
-            phone: '0898765432',
-            model: 'Honda PCX 160', color: 'ดำ',
-            plateLine1: '5ขด', plateLine2: '999', province: 'กรุงเทพมหานคร',
-            images: [],
-            createdAt: '10/03/2569 10:00',
-        },
-        {
-            id: 'RH-003',
-            activityType: 'แจ้งซ่อมรถที่มีในระบบ',
-            firstName: 'วิชัย', lastName: 'กล้าหาญ',
-            phone: '0855555555',
-            model: 'Honda Click 125i', color: 'ขาว',
-            plateLine1: '3งจ', plateLine2: '9012', province: 'ภูเก็ต',
-            symptoms: 'เบรกหลังไม่ค่อยจับ',
-            tags: ['เบรก', 'ช่วงล่าง'],
-            images: [],
-            createdAt: '10/03/2569 11:30',
-        },
-        {
-            id: 'RH-004',
-            activityType: 'แจ้งซ่อมรถคันใหม่',
-            firstName: 'มานี', lastName: 'มีนา',
-            phone: '0888888888',
-            model: 'Vespa Sprint 150', color: 'เหลือง',
-            plateLine1: '4ฉช', plateLine2: '3456', province: 'ขอนแก่น',
-            symptoms: 'ไฟหน้าไม่ติด สายไฟขาด',
-            tags: ['ไฟฟ้า'],
-            images: [],
-            createdAt: '10/03/2569 13:45',
-        },
-        {
-            id: 'RH-005',
-            activityType: 'แจ้งซ่อมครั้งแรก',
-            firstName: 'ประสิทธิ์', lastName: 'ชนะภัย',
-            phone: '0871234567',
-            model: 'Yamaha NMAX 155', color: 'น้ำเงิน',
-            plateLine1: '2คค', plateLine2: '5500', province: 'เชียงใหม่',
-            symptoms: 'เกียร์ไม่ยอมเปลี่ยน มีเสียงดังตอนออกตัว',
-            tags: ['ส่งกำลัง'],
-            images: [],
-            createdAt: '10/03/2569 14:20',
-        },
-    ]
-    
-    const combinedHistory = [...allHistory, ...MOCK_HISTORY]
-    const entry = combinedHistory.find(h => h.id === id)
+    const entry = allHistory.find(h => h.id === id)
 
     if (!entry) {
         return (

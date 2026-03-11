@@ -47,6 +47,7 @@ model Customer {
   payments         Payment[]
   quotations       Quotation[]
   serviceReminders ServiceReminder[]
+  pointTransactions PointTransaction[]
 }
 
 model Motorcycle {
@@ -616,6 +617,28 @@ enum WarrantyStatus {
   VALID
   EXPIRED
   VOID
+}
+
+enum PointTransactionType {
+  EARN
+  USE
+  EXPIRED
+  ADJUSTMENT
+}
+
+model PointTransaction {
+  id          Int                   @id @default(autoincrement())
+  customerId  Int
+  type        PointTransactionType
+  points      Int
+  amount      Decimal?              @db.Decimal(10, 2)
+  description String?
+  reference   String?
+  createdAt   DateTime              @default(now())
+  customer    Customer              @relation(fields: [customerId], references: [id])
+
+  @@index([customerId])
+  @@index([createdAt])
 }
 
 enum POStatus {

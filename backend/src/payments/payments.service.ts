@@ -5,10 +5,15 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaymentStatus, JobStatus, PaymentMethod } from '@prisma/client';
+import { PointsService } from '../customers/points.service';
 
 @Injectable()
 export class PaymentsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private pointsService: PointsService,
+  ) {}
+
 
   async calculateBilling(jobId: number) {
     const job = await this.prisma.job.findUnique({
@@ -21,6 +26,27 @@ export class PaymentsService {
         },
         laborTimes: true,
         outsources: true,
+        partRequisitions: {
+          where: {
+            status: 'ISSUED',
+          },
+          include: {
+            items: {
+              include: {
+                part: true,
+                package: {
+                  include: {
+                    items: {
+                      include: {
+                        part: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
 
@@ -46,7 +72,63 @@ export class PaymentsService {
     }
 
     // Calculate parts cost (from requisitions)
-    const partsCost = 0; // TODO: Calculate from part requisitions
+    const requisitions = await this.prisma.partRequisition.findMany({
+      where: {
+        jobId,
+        status: 'ISSUED', // Only count issued parts
+      },
+      include: {
+        items: {
+          include: {
+            part: {
+              select: {
+                id: true,
+                unitPrice: true,
+              },
+            },
+            package: {
+              include: {
+                items: {
+                  include: {
+                    part: {
+                      select: {
+                        id: true,
+                        unitPrice: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    let partsCost = 0;
+    for (const req of requisitions) {
+      for (const item of req.items) {
+        if (item.partId && item.issuedQuantity > 0) {
+          // Single part
+          const part = item.part;
+          if (part) {
+            partsCost += Number(part.unitPrice) * item.issuedQuantity;
+          }
+        } else if (item.packageId && item.issuedQuantity > 0) {
+          // Package
+          const package_ = item.package;
+          if (package_) {
+            for (const packageItem of package_.items) {
+              const part = packageItem.part;
+              if (part) {
+                const totalQty = packageItem.quantity * item.issuedQuantity;
+                partsCost += Number(part.unitPrice) * totalQty;
+              }
+            }
+          }
+        }
+      }
+    }
 
     // Calculate outsource cost
     const outsourceCost = job.outsources.reduce(
@@ -225,20 +307,22 @@ export class PaymentsService {
       },
     });
 
-    // Update customer points
+    // Update customer points with transaction log
     if (!job) {
       throw new NotFoundException(`Job with ID ${payment.jobId} not found`);
     }
 
-    const pointsEarned = Math.floor(totalAmount / 100);
-    await this.prisma.customer.update({
-      where: { id: job.motorcycle.ownerId },
-      data: {
-        points: {
-          increment: pointsEarned - (payment.pointsUsed || 0),
-        },
-      },
-    });
+    // Earn points if applicable (after deducting used points)
+    if (payment.pointsEarned > 0 && payment.pointsEarned > (payment.pointsUsed || 0)) {
+      await this.pointsService.earn({
+        customerId: job.motorcycle.ownerId,
+        points: payment.pointsEarned - (payment.pointsUsed || 0),
+        amount: totalAmount,
+        reference: payment.paymentNo,
+        description: `สะสมแต้มจากงาน ${job.jobNo}`,
+      });
+    }
+
 
     return this.prisma.payment.findUnique({
       where: { id },

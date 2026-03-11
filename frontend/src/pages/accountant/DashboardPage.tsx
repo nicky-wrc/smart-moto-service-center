@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ResponsiveContainer,
@@ -13,62 +13,134 @@ import { TbMoneybagPlus } from "react-icons/tb";
 import { TbPigMoney } from "react-icons/tb";
 import { TbCashBanknoteMove } from "react-icons/tb";
 import { MdOutlinePendingActions } from "react-icons/md";
-
-// ── Mock data ────────────────────────────────────────────────────────────────
-const mockTransactions = [
-  { id: 'J001', customer: 'สมชาย ใจดี', plate: 'กข 1234', amount: 3500, method: 'เงินสด', status: 'ชำระแล้ว', date: '2026-03-09' },
-  { id: 'J002', customer: 'วิไล รักสะอาด', plate: 'คง 5678', amount: 1200, method: 'QR Code', status: 'ชำระแล้ว', date: '2026-03-09' },
-  { id: 'J003', customer: 'ประยูร มั่นคง', plate: 'จฉ 9012', amount: 8750, method: 'เงินสด', status: 'รอชำระ', date: '2026-03-09' },
-  { id: 'J004', customer: 'นันทนา สุขใส', plate: 'ชซ 3456', amount: 2300, method: 'QR Code', status: 'ชำระแล้ว', date: '2026-03-08' },
-  { id: 'J005', customer: 'กิตติ พลชัย', plate: 'ฌญ 7890', amount: 5600, method: 'เงินสด', status: 'รอชำระ', date: '2026-03-08' },
-  { id: 'J006', customer: 'รัตนา โกศล', plate: 'ฎฏ 1122', amount: 4100, method: 'QR Code', status: 'ชำระแล้ว', date: '2026-03-07' },
-  { id: 'J007', customer: 'ธนพล สงสาร', plate: 'ฐฑ 3344', amount: 9200, method: 'เงินสด', status: 'ยกเลิก', date: '2026-03-07' },
-  { id: 'J008', customer: 'มณี บุญมา', plate: 'ฒณ 5566', amount: 670, method: 'เงินสด', status: 'ชำระแล้ว', date: '2026-03-06' },
-]
-
-const mockWeekly = [
-  { day: 'จ', revenue: 12400 },
-  { day: 'อ', revenue: 8700 },
-  { day: 'พ', revenue: 15200 },
-  { day: 'พฤ', revenue: 9300 },
-  { day: 'ศ', revenue: 21000 },
-  { day: 'ส', revenue: 6500 },
-  { day: 'อา', revenue: 4700 },
-]
+import { paymentsService, type Payment } from '../../services/payments'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const fmt = (n: number) => n.toLocaleString('th-TH')
 
+const METHOD_LABEL: Record<string, string> = {
+  CASH: 'เงินสด',
+  CREDIT_CARD: 'บัตรเครดิต',
+  TRANSFER: 'โอนเงิน',
+  POINTS: 'แต้ม',
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  PAID: 'ชำระแล้ว',
+  PENDING: 'รอชำระ',
+  REFUNDED: 'ยกเลิก',
+}
+
+type Transaction = {
+  id: string
+  paymentId: number
+  customer: string
+  plate: string
+  amount: number
+  method: string
+  status: string
+  date: string
+}
+
+function mapPayment(p: Payment): Transaction {
+  return {
+    id: p.paymentNo || `P${p.id}`,
+    paymentId: p.id,
+    customer: p.customer ? `${p.customer.firstName} ${p.customer.lastName}` : '-',
+    plate: p.job?.motorcycle?.licensePlate ?? '-',
+    amount: Number(p.totalAmount) || 0,
+    method: METHOD_LABEL[p.paymentMethod] ?? p.paymentMethod,
+    status: STATUS_LABEL[p.paymentStatus] ?? p.paymentStatus,
+    date: p.paidAt ?? p.createdAt,
+  }
+}
+
+const DAY_LABELS = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส']
+
+function buildWeeklyChart(payments: Payment[]) {
+  const now = new Date()
+  const result: { day: string; revenue: number }[] = []
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now)
+    d.setDate(d.getDate() - i)
+    const dayStr = d.toISOString().split('T')[0]
+    const rev = payments
+      .filter(p => p.paymentStatus === 'PAID' && (p.paidAt ?? p.createdAt).startsWith(dayStr))
+      .reduce((s, p) => s + Number(p.totalAmount), 0)
+    result.push({ day: DAY_LABELS[d.getDay()], revenue: rev })
+  }
+  return result
+}
+
 export default function AccountantDashboardPage() {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [weeklyData, setWeeklyData] = useState<{ day: string; revenue: number }[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const paid = mockTransactions.filter(t => t.status === 'ชำระแล้ว')
-  const pending = mockTransactions.filter(t => t.status === 'รอชำระ')
-  const todayPaid = paid.filter(t => t.date === '2026-03-09')
+  // Summary stats
+  const [totalToday, setTotalToday] = useState(0)
+  const [totalMonth, setTotalMonth] = useState(0)
+  const [totalPending, setTotalPending] = useState(0)
+  const [countPending, setCountPending] = useState(0)
 
-  const totalToday = todayPaid.reduce((s, t) => s + t.amount, 0)
-  const totalMonth = paid.reduce((s, t) => s + t.amount, 0)
-  const totalPending = pending.reduce((s, t) => s + t.amount, 0)
-  const countPending = pending.length
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const allPayments = await paymentsService.list()
+        const txs = allPayments.map(mapPayment)
+        setTransactions(txs)
 
+        // Build weekly chart
+        setWeeklyData(buildWeeklyChart(allPayments))
 
+        // Compute stats
+        const todayStr = new Date().toISOString().split('T')[0]
+        const monthStr = todayStr.slice(0, 7) // YYYY-MM
 
+        const paid = allPayments.filter(p => p.paymentStatus === 'PAID')
+        const pending = allPayments.filter(p => p.paymentStatus === 'PENDING')
+
+        const todayPaid = paid.filter(p => (p.paidAt ?? p.createdAt).startsWith(todayStr))
+        setTotalToday(todayPaid.reduce((s, p) => s + Number(p.totalAmount), 0))
+        setTotalMonth(paid.filter(p => (p.paidAt ?? p.createdAt).startsWith(monthStr)).reduce((s, p) => s + Number(p.totalAmount), 0))
+        setTotalPending(pending.reduce((s, p) => s + Number(p.totalAmount), 0))
+        setCountPending(pending.length)
+      } catch (err) {
+        console.error('Failed to load payments:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
 
   const q = search.trim().toLowerCase()
   const filteredTransactions = q
-    ? mockTransactions.filter(t =>
+    ? transactions.filter(t =>
         t.customer.toLowerCase().includes(q) ||
         t.plate.toLowerCase().includes(q) ||
         t.id.toLowerCase().includes(q)
       )
-    : mockTransactions
+    : transactions
 
   // Status badge color
   const statusColor: Record<string, string> = {
     'ชำระแล้ว': '#16a34a',
     'รอชำระ': '#F8981D',
     'ยกเลิก': '#dc2626',
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-[#F8981D] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-gray-400">กำลังโหลดข้อมูล...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -150,7 +222,7 @@ export default function AccountantDashboardPage() {
             </div>
             <div className="flex-1 min-h-0 px-2 pb-3 pt-1">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={mockWeekly} margin={{ top: 10, right: 8, left: -20, bottom: 0 }}>
+                <AreaChart data={weeklyData} margin={{ top: 10, right: 8, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#F8981D" stopOpacity={0.2} />
@@ -203,14 +275,17 @@ export default function AccountantDashboardPage() {
             </button>
           </div>
           <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
+            {filteredTransactions.length === 0 && (
+              <div className="text-center text-sm text-gray-400 py-12">ไม่มีรายการ</div>
+            )}
             {filteredTransactions.map(t => {
               const color = statusColor[t.status] ?? '#9ca3af'
               return (
                 <div
                   key={t.id}
                   onClick={() => t.status === 'รอชำระ'
-                    ? navigate(`/accountant/pendingpayment/${t.id}`)
-                    : navigate(`/accountant/historys/${t.id}`)
+                    ? navigate(`/accountant/pendingpayment/${t.paymentId}`)
+                    : navigate(`/accountant/historys/${t.paymentId}`)
                   }
                   className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors group"
                 >

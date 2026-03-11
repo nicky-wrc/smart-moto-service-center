@@ -138,7 +138,7 @@ export function QuotationA4Document({ variant, job, onClose, foremanNote, estima
               <p className="text-sm text-gray-400 mt-0.5">วันที่ ......../......../........</p>
             </div>
           </div>
-          <p className="text-center text-sm text-gray-300 mt-8">เอกสารนี้สร้างโดยระบบ RevUp</p>
+          <p className="text-center text-sm text-gray-300 mt-8">เอกสารนี้สร้างโดยระบบ Smart Moto Service Center</p>
         </div>
       </div>
     )
@@ -243,7 +243,7 @@ export function QuotationA4Document({ variant, job, onClose, foremanNote, estima
               <p className="text-sm text-gray-400 mt-0.5">วันที่ ......../......../........</p>
             </div>
           </div>
-          <p className="text-center text-sm text-gray-300 mt-8">เอกสารนี้สร้างโดยระบบ RevUp</p>
+          <p className="text-center text-sm text-gray-300 mt-8">เอกสารนี้สร้างโดยระบบ Smart Moto Service Center</p>
         </div>
       </div>
     )
@@ -349,7 +349,7 @@ export function QuotationA4Document({ variant, job, onClose, foremanNote, estima
             <p className="text-sm text-gray-400 mt-0.5">วันที่ ......../......../........</p>
           </div>
         </div>
-        <p className="text-center text-sm text-gray-300 mt-8">เอกสารนี้สร้างโดยระบบ RevUp</p>
+        <p className="text-center text-sm text-gray-300 mt-8">เอกสารนี้สร้างโดยระบบ Smart Moto Service Center</p>
       </div>
     </div>
   )

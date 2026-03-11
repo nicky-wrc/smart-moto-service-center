@@ -18,7 +18,7 @@ async function createLaborTime(jobId: number, techId: number, desc: string, cost
       laborCost: cost,
       hourlyRate: 200,
       actualMinutes: Math.round((cost / 200) * 60),
-      status: LaborTimeStatus.COMPLETED,
+      status: LaborTimeStatus.FINISHED,
     },
   })
 }

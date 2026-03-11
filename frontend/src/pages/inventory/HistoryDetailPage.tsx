@@ -28,7 +28,7 @@ export default function HistoryDetailPage() {
                         else setErrorMsg(`ไม่พบประวัติคำร้องขอเบิกหมายเลข #${id}`)
                     }
                 }
-            } catch {
+            } catch (err) {
                 if (isMounted) setErrorMsg('เกิดข้อผิดพลาดในการโหลดข้อมูลประวัติ')
             } finally {
                 if (isMounted) setIsLoading(false)

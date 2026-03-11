@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { mockSuppliers } from '../../data/suppliersMockData'
+import { supplierService, type Supplier } from '../../services/supplierService'
+import { purchaseOrderService } from '../../services/purchaseOrderService'
 import PartSelectionModal from '../../components/PartSelectionModal'
-import { mockPurchaseOrders, type PurchaseOrder } from '../../data/purchaseOrdersMockData'
 import { type PartItem } from '../../data/partsMockData'
 
 interface OrderItem extends PartItem {
@@ -19,40 +19,19 @@ export default function EditPurchaseOrderPage() {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
 
-    // Base state for original order — initialized lazily to avoid setState-in-effect
-    const [originalOrder] = useState<PurchaseOrder | null>(() =>
-        mockPurchaseOrders.find(o => o.id === id) ?? null
-    )
+    const [originalOrder, setOriginalOrder] = useState<any>(null)
+
+    // Suppliers loaded from API
+    const [suppliers, setSuppliers] = useState<Supplier[]>([])
 
     // Form State
-    const [supplierId, setSupplierId] = useState<number | ''>(() =>
-        mockPurchaseOrders.find(o => o.id === id)?.supplierId ?? ''
-    )
-    const [deliveryDate, setDeliveryDate] = useState(() =>
-        mockPurchaseOrders.find(o => o.id === id)?.deliveryDate ?? ''
-    )
-    const [remarks, setRemarks] = useState(() =>
-        mockPurchaseOrders.find(o => o.id === id)?.remarks ?? ''
-    )
-    const [managerMessage, setManagerMessage] = useState(() =>
-        mockPurchaseOrders.find(o => o.id === id)?.managerMessage ?? ''
-    )
+    const [supplierId, setSupplierId] = useState<number | ''>('')
+    const [deliveryDate, setDeliveryDate] = useState('')
+    const [remarks, setRemarks] = useState('')
+    const [managerMessage, setManagerMessage] = useState('')
 
     // Items State
-    const [orderItems, setOrderItems] = useState<OrderItem[]>(() => {
-        const order = mockPurchaseOrders.find(o => o.id === id)
-        return order?.items.map(item => ({
-            id: item.id,
-            partCode: item.partCode,
-            name: item.name || '',
-            category: item.category || 'General',
-            location: item.location || '',
-            quantity: item.quantity,
-            price: item.price || 0,
-            imageUrl: item.imageUrl || '',
-            orderQuantity: item.orderQuantity
-        })) ?? []
-    })
+    const [orderItems, setOrderItems] = useState<OrderItem[]>([])
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false)
@@ -64,10 +43,45 @@ export default function EditPurchaseOrderPage() {
         message: ''
     })
 
-    // Redirect if order not found
+    // Load original data from API
     useEffect(() => {
-        if (!originalOrder) navigate('/inventory/purchase-orders')
-    }, [originalOrder, navigate])
+        let mounted = true
+        const load = async () => {
+            try {
+                const [order, sups] = await Promise.all([
+                    purchaseOrderService.getById(id!),
+                    supplierService.getAll(),
+                ])
+                if (!mounted) return
+                if (order) {
+                    setOriginalOrder(order)
+                    setSupplierId(order.supplierId)
+                    setDeliveryDate(order.deliveryDate)
+                    setRemarks(order.remarks || '')
+                    setManagerMessage(order.managerMessage || '')
+                    setOrderItems(order.items.map((item: any) => ({
+                        id: item.id,
+                        partCode: item.partCode,
+                        name: item.name || '',
+                        category: item.category || 'General',
+                        location: item.location || '',
+                        quantity: item.quantity,
+                        price: item.price || 0,
+                        imageUrl: item.imageUrl || '',
+                        orderQuantity: item.orderQuantity
+                    })))
+                } else {
+                    navigate('/inventory/purchase-orders')
+                }
+                setSuppliers(sups)
+            } catch (err) {
+                console.error('Failed to load PO', err)
+                navigate('/inventory/purchase-orders')
+            }
+        }
+        load()
+        return () => { mounted = false }
+    }, [id, navigate])
 
     // Derived values
     const totalAmount = useMemo(() => {
@@ -104,7 +118,7 @@ export default function EditPurchaseOrderPage() {
         navigate('/inventory/purchase-orders')
     }
 
-    const handleSubmit = (action: 'draft' | 'submit') => {
+    const handleSubmit = async (action: 'draft' | 'submit') => {
         if (!supplierId) {
             setValidationModal({
                 isOpen: true,
@@ -124,43 +138,49 @@ export default function EditPurchaseOrderPage() {
             return
         }
 
-        const supplier = mockSuppliers.find(s => s.id === supplierId)
+        const supplier = suppliers.find(s => s.id === supplierId)
 
-        // Update the mock data source across pages
-        const targetOrder = mockPurchaseOrders.find(o => o.id === id)
-        if (targetOrder) {
-            targetOrder.supplierId = supplierId as number
-            targetOrder.supplierName = supplier?.companyName || 'Unknown Supplier'
-            targetOrder.deliveryDate = deliveryDate
-            targetOrder.totalAmount = totalAmount
-            targetOrder.status = action === 'submit' ? 'pending' : 'draft'
-            targetOrder.remarks = remarks
-            targetOrder.managerMessage = managerMessage
+        try {
+            await purchaseOrderService.update(id!, {
+                supplierId: supplierId as number,
+                supplierName: (supplier as any)?.companyName || supplier?.name || 'Unknown Supplier',
+                deliveryDate,
+                totalAmount,
+                status: (action === 'submit' ? 'pending' : 'draft') as 'draft' | 'pending',
+                remarks,
+                managerMessage,
+                items: orderItems.map(item => ({
+                    id: item.id,
+                    partCode: item.partCode,
+                    name: item.name,
+                    category: item.category,
+                    location: item.location,
+                    quantity: item.quantity,
+                    price: item.price,
+                    imageUrl: item.imageUrl,
+                    orderQuantity: item.orderQuantity
+                })),
+            })
 
-            // Map items back
-            targetOrder.items = orderItems.map(item => ({
-                id: item.id,
-                partCode: item.partCode,
-                name: item.name,
-                category: item.category,
-                location: item.location,
-                quantity: item.quantity,
-                price: item.price,
-                imageUrl: item.imageUrl,
-                orderQuantity: item.orderQuantity
-            }))
+            setValidationModal({
+                isOpen: true,
+                isError: false,
+                title: action === 'draft' ? 'บันทึกการแก้ไขแบบร่างสำเร็จ!' : 'ส่งคำขอสั่งซื้อสำเร็จ!',
+                message: 'กำลังกลับสู่หน้ารายการใบสั่งซื้อ...'
+            })
+
+            setTimeout(() => {
+                navigate('/inventory/purchase-orders')
+            }, 2000)
+        } catch (err) {
+            console.error('Failed to update PO:', err)
+            setValidationModal({
+                isOpen: true,
+                isError: true,
+                title: 'เกิดข้อผิดพลาด',
+                message: 'ไม่สามารถบันทึกใบสั่งซื้อได้ กรุณาลองใหม่อีกครั้ง'
+            })
         }
-
-        setValidationModal({
-            isOpen: true,
-            isError: false,
-            title: action === 'draft' ? 'บันทึกการแก้ไขแบบร่างสำเร็จ!' : 'ส่งคำขอสั่งซื้อสำเร็จ!',
-            message: 'กำลังกลับสู่หน้ารายการใบสั่งซื้อ...'
-        })
-
-        setTimeout(() => {
-            navigate('/inventory/purchase-orders')
-        }, 2000)
     }
 
     if (!originalOrder) return <div className="p-6">กำลังโหลดข้อมูล...</div>
@@ -173,7 +193,7 @@ export default function EditPurchaseOrderPage() {
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
                         {/* Header */}
                         <div className="px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
-                            <p className="text-sm font-semibold text-[#F8981D] uppercase tracking-widest mb-0.5">RevUp</p>
+                            <p className="text-sm font-semibold text-[#F8981D] uppercase tracking-widest mb-0.5">Smart Moto Service Center</p>
                             <h2 className="text-base font-semibold text-[#1E1E1E]">
                                 {validationModal.isError ? 'ข้อมูลไม่ครบถ้วน' : 'ทำรายการสำเร็จ'}
                             </h2>
@@ -228,7 +248,7 @@ export default function EditPurchaseOrderPage() {
                     <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col overflow-hidden animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
                         {/* Header */}
                         <div className="px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
-                            <p className="text-sm font-semibold text-[#F8981D] uppercase tracking-widest mb-0.5">RevUp</p>
+                            <p className="text-sm font-semibold text-[#F8981D] uppercase tracking-widest mb-0.5">Smart Moto Service Center</p>
                             <h2 className="text-base font-semibold text-[#1E1E1E]">
                                 ยืนยันการยกเลิกการแก้ไข
                             </h2>
@@ -311,11 +331,11 @@ export default function EditPurchaseOrderPage() {
                             <select
                                 value={supplierId}
                                 onChange={(e) => setSupplierId(Number(e.target.value) || '')}
-                                className="w-full text-sm border border-gray-300 rounded-xl px-4 py-2.5 bg-white outline-none focus:border-[#F8981D]"
+                                className="w-full text-sm border border-gray-300 rounded-xl px-4 py-2.5 bg-white outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
                             >
                                 <option value="">-- เลือกซัพพลายเออร์ --</option>
-                                {mockSuppliers.map(s => (
-                                    <option key={s.id} value={s.id}>{s.companyName}</option>
+                                {suppliers.map(s => (
+                                    <option key={s.id} value={s.id}>{(s as any).companyName || s.name}</option>
                                 ))}
                             </select>
                         </div>
@@ -338,7 +358,7 @@ export default function EditPurchaseOrderPage() {
                                 value={deliveryDate}
                                 min={getTomorrowString()}
                                 onChange={(e) => setDeliveryDate(e.target.value)}
-                                className="w-full text-sm border border-gray-300 rounded-xl px-4 py-2.5 bg-white outline-none focus:border-[#F8981D]"
+                                className="w-full text-sm border border-gray-300 rounded-xl px-4 py-2.5 bg-white outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
                             />
                         </div>
                     </div>
@@ -349,7 +369,7 @@ export default function EditPurchaseOrderPage() {
                             value={remarks}
                             onChange={(e) => setRemarks(e.target.value)}
                             placeholder="ระบุข้อความถึงผู้จัดการ (ถ้ามี).."
-                            className="w-full text-sm border border-gray-300 rounded-xl px-4 py-3 bg-white outline-none focus:border-[#F8981D] flex-1 min-h-[100px] resize-none"
+                            className="w-full text-sm border border-gray-300 rounded-xl px-4 py-3 bg-white outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 flex-1 min-h-[100px] resize-none"
                         ></textarea>
                     </div>
 
@@ -359,7 +379,7 @@ export default function EditPurchaseOrderPage() {
                             value={managerMessage}
                             onChange={(e) => setManagerMessage(e.target.value)}
                             placeholder="ระบุข้อความถึงซัพพลายเออร์ (เช่น ขอส่งด่วนเช้า,ส่งที่โกดัง 2)"
-                            className="w-full text-sm border border-gray-300 rounded-xl px-4 py-3 bg-white outline-none focus:border-[#F8981D] flex-1 min-h-[100px] resize-none"
+                            className="w-full text-sm border border-gray-300 rounded-xl px-4 py-3 bg-white outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 flex-1 min-h-[100px] resize-none"
                         ></textarea>
                     </div>
                 </div>
@@ -376,7 +396,7 @@ export default function EditPurchaseOrderPage() {
                         </h3>
                         <button
                             onClick={() => setIsModalOpen(true)}
-                            className="bg-transparent border-2 border-[#1E1E1E] text-[#1E1E1E] hover:bg-gray-50 px-4 py-2 rounded-xl font-semibold text-sm transition-colors flex items-center gap-2"
+                            className="bg-transparent border-2 border-amber-500 text-amber-600 hover:bg-amber-50 px-4 py-2 rounded-xl font-semibold text-sm transition-colors flex items-center gap-2"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -439,7 +459,7 @@ export default function EditPurchaseOrderPage() {
                                                             min="1"
                                                             value={item.orderQuantity}
                                                             onChange={(e) => handleUpdateQuantity(item.id, Number(e.target.value))}
-                                                            className="w-20 text-center border border-gray-300 rounded-lg px-2 py-1.5 focus:border-[#F8981D] outline-none font-medium text-amber-700 bg-amber-50/50"
+                                                            className="w-20 text-center border border-gray-300 rounded-lg px-2 py-1.5 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none font-medium text-amber-700 bg-amber-50/50"
                                                         />
                                                     </td>
                                                     <td className="py-3 px-4 text-right font-medium text-gray-800">
@@ -491,7 +511,7 @@ export default function EditPurchaseOrderPage() {
                 </button>
                 <button
                     onClick={() => handleSubmit('submit')}
-                    className="px-8 py-2.5 rounded-xl bg-[#1E1E1E] text-white font-bold hover:bg-black shadow-md transition-all active:scale-95"
+                    className="px-8 py-2.5 rounded-xl bg-amber-500 text-white font-bold hover:bg-amber-600 shadow-md shadow-amber-500/20 transition-all active:scale-95 [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
                 >
                     ยืนยันการแก้ไขและส่งคำขอ
                 </button>
