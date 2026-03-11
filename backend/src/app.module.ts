@@ -16,6 +16,12 @@ import { JobChecklistsModule } from './job-checklists/job-checklists.module';
 import { PartsModule } from './parts/parts.module';
 import { PaymentsModule } from './payments/payments.module';
 import { QuotationsModule } from './quotations/quotations.module';
+import { PartRequisitionsModule } from './part-requisitions/part-requisitions.module';
+import { ReportsModule } from './reports/reports.module';
+import { ServiceCatalogModule } from './service-catalog/service-catalog.module';
+import { SuppliersModule } from './suppliers/suppliers.module';
+import { PurchaseOrdersModule } from './purchase-orders/purchase-orders.module';
+import { PurchaseReceivesModule } from './purchase-receives/purchase-receives.module';
 
 @Module({
   imports: [
@@ -34,8 +40,15 @@ import { QuotationsModule } from './quotations/quotations.module';
     PartsModule,
     PaymentsModule,
     QuotationsModule,
+    PartRequisitionsModule,
+    ReportsModule,
+    ServiceCatalogModule,
+    SuppliersModule,
+    PurchaseOrdersModule,
+    PurchaseReceivesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
+
