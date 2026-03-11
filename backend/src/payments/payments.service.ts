@@ -14,6 +14,7 @@ export class PaymentsService {
     private pointsService: PointsService,
   ) {}
 
+
   async calculateBilling(jobId: number) {
     const job = await this.prisma.job.findUnique({
       where: { id: jobId },
@@ -321,6 +322,7 @@ export class PaymentsService {
         description: `สะสมแต้มจากงาน ${job.jobNo}`,
       });
     }
+
 
     return this.prisma.payment.findUnique({
       where: { id },

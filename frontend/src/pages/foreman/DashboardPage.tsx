@@ -109,6 +109,7 @@ export default function DashboardPage() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-4 gap-4 shrink-0">
+<<<<<<< HEAD
         <div onClick={() => navigate('/foreman/jobs')} className="bg-[#44403C] rounded-2xl px-5 py-4 flex items-center justify-between shadow-sm cursor-pointer hover:bg-black transition-colors">
           <div>
             <p className="text-xs text-white/50 font-medium">งานทั้งหมด</p>
@@ -167,10 +168,23 @@ export default function DashboardPage() {
                     <span className="text-xs font-bold text-[#1E1E1E] shrink-0">{seg.value}</span>
                   </div>
                 ))}
+=======
+        {statCards.map((s) => (
+          <div key={s.label} className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4 shadow-sm">
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center shrink-0 ${s.iconBg}`}>
+              {s.icon}
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">{s.label}</p>
+              <div className="flex items-end gap-1.5 mt-1">
+                <span className="text-3xl font-bold text-[#1E1E1E] leading-none">{s.value}</span>
+                <span className="text-sm text-gray-400 mb-0.5">{s.sub}</span>
+>>>>>>> origin/Krit_front
               </div>
             </div>
           </div>
 
+<<<<<<< HEAD
           {/* Recent jobs */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col overflow-hidden flex-1 min-h-0">
             <div className="px-5 py-3.5 border-b border-gray-100 shrink-0 flex items-center justify-between">
@@ -193,6 +207,43 @@ export default function DashboardPage() {
                     <svg className="w-3.5 h-3.5 text-gray-200 group-hover:text-gray-400 transition-colors shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                     </svg>
+=======
+      {/* ── Main grid ── */}
+      <div className="flex-1 grid gap-4 overflow-hidden" style={{ gridTemplateColumns: '1fr 280px' }}>
+
+        {/* Left: active jobs */}
+        <div className="bg-white rounded-xl border border-gray-100 flex flex-col overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-100 shrink-0 flex items-center justify-between">
+            <p className="text-sm font-semibold text-[#1E1E1E]">งานที่ต้องดูแลวันนี้</p>
+            <button
+              onClick={() => navigate('/foreman/jobs')}
+              className="text-sm text-gray-400 hover:text-[#F8981D] transition-colors bg-transparent border-none cursor-pointer"
+            >
+              ดูทั้งหมด →
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
+            {mockJobs.map((job) => {
+              const s = statusConfig[job.status]
+              return (
+                <div
+                  key={job.id}
+                  onClick={() => navigate(`/foreman/jobs/${job.id}`)}
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-[#44403C] text-white text-sm font-semibold flex items-center justify-center shrink-0">
+                    {job.id}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[#1E1E1E] truncate">{job.brand} {job.model}</p>
+                    <p className="text-sm text-gray-400 truncate">{job.customerName} · {job.licensePlate}</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={`text-sm font-medium px-2 py-0.5 rounded-full ${s.bg} ${s.text}`}>
+                      {job.status}
+                    </span>
+                    <span className="text-sm text-gray-300">{job.receivedAt.split(' ')[1]}</span>
+>>>>>>> origin/Krit_front
                   </div>
                 )
               })}
@@ -221,6 +272,7 @@ export default function DashboardPage() {
               </ResponsiveContainer>
             </div>
           </div>
+<<<<<<< HEAD
 
           {tagData.length > 0 && (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col overflow-hidden shrink-0" style={{ height: 176 }}>
@@ -234,6 +286,35 @@ export default function DashboardPage() {
                     <Bar dataKey="value" fill="#F8981D" radius={[0, 4, 4, 0]} label={{ position: 'right', fontSize: 11, fill: '#1E1E1E', fontWeight: 700 }} />
                   </BarChart>
                 </ResponsiveContainer>
+=======
+          <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2.5">
+            {mockMechanics.map((m) => (
+              <div key={m.name} className="flex items-center gap-3 bg-stone-50 rounded-xl px-3 py-3">
+                <div className="w-9 h-9 rounded-full bg-[#44403C] text-white text-sm font-semibold flex items-center justify-center shrink-0">
+                  {m.avatar}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-[#1E1E1E] truncate">{m.name}</p>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <div className="flex-1 h-1.5 bg-stone-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${Math.min(100, (m.jobs / 4) * 100)}%`,
+                          backgroundColor: '#F8981D',
+                        }}
+                      />
+                    </div>
+                    <span className="text-sm text-stone-400 shrink-0">{m.jobs} งาน</span>
+                  </div>
+                </div>
+                <span className={`text-sm font-medium px-2 py-0.5 rounded-full shrink-0 ${
+                  m.jobs === 0 ? 'bg-stone-100 text-stone-500' :
+                  m.jobs >= 3 ? 'bg-[#44403C]/10 text-[#44403C]' : 'bg-[#F8981D]/15 text-[#F8981D]'
+                }`}>
+                  {m.jobs === 0 ? 'ว่าง' : m.jobs >= 3 ? 'เต็ม' : 'ปกติ'}
+                </span>
+>>>>>>> origin/Krit_front
               </div>
             </div>
           )}

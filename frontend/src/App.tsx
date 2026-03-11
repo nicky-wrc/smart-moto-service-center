@@ -1,14 +1,22 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute'
 import LoginPage from './pages/login/LoginPage'
+import { RequestHistoryProvider } from './contexts/RequestHistoryContext'
 
 // Inventory (พนักงานคงคลัง)
 import InventoryLayout from './pages/inventory/InventoryLayout'
 import InventoryIndex from './pages/inventory'
 import RequestsPage from './pages/inventory/RequestsPage'
+import RequestDetailPage from './pages/inventory/RequestDetailPage'
 import PartsPage from './pages/inventory/PartsPage'
+import PartDetailPage from './pages/inventory/PartDetailPage'
 import PurchaseOrdersPage from './pages/inventory/PurchaseOrdersPage'
+import CreatePurchaseOrderPage from './pages/inventory/CreatePurchaseOrderPage'
+import EditPurchaseOrderPage from './pages/inventory/EditPurchaseOrderPage'
+import PurchaseOrderDetailPage from './pages/inventory/PurchaseOrderDetailPage'
 import ReportsPage from './pages/inventory/ReportsPage'
+import HistoryPage from './pages/inventory/HistoryPage'
+import HistoryDetailPage from './pages/inventory/HistoryDetailPage'
 
 // Foreman (หัวหน้าช่าง)
 import ForemanLayout from './pages/foreman/ForemanLayout'
@@ -46,97 +54,129 @@ import OwnerPendingJobsPage from './pages/owner/PendingJobsPage'
 import OwnerPurchaseRequestsPage from './pages/owner/PurchaseRequestsPage'
 import OwnerPurchaseRequestDetailPage from './pages/owner/PurchaseRequestDetailPage'
 
-// Other roles (placeholder — layouts TBD)
-import ReceptionPage from './pages/reception'
+// Reception (พนักงานรับรถ)
+import ReceptionLayout from './pages/reception/ReceptionLayout'
+import ReceptionIndex from './pages/reception'
+import ReceptionRegisterPage from './pages/reception/ReceptionRegisterPage'
+import ReceptionConfirmPage from './pages/reception/ReceptionConfirmPage'
+import ReceptionSuccessPage from './pages/reception/ReceptionSuccessPage'
+import ReceptionRepairPage from './pages/reception/ReceptionRepairPage'
+import ReceptionRepairSuccessPage from './pages/reception/ReceptionRepairSuccessPage'
+import ReceptionSearchPage from './pages/reception/ReceptionSearchPage'
+import ReceptionHistoryPage from './pages/reception/ReceptionHistoryPage'
+import ReceptionHistoryDetailPage from './pages/reception/ReceptionHistoryDetailPage'
+import ForemanResponsePage from './pages/reception/ForemanResponsePage'
+import ForemanResponseDetailPage from './pages/reception/ForemanResponseDetailPage'
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route index element={<Navigate to="/login" replace />} />
-        <Route path="/unauthorized" element={
-          <div className="min-h-screen flex items-center justify-center text-gray-500">
-            ไม่มีสิทธิ์เข้าถึงหน้านี้
-          </div>
-        } />
+    <RequestHistoryProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route index element={<Navigate to="/login" replace />} />
+          <Route path="/unauthorized" element={
+            <div className="min-h-screen flex items-center justify-center text-gray-500">
+              ไม่มีสิทธิ์เข้าถึงหน้านี้
+            </div>
+          } />
 
-        {/* พนักงานคงคลัง */}
-        <Route path="/inventory" element={
-          <ProtectedRoute roles={['STOCK_KEEPER', 'ADMIN', 'MANAGER']}>
-            <InventoryLayout />
-          </ProtectedRoute>
-        }>
-          <Route index element={<InventoryIndex />} />
-          <Route path="requests" element={<RequestsPage />} />
-          <Route path="parts" element={<PartsPage />} />
-          <Route path="purchase-orders" element={<PurchaseOrdersPage />} />
-          <Route path="reports" element={<ReportsPage />} />
-        </Route>
+          {/* พนักงานคงคลัง */}
+          <Route path="/inventory" element={
+            <ProtectedRoute roles={['STOCK_KEEPER', 'ADMIN', 'MANAGER']}>
+              <InventoryLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<InventoryIndex />} />
+            <Route path="requests" element={<RequestsPage />} />
+            <Route path="requests/:id" element={<RequestDetailPage />} />
+            <Route path="parts" element={<PartsPage />} />
+            <Route path="parts/:id" element={<PartDetailPage />} />
+            <Route path="purchase-orders" element={<PurchaseOrdersPage />} />
+            <Route path="purchase-orders/create" element={<CreatePurchaseOrderPage />} />
+            <Route path="purchase-orders/edit/:id" element={<EditPurchaseOrderPage />} />
+            <Route path="purchase-orders/:id" element={<PurchaseOrderDetailPage />} />
+            <Route path="reports" element={<ReportsPage />} />
+            <Route path="history" element={<HistoryPage />} />
+            <Route path="history/:id" element={<HistoryDetailPage />} />
+          </Route>
 
-        {/* หัวหน้าช่าง */}
-        <Route path="/foreman" element={
-          <ProtectedRoute roles={['FOREMAN', 'SERVICE_ADVISOR', 'ADMIN', 'MANAGER']}>
-            <ForemanLayout />
-          </ProtectedRoute>
-        }>
-          <Route index element={<ForemanIndex />} />
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="jobs" element={<JobOrdersPage />} />
-          <Route path="jobs/:id" element={<JobDetailPage />} />
-          <Route path="mechanics" element={<MechanicsPage />} />
-          <Route path="history" element={<JobHistoryPage />} />
-        </Route>
+          {/* หัวหน้าช่าง */}
+          <Route path="/foreman" element={
+            <ProtectedRoute roles={['FOREMAN', 'SERVICE_ADVISOR', 'ADMIN', 'MANAGER']}>
+              <ForemanLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<ForemanIndex />} />
+            <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="jobs" element={<JobOrdersPage />} />
+            <Route path="jobs/:id" element={<JobDetailPage />} />
+            <Route path="mechanics" element={<MechanicsPage />} />
+            <Route path="history" element={<JobHistoryPage />} />
+          </Route>
 
-        {/* ช่าง */}
-        <Route path="/mechanic" element={
-          <ProtectedRoute roles={['TECHNICIAN', 'FOREMAN', 'ADMIN', 'MANAGER']}>
-            <MechanicLayout />
-          </ProtectedRoute>
-        }>
-          <Route index element={<MechanicIndex />} />
-          <Route path="jobs" element={<MechanicJobsPage />} />
-          <Route path="jobs/:id" element={<MechanicJobDetailPage />} />
-          <Route path="history" element={<MechanicHistoryPage />} />
-        </Route>
+          {/* ช่าง */}
+          <Route path="/mechanic" element={
+            <ProtectedRoute roles={['TECHNICIAN', 'FOREMAN', 'ADMIN', 'MANAGER']}>
+              <MechanicLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<MechanicIndex />} />
+            <Route path="jobs" element={<MechanicJobsPage />} />
+            <Route path="jobs/:id" element={<MechanicJobDetailPage />} />
+            <Route path="history" element={<MechanicHistoryPage />} />
+          </Route>
 
-        {/* บัญชี */}
-        <Route path="/accountant" element={
-          <ProtectedRoute roles={['CASHIER', 'ADMIN', 'MANAGER']}>
-            <AccountantLayout />
-          </ProtectedRoute>
-        }>
-          <Route index element={<AccountIndex />} />
-          <Route path="dashboard" element={<AccountantDashboardPage />} />
-          <Route path="historys" element={<PaymentHistoryPage />} />
-          <Route path="historys/:id" element={<PaymentHistoryDetailPage />} />
-          <Route path="pendingpayment" element={<Pendingpayment />} />
-          <Route path="pendingpayment/:id" element={<PendingpaymentDetail />} />
-        </Route>
+          {/* บัญชี */}
+          <Route path="/accountant" element={
+            <ProtectedRoute roles={['CASHIER', 'ADMIN', 'MANAGER']}>
+              <AccountantLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<AccountIndex />} />
+            <Route path="dashboard" element={<AccountantDashboardPage />} />
+            <Route path="historys" element={<PaymentHistoryPage />} />
+            <Route path="historys/:id" element={<PaymentHistoryDetailPage />} />
+            <Route path="pendingpayment" element={<Pendingpayment />} />
+            <Route path="pendingpayment/:id" element={<PendingpaymentDetail />} />
+          </Route>
 
-        {/* เจ้าของร้าน */}
-        <Route path="/owner" element={
-          <ProtectedRoute roles={['MANAGER', 'ADMIN']}>
-            <OwnerLayout />
-          </ProtectedRoute>
-        }>
-          <Route index element={<OwnerIndex />} />
-          <Route path="dashboard" element={<OwnerDashboardPage />} />
-          <Route path="reports" element={<OwnerReportsPage />} />
-          <Route path="employees" element={<OwnerEmployeesPage />} />
-          <Route path="stock" element={<OwnerStockPage />} />
-          <Route path="pending-jobs" element={<OwnerPendingJobsPage />} />
-          <Route path="purchase-requests" element={<OwnerPurchaseRequestsPage />} />
-          <Route path="purchase-requests/:id" element={<OwnerPurchaseRequestDetailPage />} />
-        </Route>
+          {/* เจ้าของร้าน */}
+          <Route path="/owner" element={
+            <ProtectedRoute roles={['MANAGER', 'ADMIN']}>
+              <OwnerLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<OwnerIndex />} />
+            <Route path="dashboard" element={<OwnerDashboardPage />} />
+            <Route path="reports" element={<OwnerReportsPage />} />
+            <Route path="employees" element={<OwnerEmployeesPage />} />
+            <Route path="stock" element={<OwnerStockPage />} />
+            <Route path="pending-jobs" element={<OwnerPendingJobsPage />} />
+            <Route path="purchase-requests" element={<OwnerPurchaseRequestsPage />} />
+            <Route path="purchase-requests/:id" element={<OwnerPurchaseRequestDetailPage />} />
+          </Route>
 
-        {/* roles อื่น — layouts จะสร้างเพิ่มในภายหลัง */}
-        <Route path="/reception/*" element={
-          <ProtectedRoute roles={['SERVICE_ADVISOR', 'ADMIN', 'MANAGER']}>
-            <ReceptionPage />
-          </ProtectedRoute>
-        } />
-      </Routes>
-    </BrowserRouter>
+          {/* พนักงานรับรถ (Reception) */}
+          <Route path="/reception" element={
+            <ProtectedRoute roles={['SERVICE_ADVISOR', 'ADMIN', 'MANAGER']}>
+              <ReceptionLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<ReceptionIndex />} />
+            <Route path="register" element={<ReceptionRegisterPage />} />
+            <Route path="confirm" element={<ReceptionConfirmPage />} />
+            <Route path="success" element={<ReceptionSuccessPage />} />
+            <Route path="search" element={<ReceptionSearchPage />} />
+            <Route path="repair" element={<ReceptionRepairPage />} />
+            <Route path="repair-success" element={<ReceptionRepairSuccessPage />} />
+            <Route path="foreman-response" element={<ForemanResponsePage />} />
+            <Route path="foreman-response/:id" element={<ForemanResponseDetailPage />} />
+            <Route path="history" element={<ReceptionHistoryPage />} />
+            <Route path="history/:id" element={<ReceptionHistoryDetailPage />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </RequestHistoryProvider>
   )
 }

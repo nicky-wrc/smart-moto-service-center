@@ -71,6 +71,7 @@ export default function JobHistoryPage() {
         <table className="w-full text-sm border-separate border-spacing-0">
           <thead className="sticky top-0 bg-white z-10">
             <tr className="border-b border-gray-200">
+<<<<<<< HEAD
               <th className="text-left text-xs font-semibold text-gray-400 pl-5 pr-3 py-3 w-24">คำขอที่</th>
               <th className="text-left text-xs font-semibold text-gray-400 px-3 py-3">รถ</th>
               <th className="text-left text-xs font-semibold text-gray-400 px-3 py-3">ลูกค้า</th>
@@ -78,6 +79,15 @@ export default function JobHistoryPage() {
               <th className="text-left text-xs font-semibold text-gray-400 px-3 py-3">แท็ก</th>
               <th className="text-left text-xs font-semibold text-gray-400 px-3 py-3">ช่าง</th>
               <th className="text-left text-xs font-semibold text-gray-400 pl-3 pr-5 py-3 w-40">สถานะ</th>
+=======
+              <th className="text-left text-sm font-semibold text-gray-400 pl-5 pr-3 py-3 w-24">คำขอที่</th>
+              <th className="text-left text-sm font-semibold text-gray-400 px-3 py-3">รถ</th>
+              <th className="text-left text-sm font-semibold text-gray-400 px-3 py-3">ลูกค้า</th>
+              <th className="text-left text-sm font-semibold text-gray-400 px-3 py-3">อาการ</th>
+              <th className="text-left text-sm font-semibold text-gray-400 px-3 py-3">แท็ก</th>
+              <th className="text-left text-sm font-semibold text-gray-400 px-3 py-3">ช่าง</th>
+              <th className="text-left text-sm font-semibold text-gray-400 pl-3 pr-5 py-3 w-40">วันที่เสร็จ</th>
+>>>>>>> origin/Krit_front
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
@@ -97,6 +107,7 @@ export default function JobHistoryPage() {
                 className="bg-white hover:bg-gray-50 cursor-pointer transition-colors"
               >
                 <td className="pl-5 pr-3 py-3.5">
+<<<<<<< HEAD
                   <div className="w-8 h-8 rounded-lg bg-[#44403C] text-white text-xs font-semibold flex items-center justify-center">
                     {job.jobNo?.replace(/\D/g, '').slice(-3) || job.id}
                   </div>
@@ -104,6 +115,15 @@ export default function JobHistoryPage() {
                 <td className="px-3 py-3.5">
                   <p className="font-medium text-[#1E1E1E]">{job.motorcycle?.brand} {job.motorcycle?.model}</p>
                   <p className="text-xs text-gray-400 mt-0.5">{job.motorcycle?.licensePlate}</p>
+=======
+                  <div className="w-8 h-8 rounded-lg bg-[#44403C] text-white text-sm font-semibold flex items-center justify-center">
+                    {job.id}
+                  </div>
+                </td>
+                <td className="px-3 py-3.5">
+                  <p className="font-medium text-[#1E1E1E]">{job.brand} {job.model}</p>
+                  <p className="text-sm text-gray-400 mt-0.5">{job.licensePlate}</p>
+>>>>>>> origin/Krit_front
                 </td>
                 <td className="px-3 py-3.5 text-gray-600">{customerName}</td>
                 <td className="px-3 py-3.5 max-w-50">
@@ -111,8 +131,13 @@ export default function JobHistoryPage() {
                 </td>
                 <td className="px-3 py-3.5">
                   <div className="flex gap-1.5 flex-wrap">
+<<<<<<< HEAD
                     {(job.tags || []).map((tag: string) => (
                       <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-[#F8981D]/10 text-[#F8981D]">
+=======
+                    {job.tags.map((tag) => (
+                      <span key={tag} className="text-sm px-2 py-0.5 rounded-full bg-[#F8981D]/10 text-[#F8981D]">
+>>>>>>> origin/Krit_front
                         {tag}
                       </span>
                     ))}
@@ -120,6 +145,7 @@ export default function JobHistoryPage() {
                 </td>
                 <td className="px-3 py-3.5">
                   <div className="flex items-center gap-1.5">
+<<<<<<< HEAD
                     <div className="w-6 h-6 rounded-full bg-[#44403C] text-white text-xs flex items-center justify-center font-semibold shrink-0">
                       {mechanicName[0]}
                     </div>
@@ -131,6 +157,17 @@ export default function JobHistoryPage() {
                     {STATUS_LABEL[job.status] || job.status}
                   </span>
                   <p className="text-xs text-gray-400 mt-1">{completedDate}</p>
+=======
+                    <div className="w-6 h-6 rounded-full bg-[#44403C] text-white text-sm flex items-center justify-center font-semibold shrink-0">
+                      {job.mechanic[0]}
+                    </div>
+                    <span className="text-sm text-gray-600">{job.mechanic}</span>
+                  </div>
+                </td>
+                <td className="pl-3 pr-5 py-3.5 text-sm text-gray-400">
+                  <p className="text-gray-500">{job.completedAt.split('  ')[0]}</p>
+                  <p>{job.completedAt.split('  ')[1]}</p>
+>>>>>>> origin/Krit_front
                 </td>
               </tr>
               )

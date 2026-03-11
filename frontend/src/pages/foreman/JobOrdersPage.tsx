@@ -127,9 +127,15 @@ export default function JobOrdersPage() {
         {/* View toggle */}
         <div className="flex items-center bg-white border border-gray-200 rounded-full p-1 shrink-0">
           <button
+<<<<<<< HEAD
             onClick={() => setView('table')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border-none ${
               view === 'table' ? 'bg-[#1E1E1E] text-white' : 'bg-transparent text-gray-400 hover:text-gray-600'
+=======
+            onClick={() => setView('list')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer border-none ${
+              view === 'list' ? 'bg-[#1E1E1E] text-white' : 'bg-transparent text-gray-400 hover:text-gray-600'
+>>>>>>> origin/Krit_front
             }`}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -139,7 +145,7 @@ export default function JobOrdersPage() {
           </button>
           <button
             onClick={() => setView('board')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border-none ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer border-none ${
               view === 'board' ? 'bg-[#1E1E1E] text-white' : 'bg-transparent text-gray-400 hover:text-gray-600'
             }`}
           >
@@ -165,7 +171,7 @@ export default function JobOrdersPage() {
                       <span className={`w-2 h-2 rounded-full shrink-0 ${col.dot}`} />
                       <span className="text-sm font-semibold text-[#1E1E1E]">{col.label}</span>
                     </div>
-                    <span className="text-xs font-semibold text-gray-400 bg-white/70 px-2 py-0.5 rounded-full">
+                    <span className="text-sm font-semibold text-gray-400 bg-white/70 px-2 py-0.5 rounded-full">
                       {colJobs.length}
                     </span>
                   </div>
@@ -173,7 +179,7 @@ export default function JobOrdersPage() {
                   {/* Cards */}
                   <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2.5">
                     {colJobs.length === 0 && (
-                      <p className="text-center text-xs text-gray-300 mt-6">ไม่มีรายการ</p>
+                      <p className="text-center text-sm text-gray-300 mt-6">ไม่มีรายการ</p>
                     )}
                     {colJobs.map((job) => (
                       <div
@@ -182,6 +188,7 @@ export default function JobOrdersPage() {
                         className="bg-white rounded-xl p-3.5 cursor-pointer hover:shadow-md transition-all border border-white hover:border-gray-100"
                       >
                         <div className="flex items-center justify-between mb-2">
+<<<<<<< HEAD
                           <span className="text-xs text-gray-400 font-medium">{job.jobNo}</span>
                           <span className="text-xs text-gray-300">{formatTime(job.createdAt)}</span>
                         </div>
@@ -202,6 +209,34 @@ export default function JobOrdersPage() {
                         <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-gray-50">
                           <span className="text-xs text-gray-400">{job.reception?.name || '-'}</span>
                           <span className="text-xs text-gray-300">{job.technician?.name || 'ยังไม่มอบหมาย'}</span>
+=======
+                          <span className="text-sm text-gray-400 font-medium">คำขอที่ {job.id}</span>
+                          <span className="text-sm text-gray-300">{job.receivedAt.split('  ')[1]}</span>
+                        </div>
+                        <p className="text-sm font-semibold text-[#1E1E1E] leading-snug">{job.brand} {job.model}</p>
+                        <p className="text-sm text-gray-400 mt-0.5">{job.customerName} · {job.licensePlate}</p>
+                        <p className="text-sm text-gray-400 italic mt-1.5 line-clamp-2">"{job.symptom}"</p>
+                        {job.tags.length > 0 && (
+                          <div className="flex gap-1.5 flex-wrap mt-2.5">
+                            {job.tags.slice(0, 2).map((tag) => (
+                              <span key={tag} className="text-sm px-2 py-0.5 rounded-full bg-[#F8981D]/10 text-[#F8981D]">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {job.mechanicReport && (
+                          <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1 mt-2.5">
+                            <svg className="w-3 h-3 text-amber-500 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                            </svg>
+                            <span className="text-sm font-medium text-amber-600">ช่างรายงานปัญหาเพิ่มเติม</span>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-gray-50">
+                          <span className="text-sm text-gray-400">{job.receptionist}</span>
+                          <span className="text-sm text-gray-300">{job.photos.length} รูป</span>
+>>>>>>> origin/Krit_front
                         </div>
                       </div>
                     ))}
@@ -214,6 +249,7 @@ export default function JobOrdersPage() {
       )}
 
       {/* ── LIST VIEW ── */}
+<<<<<<< HEAD
       {view === 'table' && (
         <div className="flex-1 overflow-hidden flex flex-col px-5">
           <div className="flex-1 overflow-hidden flex flex-col rounded-2xl">
@@ -227,6 +263,63 @@ export default function JobOrdersPage() {
                 <span />
               </div>
             </div>
+=======
+      {view === 'list' && (
+        <>
+          <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
+            {visibleJobs.length === 0 && (
+              <p className="text-center text-sm text-gray-400 mt-10">ไม่มีรายการ</p>
+            )}
+            {visibleJobs.map((job) => {
+              const s = statusConfig[job.status]
+              return (
+                <div
+                  key={job.id}
+                  onClick={() => navigate(`/foreman/jobs/${job.id}`)}
+                  className="bg-white rounded-xl border border-gray-100 overflow-hidden cursor-pointer hover:shadow-sm transition-all"
+                >
+                  <div className="flex items-stretch">
+                    <div className="bg-[#1E1E1E] text-white text-sm font-medium px-4 py-2.5 flex items-center rounded-br-xl shrink-0">
+                      คำขอที่ {job.id}
+                    </div>
+                    <div className="flex items-center gap-2 px-3 flex-1 flex-wrap min-w-0">
+                      <span className={`text-sm font-medium px-2.5 py-0.5 rounded-full ${s.bg} ${s.text}`}>{job.status}</span>
+                      {job.tags.slice(0, 2).map((tag) => (
+                        <span key={tag} className="text-sm px-2.5 py-0.5 rounded-full bg-[#F8981D]/10 text-[#F8981D] border border-[#F8981D]/20">{tag}</span>
+                      ))}
+                      {job.mechanicReport && (
+                        <span className="flex items-center gap-1 text-sm font-medium px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200">
+                          <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                          </svg>
+                          มีปัญหาเพิ่มเติม
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center pr-4 shrink-0">
+                      <span className="text-sm text-gray-400">{job.receivedAt}</span>
+                    </div>
+                  </div>
+                  <div className="px-4 pb-4 pt-3 flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-[#F8981D] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      <span className="truncate">{job.receptionist} · {job.brand} {job.model}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-[#F8981D] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      <span className="truncate">{job.licensePlate} · {job.province}</span>
+                    </div>
+                    <p className="text-sm text-gray-400 italic truncate">"{job.symptom}"</p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+>>>>>>> origin/Krit_front
 
             <div className="flex-1 overflow-y-auto bg-white">
               {visibleJobs.length === 0 && (

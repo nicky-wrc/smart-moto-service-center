@@ -24,6 +24,7 @@ body {
   font-family: 'Kanit', system-ui, -apple-system, sans-serif;
   background-color: #44403C;
   color: #1E1E1E;
+<<<<<<< HEAD
 }
 
 #root {
@@ -284,4 +285,6 @@ body {
     display: none;
   }
 
+=======
+>>>>>>> origin/Krit_front
 }

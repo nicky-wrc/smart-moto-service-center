@@ -8,26 +8,28 @@ datasource db {
 }
 
 model User {
-  id               Int               @id @default(autoincrement())
-  username         String            @unique
-  password         String
-  name             String
-  role             Role              @default(TECHNICIAN)
-  isActive         Boolean           @default(true)
-  baseSalary       Decimal?          @db.Decimal(10, 2)
-  commissionRate   Decimal?          @db.Decimal(5, 2)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  appointments     Appointment[]
-  receptionJobs    Job[]             @relation("ReceptionJobs")
-  technicianJobs   Job[]             @relation("TechnicianJobs")
-  laborTimes       LaborTime[]
-  partRequisitions PartRequisition[]
-  quotations       Quotation[]
-  stockMovements   StockMovement[]
-  createdPOs       PurchaseOrder[]   @relation("POCreatedBy")
-  approvedPOs      PurchaseOrder[]   @relation("POApprovedBy")
-  receivedPOs      PurchaseReceive[] @relation("POReceivedBy")
+  id                   Int                @id @default(autoincrement())
+  username             String             @unique
+  password             String
+  name                 String
+  role                 Role               @default(TECHNICIAN)
+  isActive             Boolean            @default(true)
+  baseSalary           Decimal?           @db.Decimal(10, 2)
+  commissionRate       Decimal?           @db.Decimal(5, 2)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  appointments         Appointment[]
+  receptionJobs        Job[]              @relation("ReceptionJobs")
+  technicianJobs       Job[]              @relation("TechnicianJobs")
+  laborTimes           LaborTime[]
+  partRequisitions     PartRequisition[]
+  quotations           Quotation[]
+  stockMovements       StockMovement[]
+  createdPOs           PurchaseOrder[]    @relation("POCreatedBy")
+  approvedPOs          PurchaseOrder[]    @relation("POApprovedBy")
+  receivedPOs          PurchaseReceive[]  @relation("POReceivedBy")
+  foremanResponses     ForemanResponse[]  @relation("ForemanResponses")
+  foremanDecisions     ForemanResponse[]  @relation("ForemanDecisions")
 }
 
 model Customer {
@@ -71,40 +73,41 @@ model Motorcycle {
 
 model Job {
   id                      Int                @id @default(autoincrement())
-  jobNo                   String             @unique
+  jobNo                   String                @unique
   symptom                 String
   fuelLevel               Int?
   valuables               String?
-  status                  JobStatus          @default(PENDING)
-  jobType                 JobType            @default(NORMAL)
+  status                  JobStatus             @default(PENDING)
+  jobType                 JobType               @default(NORMAL)
   motorcycleId            Int
   receptionId             Int?
   technicianId            Int?
-  createdAt               DateTime           @default(now())
-  updatedAt               DateTime           @updatedAt
-  appointmentId           Int?               @unique
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
+  appointmentId           Int?                  @unique
   completedAt             DateTime?
   diagnosisNotes          String?
-  quotationId             Int?               @unique
+  quotationId             Int?                  @unique
   startedAt               DateTime?
-  warrantyId              Int?               @unique
-  images                  String[]           @default([])
-  tags                    String[]           @default([])
+  warrantyId              Int?                  @unique
+  images                  String[]              @default([])
+  tags                    String[]              @default([])
   oldPartsAction          String?
   estimatedCompletionDate DateTime?
-  inspectionFee           Decimal?           @db.Decimal(10, 2)
-  appointment             Appointment?       @relation(fields: [appointmentId], references: [id])
-  motorcycle              Motorcycle         @relation(fields: [motorcycleId], references: [id])
-  quotation               Quotation?         @relation(fields: [quotationId], references: [id])
-  reception               User?              @relation("ReceptionJobs", fields: [receptionId], references: [id])
-  technician              User?              @relation("TechnicianJobs", fields: [technicianId], references: [id])
-  warranty                Warranty?          @relation(fields: [warrantyId], references: [id])
+  inspectionFee           Decimal?              @db.Decimal(10, 2)
+  appointment             Appointment?          @relation(fields: [appointmentId], references: [id])
+  motorcycle              Motorcycle            @relation(fields: [motorcycleId], references: [id])
+  quotation               Quotation?            @relation(fields: [quotationId], references: [id])
+  reception               User?                 @relation("ReceptionJobs", fields: [receptionId], references: [id])
+  technician              User?                 @relation("TechnicianJobs", fields: [technicianId], references: [id])
+  warranty                Warranty?             @relation(fields: [warrantyId], references: [id])
   checklistItems          JobChecklistItem[]
   laborTimes              LaborTime[]
   outsources              Outsource[]
   partRequisitions        PartRequisition[]
   payment                 Payment?
   oldParts                OldPart[]
+  foremanResponses        ForemanResponse[]
 }
 
 model Appointment {
@@ -122,6 +125,64 @@ model Appointment {
   motorcycle    Motorcycle        @relation(fields: [motorcycleId], references: [id])
   scheduledBy   User              @relation(fields: [scheduledById], references: [id])
   job           Job?
+}
+
+// Foreman Response - การตอบกลับจากหัวหน้าช่าง
+model ForemanResponse {
+  id                   Int                    @id @default(autoincrement())
+  jobId                Int
+  assessmentNumber     Int                    @default(1) // ครั้งที่ประเมิน
+  
+  // Foreman's Assessment
+  foremanAnalysis      String                 @db.Text // ผลการวิเคราะห์
+  estimatedCost        Decimal                @db.Decimal(10, 2)
+  estimatedDuration    String                 // เช่น "2-3 วัน"
+  additionalNotes      String?                @db.Text
+  
+  // Foreman Info
+  foremanId            Int
+  respondedAt          DateTime               @default(now())
+  
+  // Customer Decision
+  status               ForemanResponseStatus  @default(PENDING_CUSTOMER)
+  customerDecision     CustomerDecisionType?
+  customerDecisionAt   DateTime?
+  decisionByUserId     Int?                   // Reception staff who recorded decision
+  decisionNotes        String?
+  
+  // Timestamps
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  
+  // Relations
+  job                  Job                    @relation(fields: [jobId], references: [id])
+  foreman              User                   @relation("ForemanResponses", fields: [foremanId], references: [id])
+  decisionBy           User?                  @relation("ForemanDecisions", fields: [decisionByUserId], references: [id])
+  requiredParts        ForemanRequiredPart[]
+  
+  @@index([jobId])
+  @@index([status])
+  @@index([foremanId])
+}
+
+// Required Parts in Foreman Response
+model ForemanRequiredPart {
+  id                 Int              @id @default(autoincrement())
+  foremanResponseId  Int
+  partId             Int?             // Optional - if exists in inventory
+  name               String
+  quantity           Int
+  unitPrice          Decimal          @db.Decimal(10, 2)
+  totalPrice         Decimal          @db.Decimal(10, 2)
+  partNumber         String?
+  supplier           String?
+  inStock            Boolean          @default(false)
+  createdAt          DateTime         @default(now())
+  
+  foremanResponse    ForemanResponse  @relation(fields: [foremanResponseId], references: [id], onDelete: Cascade)
+  part               Part?            @relation(fields: [partId], references: [id])
+  
+  @@index([foremanResponseId])
 }
 
 model JobChecklistItem {
@@ -203,6 +264,7 @@ model Part {
   stockMovements       StockMovement[]
   purchaseOrderItems   PurchaseOrderItem[]
   purchaseReceiveItems PurchaseReceiveItem[]
+  foremanRequiredParts ForemanRequiredPart[]
 }
 
 model PartPackage {
@@ -593,4 +655,17 @@ enum OldPartAction {
   RETURN_CUSTOMER
   DISPOSE
   KEEP_EVIDENCE
+}
+
+enum ForemanResponseStatus {
+  PENDING_CUSTOMER // รอการตัดสินใจจากลูกค้า
+  APPROVED // ลูกค้าอนุมัติ - เริ่มซ่อม
+  REJECTED // ลูกค้าไม่อนุมัติ - ยกเลิก
+  IN_PROGRESS // กำลังซ่อม
+  COMPLETED // ซ่อมเสร็จ
+}
+
+enum CustomerDecisionType {
+  APPROVED
+  REJECTED
 }
