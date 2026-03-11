@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { mockParts, type PartItem } from '../../data/partsMockData'
+import { type PartItem } from '../../data/partsMockData'
+import { partService } from '../../services/partService'
 
 // Info Card Component
 function InfoCard({ 
@@ -65,13 +66,12 @@ export default function PartDetailPage() {
     const [imageLoaded, setImageLoaded] = useState(false)
 
     useEffect(() => {
-        // Simulate API fetch
         const fetchPart = async () => {
             setIsLoading(true)
             setImageLoaded(false)
             try {
-                await new Promise(resolve => setTimeout(resolve, 400))
-                const found = mockParts.find(p => p.id === Number(id))
+                const result = await partService.getParts({ limit: 1000 })
+                const found = result.data.find((p: PartItem) => p.id === Number(id))
                 setPart(found || null)
             } catch (err) {
                 console.error("Failed to load part details", err)

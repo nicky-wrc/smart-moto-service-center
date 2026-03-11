@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { mockSuppliers } from '../../data/suppliersMockData'
+import { supplierService, type Supplier } from '../../services/supplierService'
+import { purchaseOrderService } from '../../services/purchaseOrderService'
 import PartSelectionModal from '../../components/PartSelectionModal'
-import { mockPurchaseOrders, type PurchaseOrder } from '../../data/purchaseOrdersMockData'
 import { type PartItem } from '../../data/partsMockData'
 
 interface OrderItem extends PartItem {
@@ -19,8 +19,10 @@ export default function EditPurchaseOrderPage() {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
 
-    // Base state for original order
-    const [originalOrder, setOriginalOrder] = useState<PurchaseOrder | null>(null)
+    const [originalOrder, setOriginalOrder] = useState<any>(null)
+
+    // Suppliers loaded from API
+    const [suppliers, setSuppliers] = useState<Supplier[]>([])
 
     // Form State
     const [supplierId, setSupplierId] = useState<number | ''>('')
@@ -41,31 +43,44 @@ export default function EditPurchaseOrderPage() {
         message: ''
     })
 
-    // Load original data
+    // Load original data from API
     useEffect(() => {
-        const order = mockPurchaseOrders.find(o => o.id === id)
-        if (order) {
-            setOriginalOrder(order)
-            setSupplierId(order.supplierId)
-            setDeliveryDate(order.deliveryDate)
-            setRemarks(order.remarks || '')
-            setManagerMessage(order.managerMessage || '')
-
-            // Map POItem to OrderItem
-            setOrderItems(order.items.map(item => ({
-                id: item.id,
-                partCode: item.partCode,
-                name: item.name || '',
-                category: item.category || 'General',
-                location: item.location || '',
-                quantity: item.quantity,
-                price: item.price || 0,
-                imageUrl: item.imageUrl || '',
-                orderQuantity: item.orderQuantity
-            })))
-        } else {
-            navigate('/inventory/purchase-orders')
+        let mounted = true
+        const load = async () => {
+            try {
+                const [order, sups] = await Promise.all([
+                    purchaseOrderService.getById(id!),
+                    supplierService.getAll(),
+                ])
+                if (!mounted) return
+                if (order) {
+                    setOriginalOrder(order)
+                    setSupplierId(order.supplierId)
+                    setDeliveryDate(order.deliveryDate)
+                    setRemarks(order.remarks || '')
+                    setManagerMessage(order.managerMessage || '')
+                    setOrderItems(order.items.map((item: any) => ({
+                        id: item.id,
+                        partCode: item.partCode,
+                        name: item.name || '',
+                        category: item.category || 'General',
+                        location: item.location || '',
+                        quantity: item.quantity,
+                        price: item.price || 0,
+                        imageUrl: item.imageUrl || '',
+                        orderQuantity: item.orderQuantity
+                    })))
+                } else {
+                    navigate('/inventory/purchase-orders')
+                }
+                setSuppliers(sups)
+            } catch (err) {
+                console.error('Failed to load PO', err)
+                navigate('/inventory/purchase-orders')
+            }
         }
+        load()
+        return () => { mounted = false }
     }, [id, navigate])
 
     // Derived values
@@ -103,7 +118,7 @@ export default function EditPurchaseOrderPage() {
         navigate('/inventory/purchase-orders')
     }
 
-    const handleSubmit = (action: 'draft' | 'submit') => {
+    const handleSubmit = async (action: 'draft' | 'submit') => {
         if (!supplierId) {
             setValidationModal({
                 isOpen: true,
@@ -123,43 +138,49 @@ export default function EditPurchaseOrderPage() {
             return
         }
 
-        const supplier = mockSuppliers.find(s => s.id === supplierId)
+        const supplier = suppliers.find(s => s.id === supplierId)
 
-        // Update the mock data source across pages
-        const targetOrder = mockPurchaseOrders.find(o => o.id === id)
-        if (targetOrder) {
-            targetOrder.supplierId = supplierId as number
-            targetOrder.supplierName = supplier?.companyName || 'Unknown Supplier'
-            targetOrder.deliveryDate = deliveryDate
-            targetOrder.totalAmount = totalAmount
-            targetOrder.status = action === 'submit' ? 'pending' : 'draft'
-            targetOrder.remarks = remarks
-            targetOrder.managerMessage = managerMessage
+        try {
+            await purchaseOrderService.update(id!, {
+                supplierId: supplierId as number,
+                supplierName: (supplier as any)?.companyName || supplier?.name || 'Unknown Supplier',
+                deliveryDate,
+                totalAmount,
+                status: (action === 'submit' ? 'pending' : 'draft') as 'draft' | 'pending',
+                remarks,
+                managerMessage,
+                items: orderItems.map(item => ({
+                    id: item.id,
+                    partCode: item.partCode,
+                    name: item.name,
+                    category: item.category,
+                    location: item.location,
+                    quantity: item.quantity,
+                    price: item.price,
+                    imageUrl: item.imageUrl,
+                    orderQuantity: item.orderQuantity
+                })),
+            })
 
-            // Map items back
-            targetOrder.items = orderItems.map(item => ({
-                id: item.id,
-                partCode: item.partCode,
-                name: item.name,
-                category: item.category,
-                location: item.location,
-                quantity: item.quantity,
-                price: item.price,
-                imageUrl: item.imageUrl,
-                orderQuantity: item.orderQuantity
-            }))
+            setValidationModal({
+                isOpen: true,
+                isError: false,
+                title: action === 'draft' ? 'บันทึกการแก้ไขแบบร่างสำเร็จ!' : 'ส่งคำขอสั่งซื้อสำเร็จ!',
+                message: 'กำลังกลับสู่หน้ารายการใบสั่งซื้อ...'
+            })
+
+            setTimeout(() => {
+                navigate('/inventory/purchase-orders')
+            }, 2000)
+        } catch (err) {
+            console.error('Failed to update PO:', err)
+            setValidationModal({
+                isOpen: true,
+                isError: true,
+                title: 'เกิดข้อผิดพลาด',
+                message: 'ไม่สามารถบันทึกใบสั่งซื้อได้ กรุณาลองใหม่อีกครั้ง'
+            })
         }
-
-        setValidationModal({
-            isOpen: true,
-            isError: false,
-            title: action === 'draft' ? 'บันทึกการแก้ไขแบบร่างสำเร็จ!' : 'ส่งคำขอสั่งซื้อสำเร็จ!',
-            message: 'กำลังกลับสู่หน้ารายการใบสั่งซื้อ...'
-        })
-
-        setTimeout(() => {
-            navigate('/inventory/purchase-orders')
-        }, 2000)
     }
 
     if (!originalOrder) return <div className="p-6">กำลังโหลดข้อมูล...</div>
@@ -313,8 +334,8 @@ export default function EditPurchaseOrderPage() {
                                 className="w-full text-sm border border-gray-300 rounded-xl px-4 py-2.5 bg-white outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
                             >
                                 <option value="">-- เลือกซัพพลายเออร์ --</option>
-                                {mockSuppliers.map(s => (
-                                    <option key={s.id} value={s.id}>{s.companyName}</option>
+                                {suppliers.map(s => (
+                                    <option key={s.id} value={s.id}>{(s as any).companyName || s.name}</option>
                                 ))}
                             </select>
                         </div>

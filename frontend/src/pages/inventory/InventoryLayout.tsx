@@ -60,24 +60,10 @@ const pageTitles: Record<string, string> = {
 
 export default function InventoryLayout() {
   return (
-<<<<<<< HEAD
-    <div className="min-h-screen bg-[#44403C] pb-6 pr-6 flex items-stretch font-[Kanit]">
-      <div className="flex-1 bg-[#44403C] rounded-2xl flex flex-col overflow-hidden min-h-[calc(100vh-2rem)]">
-        <AppHeader title={title} />
-        <div className="flex flex-1 gap-0">
-          <Sidebar navItems={navItems} />
-          <div className="flex-1 bg-white rounded-xl overflow-auto">
-            <Outlet />
-          </div>
-        </div>
-      </div>
-    </div>
-=======
     <AppLayout
       navItems={navItems}
       pageTitles={pageTitles}
       defaultTitle="พนักงานคงคลัง"
     />
->>>>>>> origin/Krit_front
   )
 }

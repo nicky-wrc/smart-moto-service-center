@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Wrench, Clock, AlertCircle, CheckCircle, Play, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { jobsService } from '../../services/api/jobs.service';
@@ -192,7 +192,7 @@ export const JobQueuePage = () => {
 interface JobCardProps {
   job: Job;
   getStatusBadge: (status: string) => { label: string; className: string };
-  getJobTypeBadge: (jobType: string) => JSX.Element;
+  getJobTypeBadge: (jobType: string) => React.ReactNode;
   onStartJob?: (jobId: number) => Promise<void>;
 }
 

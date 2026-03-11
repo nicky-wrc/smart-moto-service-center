@@ -1,91 +1,33 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import SearchBox from '../../components/SearchBox'
+import { customersService, type Customer, type Motorcycle } from '../../services/customers'
 
-type Motorcycle = {
-    id: string
-    model: string
-    color: string
-    plateLine1: string
-    plateLine2: string
-    province: string
-}
 
-type Customer = {
-    id: string
-    firstName: string
-    lastName: string
-    phone: string
-    address?: string
-    motorcycles: Motorcycle[]
-}
-
-const MOCK_CUSTOMERS: Customer[] = [
-    {
-        id: 'CUST-001',
-        firstName: 'สมชาย',
-        lastName: 'ใจดี',
-        phone: '0812345678',
-        address: '123/4 หมู่ 5 กรุงเทพมหานคร',
-        motorcycles: [
-            { id: 'M-001', model: 'Honda Wave 110i', color: 'แดง', plateLine1: '1กข', plateLine2: '1234', province: 'กรุงเทพมหานคร' },
-            { id: 'M-002', model: 'Yamaha Fino', color: 'ฟ้า-ขาว', plateLine1: '2คฆ', plateLine2: '5678', province: 'เชียงใหม่' },
-        ]
-    },
-    {
-        id: 'CUST-002',
-        firstName: 'สมหญิง',
-        lastName: 'รักดี',
-        phone: '0898765432',
-        motorcycles: [
-            { id: 'M-003', model: 'Honda PCX 160', color: 'ดำ', plateLine1: '5ขด', plateLine2: '999', province: 'กรุงเทพมหานคร' }
-        ]
-    },
-    {
-        id: 'CUST-003',
-        firstName: 'วิชัย',
-        lastName: 'กล้าหาญ',
-        phone: '0855555555',
-        motorcycles: [
-            { id: 'M-004', model: 'Honda Click 125i', color: 'ขาว', plateLine1: '3งจ', plateLine2: '9012', province: 'ภูเก็ต' },
-        ]
-    },
-    {
-        id: 'CUST-004',
-        firstName: 'มานี',
-        lastName: 'มีนา',
-        phone: '0888888888',
-        motorcycles: [
-            { id: 'M-005', model: 'Vespa Sprint 150', color: 'เหลือง', plateLine1: '4ฉช', plateLine2: '3456', province: 'ขอนแก่น' },
-        ]
-    },
-]
 
 export default function ReceptionSearchPage() {
     const navigate = useNavigate()
     const location = useLocation()
     const [searchQuery, setSearchQuery] = useState('')
     const [showFilters, setShowFilters] = useState(false)
-    const [allCustomers, setAllCustomers] = useState<Customer[]>(MOCK_CUSTOMERS)
+    const [allCustomers, setAllCustomers] = useState<Customer[]>([])
+    const [isLoading, setIsLoading] = useState(true)
 
-    // Load customers from localStorage and auto-refresh when returning from register page
+    // Load customers from API
     useEffect(() => {
-        const loadCustomers = () => {
-            const existingCustomersStr = localStorage.getItem('smart_moto_customers')
-            if (existingCustomersStr) {
-                try {
-                    const localCustomers = JSON.parse(existingCustomersStr)
-                    const mockIds = new Set(MOCK_CUSTOMERS.map(c => c.id))
-                    const uniqueLocalCustomers = localCustomers.filter((c: Customer) => !mockIds.has(c.id))
-                    setAllCustomers([...MOCK_CUSTOMERS, ...uniqueLocalCustomers])
-                } catch (e) {
-                    console.error("Failed to parse local customers", e)
-                }
+        const loadCustomers = async () => {
+            setIsLoading(true)
+            try {
+                const customers = await customersService.list()
+                setAllCustomers(customers)
+            } catch (err) {
+                console.error('Failed to load customers', err)
+            } finally {
+                setIsLoading(false)
             }
         }
-        
         loadCustomers()
-    }, [location]) // Reload when location changes (coming back from other pages)
+    }, [location])
 
     // Filters
     const [filterName, setFilterName] = useState('')
@@ -99,23 +41,21 @@ export default function ReceptionSearchPage() {
     const filteredCustomers = useMemo(() => {
         return allCustomers.filter(customer => {
             const fullName = `${customer.firstName} ${customer.lastName}`.toLowerCase()
-            const allPlates = customer.motorcycles.map(m => `${m.plateLine1} ${m.plateLine2} ${m.province}`).join(' ').toLowerCase()
-            const allModels = customer.motorcycles.map(m => m.model).join(' ').toLowerCase()
+            const allPlates = (customer.motorcycles || []).map(m => m.licensePlate).join(' ').toLowerCase()
+            const allModels = (customer.motorcycles || []).map(m => `${m.brand} ${m.model}`).join(' ').toLowerCase()
 
-            // Global search box matches against multiple fields
             if (searchQuery) {
                 const query = searchQuery.toLowerCase()
                 const matchesSearch =
                     fullName.includes(query) ||
-                    customer.phone.includes(query) ||
+                    customer.phoneNumber.includes(query) ||
                     allPlates.includes(query) ||
                     allModels.includes(query)
                 if (!matchesSearch) return false
             }
 
-            // Specific filters
             if (filterName && !fullName.includes(filterName.toLowerCase())) return false
-            if (filterPhone && !customer.phone.includes(filterPhone)) return false
+            if (filterPhone && !customer.phoneNumber.includes(filterPhone)) return false
             if (filterPlate && !allPlates.includes(filterPlate.toLowerCase())) return false
             if (filterModel && !allModels.includes(filterModel.toLowerCase())) return false
 
@@ -129,16 +69,16 @@ export default function ReceptionSearchPage() {
                 formData: {
                     firstName: customer.firstName,
                     lastName: customer.lastName,
-                    phone: customer.phone,
+                    phone: customer.phoneNumber,
                     address: customer.address || '',
-                    model: motorcycle.model,
+                    model: `${motorcycle.brand} ${motorcycle.model}`,
                     color: motorcycle.color,
-                    plateLine1: motorcycle.plateLine1,
-                    plateLine2: motorcycle.plateLine2,
-                    province: motorcycle.province,
+                    plateLine1: motorcycle.licensePlate,
+                    plateLine2: '',
+                    province: '',
                 },
-                isExistingCustomer: true, // ลูกค้าเก่า
-                isNewMotorcycle: false, // รถที่มีในระบบ
+                isExistingCustomer: true,
+                isNewMotorcycle: false,
             }
         })
     }
@@ -149,7 +89,7 @@ export default function ReceptionSearchPage() {
                 formData: {
                     firstName: customer.firstName,
                     lastName: customer.lastName,
-                    phone: customer.phone,
+                    phone: customer.phoneNumber,
                     address: customer.address || '',
                     model: '',
                     color: '',
@@ -157,9 +97,9 @@ export default function ReceptionSearchPage() {
                     plateLine2: '',
                     province: '',
                 },
-                returnTo: 'newMoto', // This tells the register page to show "add new motorcycle" header and go to repair after saving
-                isExistingCustomer: true, // ลูกค้าเก่า
-                isNewMotorcycle: true, // เพิ่มรถคันใหม่
+                returnTo: 'newMoto',
+                isExistingCustomer: true,
+                isNewMotorcycle: true,
             }
         })
     }
@@ -293,22 +233,22 @@ export default function ReceptionSearchPage() {
                                             {customer.firstName} {customer.lastName}
                                         </td>
                                         <td className="py-4 px-6 text-left text-gray-600 align-top">
-                                            {customer.phone}
+                                            {customer.phoneNumber}
                                         </td>
                                         <td className="py-4 px-6 text-left align-top">
                                             <div className="flex flex-col gap-2">
-                                                {customer.motorcycles.map(m => (
+                                                {(customer.motorcycles || []).map(m => (
                                                     <div key={m.id} className="inline-flex w-fit items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
-                                                        {m.plateLine1} {m.plateLine2} {m.province}
+                                                        {m.licensePlate}
                                                     </div>
                                                 ))}
                                             </div>
                                         </td>
                                         <td className="py-4 px-6 text-left text-gray-600 align-top">
                                             <div className="flex flex-col gap-2">
-                                                {customer.motorcycles.map(m => (
+                                                {(customer.motorcycles || []).map(m => (
                                                     <div key={m.id} className="py-1 text-xs">
-                                                        {m.model} <span className="text-gray-400">({m.color})</span>
+                                                        {m.brand} {m.model} <span className="text-gray-400">({m.color})</span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -338,9 +278,9 @@ export default function ReceptionSearchPage() {
                     <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
                         <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                             <div>
-                                <h3 className="text-xl font-semibold text-gray-800">ลูกค้ารายนี้มีรถในประวัติ {selectedCustomer.motorcycles.length} คัน</h3>
+                                <h3 className="text-xl font-semibold text-gray-800">ลูกค้ารายนี้มีรถในประวัติ {(selectedCustomer.motorcycles || []).length} คัน</h3>
                                 <p className="text-sm text-gray-500 mt-1">
-                                    คุณ {selectedCustomer.firstName} {selectedCustomer.lastName} ({selectedCustomer.phone})
+                                    คุณ {selectedCustomer.firstName} {selectedCustomer.lastName} ({selectedCustomer.phoneNumber})
                                 </p>
                             </div>
                             <button
@@ -357,7 +297,7 @@ export default function ReceptionSearchPage() {
                             <p className="text-sm font-medium text-gray-700 mb-1">โปรดเลือกรถที่ต้องการแจ้งซ่อม:</p>
 
                             <div className="flex flex-col gap-3">
-                                {selectedCustomer.motorcycles.map(m => (
+                                {(selectedCustomer.motorcycles || []).map(m => (
                                     <div
                                         key={m.id}
                                         onClick={() => handleSelectMotorcycle(selectedCustomer, m)}
@@ -371,10 +311,10 @@ export default function ReceptionSearchPage() {
                                                 </svg>
                                             </div>
                                             <div className="flex flex-col gap-1">
-                                                <h4 className="font-semibold text-gray-800 group-hover:text-amber-600 transition-colors">{m.model}</h4>
+                                                <h4 className="font-semibold text-gray-800 group-hover:text-amber-600 transition-colors">{m.brand} {m.model}</h4>
                                                 <div className="flex flex-wrap items-center gap-2">
                                                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold tracking-wide bg-gray-100 text-gray-700 border border-gray-200">
-                                                        {m.plateLine1} {m.plateLine2} {m.province}
+                                                        {m.licensePlate}
                                                     </span>
                                                     <span className="text-xs text-gray-500 font-medium">สี{m.color}</span>
                                                 </div>

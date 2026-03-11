@@ -1,148 +1,12 @@
-<<<<<<< HEAD
-import { useState, useEffect } from 'react';
-import { Search, Package, AlertCircle } from 'lucide-react';
-import { partsService } from '../../services/api/parts.service';
-import type { Part } from '../../services/api/types';
-
-export default function PartsPage() {
-  const [parts, setParts] = useState<Part[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
-
-  useEffect(() => {
-    loadParts();
-  }, []);
-
-  const loadParts = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const filters: any = { isActive: true };
-      if (searchTerm) filters.search = searchTerm;
-      if (categoryFilter) filters.category = categoryFilter;
-      const data = await partsService.findAll(filters);
-      setParts(data);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'ไม่สามารถโหลดข้อมูลได้');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const categories = [...new Set(parts.map(p => p.category).filter(Boolean))];
-  const lowStockCount = parts.filter(p => p.stockQuantity <= p.reorderPoint).length;
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">รายการอะไหล่ทั้งหมด</h1>
-        {lowStockCount > 0 && (
-          <span className="flex items-center gap-2 bg-red-100 text-red-700 px-4 py-2 rounded-lg text-sm font-medium">
-            <AlertCircle className="w-4 h-4" />
-            สต็อกต่ำ {lowStockCount} รายการ
-          </span>
-        )}
-      </div>
-
-      <div className="card mb-6">
-        <div className="flex gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="ค้นหาอะไหล่..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && loadParts()}
-              className="form-input pl-10"
-            />
-          </div>
-          <select
-            value={categoryFilter}
-            onChange={(e) => { setCategoryFilter(e.target.value); setTimeout(loadParts, 0); }}
-            className="form-select"
-          >
-            <option value="">ทุกหมวดหมู่</option>
-            {categories.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-          <button onClick={loadParts} className="btn btn-secondary">
-            ค้นหา
-          </button>
-        </div>
-      </div>
-
-      {error && <div className="alert alert-error mb-4">{error}</div>}
-
-      {loading ? (
-        <div className="text-center py-12">
-          <div className="spinner mx-auto"></div>
-          <p className="mt-4 text-gray-600">กำลังโหลด...</p>
-        </div>
-      ) : parts.length === 0 ? (
-        <div className="card text-center py-12">
-          <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600">ไม่พบอะไหล่</p>
-        </div>
-      ) : (
-        <div className="card">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900">รหัส</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900">ชื่อ</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900">ยี่ห้อ</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900">หมวดหมู่</th>
-                  <th className="text-right py-3 px-4 font-semibold text-gray-900">ราคา</th>
-                  <th className="text-right py-3 px-4 font-semibold text-gray-900">สต็อก</th>
-                  <th className="text-right py-3 px-4 font-semibold text-gray-900">จุดสั่งซื้อ</th>
-                </tr>
-              </thead>
-              <tbody>
-                {parts.map((part) => (
-                  <tr key={part.id} className={`border-b border-gray-200 hover:bg-gray-50 ${part.stockQuantity <= part.reorderPoint ? 'bg-red-50' : ''}`}>
-                    <td className="py-3 px-4">
-                      <span className="font-medium text-gray-900">{part.partNo}</span>
-                      {part.stockQuantity <= part.reorderPoint && (
-                        <AlertCircle className="w-4 h-4 text-red-500 inline ml-2" />
-                      )}
-                    </td>
-                    <td className="py-3 px-4">{part.name}</td>
-                    <td className="py-3 px-4">{part.brand || '-'}</td>
-                    <td className="py-3 px-4">
-                      <span className="badge badge-info">{part.category || '-'}</span>
-                    </td>
-                    <td className="py-3 px-4 text-right">฿{Number(part.unitPrice).toLocaleString()}</td>
-                    <td className="py-3 px-4 text-right">
-                      <span className={part.stockQuantity <= part.reorderPoint ? 'text-red-600 font-bold' : ''}>
-                        {part.stockQuantity} {part.unit}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right">{part.reorderPoint} {part.unit}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-=======
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import SearchBox from '../../components/SearchBox'
-import { partService } from '../../services/partService'
-import { mockParts, type PartItem } from '../../data/partsMockData'
-
-// Extract unique filter options from mock data (in real app, this would be an API call)
-const CATEGORIES = Array.from(new Set(mockParts.map(p => p.category)))
-const LOCATIONS = Array.from(new Set(mockParts.map(p => p.location)))
-const MOTORCYCLE_MODELS = Array.from(new Set(mockParts.filter(p => p.motorcycleModel && p.motorcycleModel !== 'ทุกรุ่น').map(p => p.motorcycleModel!))).sort()
+import { partService, type PartItem } from '../../services/partService'
 
 export default function PartsPage() {
   const navigate = useNavigate()
   const [parts, setParts] = useState<PartItem[]>([])
+  const [allParts, setAllParts] = useState<PartItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
 
@@ -160,6 +24,11 @@ export default function PartsPage() {
   const [filterModel, setFilterModel] = useState('')
   const [filterStockLevel, setFilterStockLevel] = useState('')
 
+  // Dynamic filter options computed from API data
+  const [categories, setCategories] = useState<string[]>([])
+  const [locations, setLocations] = useState<string[]>([])
+  const [motorcycleModels, setMotorcycleModels] = useState<string[]>([])
+
   // Use debounced search text to avoid rapid requests when typing
   const [debouncedSearch, setDebouncedSearch] = useState(search)
 
@@ -169,6 +38,25 @@ export default function PartsPage() {
     }, 500)
     return () => clearTimeout(timer)
   }, [search])
+
+  // Load all parts once to compute filter options
+  useEffect(() => {
+    const loadFilterOptions = async () => {
+      try {
+        const result = await partService.getParts({ limit: 1000 })
+        const all = result.data || []
+        setAllParts(all)
+        setCategories(Array.from(new Set(all.map((p: PartItem) => p.category).filter(Boolean))))
+        setLocations(Array.from(new Set(all.map((p: PartItem) => p.location).filter(Boolean))))
+        setMotorcycleModels(
+          Array.from(new Set(all.filter((p: PartItem) => p.motorcycleModel && p.motorcycleModel !== 'ทุกรุ่น').map((p: PartItem) => p.motorcycleModel!))).sort()
+        )
+      } catch {
+        // Silently fail for filter options
+      }
+    }
+    loadFilterOptions()
+  }, [])
 
   // Reset pagination to page 1 when filters change
   useEffect(() => {
@@ -237,9 +125,6 @@ export default function PartsPage() {
         {/* Filter row */}
         {showFilters && (
           <div className="relative mt-2 p-5 bg-white rounded-xl border border-gray-200 shadow-md">
-            <div className="absolute -top-[10px] right-[1400px] w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[10px] border-b-white z-20" />
-            <div className="absolute -top-[12px] right-[1400px] w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[12px] border-b-gray-200 z-10" />
-
             <div className="relative z-30 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
               {/* Category */}
               <div>
@@ -250,7 +135,7 @@ export default function PartsPage() {
                   className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                 >
                   <option value="">ทั้งหมด</option>
-                  {CATEGORIES.map((c) => (
+                  {categories.map((c) => (
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
@@ -264,7 +149,7 @@ export default function PartsPage() {
                   className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                 >
                   <option value="">ทั้งหมด</option>
-                  {LOCATIONS.map((l) => (
+                  {locations.map((l) => (
                     <option key={l} value={l}>{l}</option>
                   ))}
                 </select>
@@ -278,7 +163,7 @@ export default function PartsPage() {
                   className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                 >
                   <option value="">ทุกรุ่น</option>
-                  {MOTORCYCLE_MODELS.map((m) => (
+                  {motorcycleModels.map((m) => (
                     <option key={m} value={m}>{m}</option>
                   ))}
                 </select>
@@ -341,7 +226,6 @@ export default function PartsPage() {
                       (e.target as HTMLImageElement).src = 'https://placehold.co/400x300/f8fafc/94a3b8.png?text=No+Image'
                     }}
                   />
-                  {/* Fade overlay bottom */}
                   <div className="absolute inset-0 bg-gradient-to-t from-gray-900/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
                   {/* Status Badges */}
@@ -370,7 +254,7 @@ export default function PartsPage() {
                     </h3>
                     <div className="flex flex-wrap gap-1.5 mt-auto">
                       <span className="text-[11px] font-medium text-amber-700 bg-amber-50/80 border border-amber-100/50 px-2 py-0.5 rounded-md">
-                        {item.category.split(' ')[0]}
+                        {item.category?.split(' ')[0] || 'ไม่ระบุ'}
                       </span>
                       <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50/80 border border-emerald-100/50 px-2 py-0.5 rounded-md">
                         {item.motorcycleModel === 'ทุกรุ่น' || !item.motorcycleModel ? 'รองรับทุกรุ่น' : `${item.motorcycleModel}`}
@@ -386,7 +270,7 @@ export default function PartsPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
                       <span className="truncate block" title={item.location}>
-                        {item.location}
+                        {item.location || '-'}
                       </span>
                     </div>
 
@@ -406,7 +290,7 @@ export default function PartsPage() {
                         <span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5">ราคา/หน่วย</span>
                         <div className="flex items-baseline gap-1">
                           <span className="text-sm font-bold text-gray-900 leading-none">
-                            ฿{item.price.toLocaleString()}
+                            ฿{item.price?.toLocaleString() || '0'}
                           </span>
                         </div>
                       </div>
@@ -462,7 +346,6 @@ export default function PartsPage() {
           )}
         </div>
       )}
->>>>>>> origin/Krit_front
     </div>
   );
 }

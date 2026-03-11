@@ -24,7 +24,7 @@ export const ReceiptHistoryPage = () => {
       if (dateTo) filters.dateTo = dateTo;
       if (supplierFilter) filters.supplier = supplierFilter;
       const data = await partsService.getReceipts(filters);
-      setReceipts(data);
+      setReceipts(data as any[]);
     } catch (err: any) {
       setError(err.response?.data?.message || 'ไม่สามารถโหลดข้อมูลได้');
     } finally {

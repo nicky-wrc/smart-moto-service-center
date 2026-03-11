@@ -163,7 +163,6 @@ export default function MechanicJobDetailPage() {
               {/* Customer + Vehicle */}
               <div className="grid grid-cols-2 gap-3 shrink-0">
                 <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm">
-<<<<<<< HEAD
                   <p className="text-xs text-gray-400 uppercase tracking-wide mb-1.5">ลูกค้า</p>
                   <p className="font-semibold text-sm text-[#1E1E1E]">{customerName}</p>
                   <p className="text-xs text-gray-400 mt-0.5">{job.motorcycle?.owner?.phoneNumber}</p>
@@ -172,35 +171,17 @@ export default function MechanicJobDetailPage() {
                   <p className="text-xs text-gray-400 uppercase tracking-wide mb-1.5">รถ</p>
                   <p className="font-semibold text-sm text-[#1E1E1E]">{job.motorcycle?.brand} {job.motorcycle?.model}</p>
                   <p className="text-sm text-gray-500 mt-0.5">ทะเบียน {job.motorcycle?.licensePlate}</p>
-=======
-                  <p className="text-sm text-gray-400 uppercase tracking-wide mb-1.5">ลูกค้า</p>
-                  <p className="font-semibold text-sm text-[#1E1E1E]">{baseJob.customerName}</p>
-                </div>
-                <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm">
-                  <p className="text-sm text-gray-400 uppercase tracking-wide mb-1.5">รถ</p>
-                  <p className="font-semibold text-sm text-[#1E1E1E]">{baseJob.brand} {baseJob.model}</p>
-                  <p className="text-sm text-gray-500 mt-0.5">ทะเบียน {baseJob.licensePlate}</p>
->>>>>>> origin/Krit_front
                 </div>
               </div>
 
               {/* Symptom */}
               <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm">
-<<<<<<< HEAD
                 <p className="text-xs text-gray-400 uppercase tracking-wide mb-1.5">อาการที่แจ้ง</p>
                 <p className="text-sm text-gray-700 leading-relaxed">{job.symptom}</p>
                 {job.tags?.length > 0 && (
                   <div className="flex gap-1.5 flex-wrap mt-2.5">
                     {job.tags.map((tag: string) => (
                       <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-[#F8981D]/10 text-[#F8981D]">{tag}</span>
-=======
-                <p className="text-sm text-gray-400 uppercase tracking-wide mb-1.5">อาการที่แจ้ง</p>
-                <p className="text-sm text-gray-700 leading-relaxed">{baseJob.symptom}</p>
-                {baseJob.tags.length > 0 && (
-                  <div className="flex gap-1.5 flex-wrap mt-2.5">
-                    {baseJob.tags.map((tag) => (
-                      <span key={tag} className="text-sm px-2 py-0.5 rounded-full bg-[#F8981D]/10 text-[#F8981D]">{tag}</span>
->>>>>>> origin/Krit_front
                     ))}
                   </div>
                 )}
@@ -209,7 +190,6 @@ export default function MechanicJobDetailPage() {
               {/* Diagnosis notes */}
               {job.diagnosisNotes && (
                 <div className="bg-[#44403C]/5 border border-[#44403C]/15 rounded-xl px-4 py-3">
-<<<<<<< HEAD
                   <p className="text-xs text-[#44403C]/70 uppercase tracking-wide mb-1.5">หมายเหตุ</p>
                   <p className="text-sm text-[#44403C] whitespace-pre-wrap">{job.diagnosisNotes}</p>
                 </div>
@@ -219,55 +199,6 @@ export default function MechanicJobDetailPage() {
               {isWorking && (
                 <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm flex flex-col gap-3">
                   <p className="text-xs text-gray-400 uppercase tracking-wide">รายงานปัญหาที่พบเพิ่ม</p>
-=======
-                  <p className="text-sm text-[#44403C]/70 uppercase tracking-wide mb-1.5">หมายเหตุจากหัวหน้าช่าง</p>
-                  <p className="text-sm text-[#44403C]">{baseJob.foremanNote}</p>
-                </div>
-              )}
-
-              {/* QC rejection note */}
-              {baseJob.qcRejectNote && (
-                <div className="bg-[#F8981D]/5 border border-[#F8981D]/30 rounded-xl px-4 py-3 flex items-start gap-3">
-                  <svg className="w-4 h-4 text-[#F8981D] mt-0.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                  <div>
-                    <p className="text-sm font-semibold text-[#F8981D] uppercase tracking-wide mb-1">หัวหน้าช่างตีกลับ — ต้องแก้ไข</p>
-                    <p className="text-sm text-[#F8981D]/80 leading-relaxed">{baseJob.qcRejectNote}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Original photos */}
-              {baseJob.photos.length > 0 && (
-                <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm">
-                  <p className="text-sm text-gray-400 uppercase tracking-wide mb-2">รูปภาพจากการรับรถ</p>
-                  <div className="flex gap-2 flex-wrap">
-                    {baseJob.photos.map((p, i) => (
-                      <button key={i} onClick={() => openLightbox(baseJob.photos, i)}
-                        className="w-24 h-24 rounded-xl overflow-hidden border border-gray-200 hover:border-[#F8981D] transition-colors p-0 cursor-pointer group shrink-0">
-                        <img src={p} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* ── Finding report (กำลังซ่อม only) ── */}
-              {isWorking && (
-                <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-400 uppercase tracking-wide">รายงานปัญหาที่พบเพิ่ม</p>
-                    {notifiedForeman && !editingReport && (
-                      <button
-                        onClick={() => { setSavedNote(findingNote); setSavedPhotos(findingPhotos); setEditingReport(true) }}
-                        className="text-sm text-gray-400 hover:text-[#F8981D] bg-transparent border border-gray-200 hover:border-[#F8981D] rounded-lg px-2.5 py-1 cursor-pointer transition-colors"
-                      >
-                        แก้ไข
-                      </button>
-                    )}
-                  </div>
->>>>>>> origin/Krit_front
 
                   {notifiedForeman ? (
                     <p className="text-sm text-gray-700 bg-gray-50 rounded-lg px-3 py-2.5 border border-gray-100 whitespace-pre-wrap">
@@ -282,7 +213,6 @@ export default function MechanicJobDetailPage() {
                         rows={3}
                         className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white text-gray-700 resize-none outline-none focus:border-[#F8981D] transition-colors"
                       />
-<<<<<<< HEAD
                       <button
                         onClick={() => { if (findingNote.trim()) setConfirmAction('notifyForeman') }}
                         disabled={!findingNote.trim()}
@@ -290,58 +220,6 @@ export default function MechanicJobDetailPage() {
                       >
                         แจ้งหัวหน้าช่าง
                       </button>
-=======
-
-                      <div>
-                        <p className="text-sm text-gray-400 mb-2">รูปภาพประกอบ</p>
-                        <div className="flex gap-2 flex-wrap">
-                          {findingPhotos.map((p, i) => (
-                            <div key={i} className="relative group shrink-0">
-                              <button onClick={() => openLightbox(findingPhotos, i)}
-                                className="w-20 h-20 rounded-xl overflow-hidden border border-[#F8981D]/40 hover:border-[#F8981D] transition-colors p-0 cursor-pointer block">
-                                <img src={p} alt="" className="w-full h-full object-cover" />
-                              </button>
-                              <button onClick={() => setFindingPhotos((prev) => prev.filter((_, idx) => idx !== i))}
-                                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-sm flex items-center justify-center border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
-                                ✕
-                              </button>
-                            </div>
-                          ))}
-                          <label className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-200 hover:border-[#F8981D] flex items-center justify-center cursor-pointer transition-colors shrink-0 group">
-                            <svg className="w-5 h-5 text-gray-300 group-hover:text-[#F8981D] transition-colors" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                            </svg>
-                            <input type="file" accept="image/*" multiple className="hidden" onChange={handleFindingPhotos} />
-                          </label>
-                        </div>
-                      </div>
-
-                      {editingReport ? (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => { setFindingNote(savedNote); setFindingPhotos(savedPhotos); setEditingReport(false) }}
-                            className="flex-1 py-2.5 text-sm text-gray-400 hover:text-gray-600 border border-gray-200 hover:border-gray-400 rounded-xl bg-transparent cursor-pointer transition-colors"
-                          >
-                            ยกเลิก
-                          </button>
-                          <button
-                            onClick={() => { if (findingNote.trim()) setEditingReport(false) }}
-                            disabled={!findingNote.trim()}
-                            className="flex-1 py-2.5 text-sm font-medium bg-[#44403C] hover:bg-black disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl border-none cursor-pointer transition-colors"
-                          >
-                            บันทึก
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => { if (findingNote.trim()) setConfirmAction('notifyForeman') }}
-                          disabled={!findingNote.trim()}
-                          className="w-full bg-[#44403C] hover:bg-black disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium py-2.5 rounded-xl transition-colors border-none cursor-pointer"
-                        >
-                          แจ้งหัวหน้าช่าง
-                        </button>
-                      )}
->>>>>>> origin/Krit_front
                     </>
                   )}
                 </div>
@@ -369,88 +247,12 @@ export default function MechanicJobDetailPage() {
             {/* RIGHT */}
             <div className="flex flex-col gap-3 overflow-y-auto">
 
-<<<<<<< HEAD
-=======
-              {/* Parts used */}
-              <div className={`rounded-xl border p-4 shadow-sm ${status === 'คืนของ' && !partsReturned ? 'bg-white border-[#F8981D]/40' : 'bg-white border-gray-100'}`}>
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm text-gray-400 uppercase tracking-wide">อะไหล่ที่เบิกมา</p>
-                  {status === 'คืนของ' && !partsReturned && (
-                    <span className="text-sm font-medium text-[#F8981D]">กรอกจำนวนที่ใช้จริง</span>
-                  )}
-                </div>
-                {!['คืนของ', 'เสร็จแล้ว'].includes(status) && (
-                  <p className="text-sm text-gray-400 italic">จะสามารถบันทึกได้หลังหัวหน้าช่างตรวจผ่านแล้ว</p>
-                )}
-                {baseJob.parts.length === 0 ? (
-                  <p className="text-sm text-gray-400">ไม่มีอะไหล่</p>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    {baseJob.parts.map((p, i) => {
-                      const actual = actualQtys[i] ?? p.qty
-                      const unused = p.qty - actual
-                      const isActive = status === 'คืนของ' && !partsReturned
-                      return (
-                        <div key={i} className={`rounded-xl px-3 py-2.5 transition-all ${
-                          !['คืนของ', 'เสร็จแล้ว'].includes(status)
-                            ? 'bg-stone-50 opacity-40'
-                            : isActive
-                              ? 'bg-[#F8981D]/5 border border-[#F8981D]/20'
-                              : 'bg-stone-50'
-                        }`}>
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium text-[#1E1E1E]">{p.name}</p>
-                            {isActive ? (
-                              <div className="flex items-center border border-[#F8981D]/40 rounded-lg overflow-hidden h-7 shrink-0 bg-white">
-                                <button onClick={() => setActualQtys((prev) => ({ ...prev, [i]: Math.max(0, actual - 1) }))}
-                                  className="w-7 h-7 flex items-center justify-center text-[#F8981D] hover:bg-[#F8981D]/10 bg-transparent border-none cursor-pointer font-bold text-sm transition-colors">−</button>
-                                <span className="text-sm font-semibold w-7 text-center text-[#1E1E1E]">{actual}</span>
-                                <button onClick={() => setActualQtys((prev) => ({ ...prev, [i]: Math.min(p.qty, actual + 1) }))}
-                                  className="w-7 h-7 flex items-center justify-center text-[#F8981D] hover:bg-[#F8981D]/10 bg-transparent border-none cursor-pointer font-bold text-sm transition-colors">+</button>
-                              </div>
-                            ) : (
-                              <span className="text-sm text-gray-400">{actual} {p.unit}</span>
-                            )}
-                          </div>
-                          {isActive && unused > 0 && (
-                            <p className="text-sm text-[#F8981D] font-medium mt-1">คืน {unused} {p.unit}</p>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-                {status === 'คืนของ' && !partsReturned && baseJob.parts.length > 0 && (
-                  <button
-                    onClick={() => setConfirmAction('returnParts')}
-                    className="w-full mt-3 bg-[#F8981D] hover:bg-orange-500 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors border-none cursor-pointer"
-                  >
-                    ยืนยันคืนอะไหล่ส่วนที่เหลือ
-                  </button>
-                )}
-                {partsReturned && (
-                  <div className="mt-3 flex items-center justify-end gap-2 text-sm text-[#44403C]">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                    คืนอะไหล่แล้ว
-                  </div>
-                )}
-              </div>
 
->>>>>>> origin/Krit_front
               {/* Removed customer parts */}
               <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
                 <p className="text-sm text-gray-400 uppercase tracking-wide mb-3">อะไหล่เก่าที่ถอดออก</p>
 
-<<<<<<< HEAD
-=======
-                {!['คืนของ', 'เสร็จแล้ว'].includes(status) && (
-                  <p className="text-sm text-gray-400 italic">จะสามารถบันทึกได้หลังหัวหน้าช่างตรวจผ่านแล้ว</p>
-                )}
 
-                {/* Items list */}
->>>>>>> origin/Krit_front
                 {removedParts.length > 0 && (
                   <div className="flex flex-col gap-2 mb-3">
                     {removedParts.map(rp => (
@@ -464,15 +266,9 @@ export default function MechanicJobDetailPage() {
                             <span className={`text-sm font-medium px-2 py-0.5 rounded-full ${dispositionConfig[rp.disposition].bg} ${dispositionConfig[rp.disposition].text}`}>
                               {rp.disposition}
                             </span>
-<<<<<<< HEAD
                             {isWorking && (
                               <button onClick={() => setRemovedParts(p => p.filter(x => x.id !== rp.id))}
                                 className="text-gray-300 hover:text-red-400 bg-transparent border-none cursor-pointer text-xs transition-colors">✕</button>
-=======
-                            {status === 'คืนของ' && (
-                              <button onClick={() => setRemovedParts((p) => p.filter((x) => x.id !== rp.id))}
-                                className="text-gray-300 hover:text-red-400 bg-transparent border-none cursor-pointer text-sm transition-colors">✕</button>
->>>>>>> origin/Krit_front
                             )}
                           </div>
                         </div>
@@ -511,15 +307,9 @@ export default function MechanicJobDetailPage() {
                           className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#44403C] transition-colors"
                         />
                         <div className="flex gap-1.5">
-<<<<<<< HEAD
                           {(['คืนลูกค้า', 'ทิ้ง', 'เก็บหลักฐาน'] as Disposition[]).map(d => (
                             <button key={d} onClick={() => setNewRemoved(p => ({ ...p, disposition: d }))}
                               className={`flex-1 text-xs py-1.5 rounded-lg border cursor-pointer transition-colors font-medium ${
-=======
-                          {(['คืนลูกค้า', 'ทิ้ง', 'เก็บหลักฐาน'] as Disposition[]).map((d) => (
-                            <button key={d} onClick={() => setNewRemoved((p) => ({ ...p, disposition: d }))}
-                              className={`flex-1 text-sm py-1.5 rounded-lg border cursor-pointer transition-colors font-medium ${
->>>>>>> origin/Krit_front
                                 newRemoved.disposition === d
                                   ? 'bg-[#44403C] text-white border-[#44403C]'
                                   : 'bg-white text-gray-400 border-gray-200 hover:border-gray-400'
@@ -581,11 +371,7 @@ export default function MechanicJobDetailPage() {
                 {['COMPLETED', 'PAID'].includes(job.status) && (
                   <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-center">
                     <p className="text-sm font-medium text-[#44403C]">งานเสร็จสมบูรณ์</p>
-<<<<<<< HEAD
                     {job.completedAt && <p className="text-xs text-gray-600 mt-0.5">เสร็จเมื่อ {formatDate(job.completedAt)}</p>}
-=======
-                    {baseJob.completedAt && <p className="text-sm text-gray-600 mt-0.5">เสร็จเมื่อ {baseJob.completedAt}</p>}
->>>>>>> origin/Krit_front
                   </div>
                 )}
               </div>
@@ -597,52 +383,31 @@ export default function MechanicJobDetailPage() {
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full bg-stone-300 shrink-0" />
                     <div>
-<<<<<<< HEAD
                       <p className="text-xs font-medium text-gray-600">รับงานเข้า</p>
                       <p className="text-xs text-gray-400">{formatDate(job.createdAt)}</p>
-=======
-                      <p className="text-sm font-medium text-gray-600">ได้รับมอบหมาย</p>
-                      <p className="text-sm text-gray-400">{baseJob.assignedAt}</p>
->>>>>>> origin/Krit_front
                     </div>
                   </div>
                   {job.startedAt && (
                     <div className="flex items-center gap-3">
                       <div className="w-2 h-2 rounded-full bg-[#F8981D] shrink-0" />
                       <div>
-<<<<<<< HEAD
                         <p className="text-xs font-medium text-gray-600">เริ่มซ่อม</p>
                         <p className="text-xs text-gray-400">{formatDate(job.startedAt)}</p>
-=======
-                        <p className="text-sm font-medium text-gray-600">เริ่มซ่อม</p>
-                        <p className="text-sm text-gray-400">{baseJob.startedAt}</p>
->>>>>>> origin/Krit_front
                       </div>
                     </div>
                   )}
                   {notifiedForeman && (
                     <div className="flex items-center gap-3">
                       <div className="w-2 h-2 rounded-full bg-stone-400 shrink-0" />
-<<<<<<< HEAD
                       <div><p className="text-xs font-medium text-gray-600">แจ้งปัญหาเพิ่มหัวหน้าช่าง</p></div>
-=======
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">แจ้งปัญหาเพิ่มหัวหน้าช่าง</p>
-                      </div>
->>>>>>> origin/Krit_front
                     </div>
                   )}
                   {job.completedAt && (
                     <div className="flex items-center gap-3">
                       <div className="w-2 h-2 rounded-full bg-green-400 shrink-0" />
                       <div>
-<<<<<<< HEAD
                         <p className="text-xs font-medium text-gray-600">เสร็จแล้ว</p>
                         <p className="text-xs text-gray-400">{formatDate(job.completedAt)}</p>
-=======
-                        <p className="text-sm font-medium text-gray-600">เสร็จแล้ว</p>
-                        <p className="text-sm text-gray-400">{baseJob.completedAt}</p>
->>>>>>> origin/Krit_front
                       </div>
                     </div>
                   )}

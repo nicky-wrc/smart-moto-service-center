@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import React, { useState, type ReactNode } from 'react';
 import { Header } from './Header';
 import { Footer } from './Footer';
 

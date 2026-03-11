@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Package, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { partPackagesService } from '../../services/api/part-packages.service';
-import type { PartPackage, CreatePackageDto } from '../../services/api/types';
+import type { PartPackage } from '../../services/api/types';
 
 export const PackagesPage = () => {
   const [packages, setPackages] = useState<PartPackage[]>([]);
@@ -10,7 +10,7 @@ export const PackagesPage = () => {
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState<CreatePackageDto>({
+  const [formData, setFormData] = useState<any>({
     name: '',
     description: '',
     sellingPrice: 0,

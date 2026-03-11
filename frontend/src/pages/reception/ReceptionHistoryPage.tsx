@@ -8,64 +8,6 @@ import { getReceptionHistory, type ReceptionHistoryEntry, type ReceptionActivity
 // Re-export types for backward compatibility
 export type { ReceptionActivityType, ReceptionHistoryEntry }
 
-// ─── Mock Data (for fallback) ────────────────────────────────────────────────
-
-const MOCK_HISTORY: ReceptionHistoryEntry[] = [
-    {
-        id: 'RH-001',
-        activityType: 'แจ้งซ่อมครั้งแรก',
-        firstName: 'สมชาย', lastName: 'ใจดี',
-        phone: '0812345678',
-        model: 'Honda Wave 110i', color: 'แดง',
-        plateLine1: '1กข', plateLine2: '1234', province: 'กรุงเทพมหานคร',
-        symptoms: 'เครื่องยนต์ดับบ่อย น้ำมันรั่ว',
-        tags: ['เครื่องยนต์', 'เชื้อเพลิง'],
-        createdAt: '10/03/2569 09:15',
-    },
-    {
-        id: 'RH-002',
-        activityType: 'ลงทะเบียนใหม่',
-        firstName: 'สมหญิง', lastName: 'รักดี',
-        phone: '0898765432',
-        model: 'Honda PCX 160', color: 'ดำ',
-        plateLine1: '5ขด', plateLine2: '999', province: 'กรุงเทพมหานคร',
-        createdAt: '10/03/2569 10:00',
-    },
-    {
-        id: 'RH-003',
-        activityType: 'แจ้งซ่อมรถที่มีในระบบ',
-        firstName: 'วิชัย', lastName: 'กล้าหาญ',
-        phone: '0855555555',
-        model: 'Honda Click 125i', color: 'ขาว',
-        plateLine1: '3งจ', plateLine2: '9012', province: 'ภูเก็ต',
-        symptoms: 'เบรกหลังไม่ค่อยจับ',
-        tags: ['เบรก', 'ช่วงล่าง'],
-        createdAt: '10/03/2569 11:30',
-    },
-    {
-        id: 'RH-004',
-        activityType: 'แจ้งซ่อมรถคันใหม่',
-        firstName: 'มานี', lastName: 'มีนา',
-        phone: '0888888888',
-        model: 'Vespa Sprint 150', color: 'เหลือง',
-        plateLine1: '4ฉช', plateLine2: '3456', province: 'ขอนแก่น',
-        symptoms: 'ไฟหน้าไม่ติด สายไฟขาด',
-        tags: ['ไฟฟ้า'],
-        createdAt: '10/03/2569 13:45',
-    },
-    {
-        id: 'RH-005',
-        activityType: 'แจ้งซ่อมครั้งแรก',
-        firstName: 'ประสิทธิ์', lastName: 'ชนะภัย',
-        phone: '0871234567',
-        model: 'Yamaha NMAX 155', color: 'น้ำเงิน',
-        plateLine1: '2คค', plateLine2: '5500', province: 'เชียงใหม่',
-        symptoms: 'เกียร์ไม่ยอมเปลี่ยน มีเสียงดังตอนออกตัว',
-        tags: ['ส่งกำลัง'],
-        createdAt: '10/03/2569 14:20',
-    },
-]
-
 // ─── Status Config ────────────────────────────────────────────────────────────
 
 // ─── Auto tags from activity type ────────────────────────────────────────────
@@ -100,11 +42,10 @@ export default function ReceptionHistoryPage() {
     const [filterModel, setFilterModel] = useState('')
     const [filterActivity, setFilterActivity] = useState<ReceptionActivityType | ''>('')
 
-    // Merge loaded history with mock data
+    // Load history from localStorage only (no mock data)
     const allHistory = useMemo(() => {
-        const loadedHistory = getReceptionHistory()
-        return [...loadedHistory, ...MOCK_HISTORY]
-    }, []) // Empty dependency array means this only runs once on mount
+        return getReceptionHistory()
+    }, [])
 
     const filtered = useMemo(() => {
         return allHistory.filter(entry => {

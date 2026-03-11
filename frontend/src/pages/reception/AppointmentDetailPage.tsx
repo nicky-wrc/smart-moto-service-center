@@ -262,12 +262,12 @@ export const AppointmentDetailPage = () => {
             </p>
           </div>
 
-          {appointment.motorcycle.color && (
+          {(appointment.motorcycle as any).color && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 สีรถ
               </label>
-              <p className="text-gray-900">{appointment.motorcycle.color}</p>
+              <p className="text-gray-900">{(appointment.motorcycle as any).color}</p>
             </div>
           )}
         </div>

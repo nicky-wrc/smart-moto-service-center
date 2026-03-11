@@ -1136,15 +1136,9 @@ export default function JobDetailPage() {
                           </button>
                           {allSkills.map((skill: string) => (
                             <button
-<<<<<<< HEAD
                               key={skill as string}
                               onClick={() => setMechanicSkillFilter(mechanicSkillFilter === skill ? '' : skill as string)}
                               className={`text-xs px-2.5 py-1 rounded-full border transition-colors cursor-pointer ${
-=======
-                              key={skill}
-                              onClick={() => setMechanicSkillFilter(mechanicSkillFilter === skill ? '' : skill)}
-                              className={`text-sm px-2.5 py-1 rounded-full border transition-colors cursor-pointer ${
->>>>>>> origin/Krit_front
                                 mechanicSkillFilter === skill ? 'bg-[#F8981D] text-white border-[#F8981D]' : 'bg-white text-gray-400 border-gray-200 hover:border-[#F8981D] hover:text-[#F8981D]'
                               }`}
                             >

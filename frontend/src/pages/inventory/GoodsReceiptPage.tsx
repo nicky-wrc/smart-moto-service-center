@@ -97,7 +97,7 @@ export const GoodsReceiptPage = () => {
         notes: notes || undefined,
       };
 
-      const result = await partsService.createReceipt(receiptData);
+      const result = await partsService.createReceipt(receiptData) as any;
       alert(`บันทึกรับของเข้าสำเร็จ!\nเลขที่: ${result.receiptNo}`);
       navigate('/inventory/receipts');
     } catch (err: any) {

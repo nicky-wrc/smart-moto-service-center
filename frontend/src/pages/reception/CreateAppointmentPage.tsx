@@ -229,8 +229,7 @@ export const CreateAppointmentPage = () => {
             <div className="flex items-center justify-end gap-4 pt-4 border-t border-gray-200">
               <Link
                 to="/reception/appointments"
-                className="btn btn-outline"
-                disabled={submitting}
+                className={`btn btn-outline ${submitting ? 'opacity-50 pointer-events-none' : ''}`}
               >
                 ยกเลิก
               </Link>

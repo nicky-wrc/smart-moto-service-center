@@ -21,6 +21,7 @@ import type {
   JobChecklistItem,
   CreateChecklistItemDto,
 } from '../../services/api/types';
+import { OutsourceModal } from './OutsourceModal';
 
 export const JobDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -398,7 +399,7 @@ export const JobDetailPage = () => {
                   onClick={async () => {
                     if (!confirm('ต้องการเสร็จสิ้นงานนี้หรือไม่?')) return;
                     try {
-                      const updatedJob = await jobsService.completeJob(+id);
+                      const updatedJob = await jobsService.completeJob(+id!);
                       setJob(updatedJob);
                       alert('✅ งานเสร็จสิ้นแล้ว!');
                     } catch (err: any) {

@@ -72,21 +72,12 @@ export default function MechanicHistoryPage() {
           <table className="w-full text-sm border-separate border-spacing-0">
             <thead className="sticky top-0 bg-white z-10">
               <tr className="border-b border-gray-200">
-<<<<<<< HEAD
                 <th className="text-left text-xs font-semibold text-gray-400 pl-5 pr-3 py-3 w-28">เลขที่งาน</th>
                 <th className="text-left text-xs font-semibold text-gray-400 px-3 py-3">รถ</th>
                 <th className="text-left text-xs font-semibold text-gray-400 px-3 py-3">ลูกค้า</th>
                 <th className="text-left text-xs font-semibold text-gray-400 px-3 py-3">อาการ</th>
                 <th className="text-left text-xs font-semibold text-gray-400 px-3 py-3">แท็ก</th>
                 <th className="text-left text-xs font-semibold text-gray-400 pl-3 pr-5 py-3 w-40">วันที่เสร็จ</th>
-=======
-                <th className="text-left text-sm font-semibold text-gray-400 pl-5 pr-3 py-3 w-24">คำขอที่</th>
-                <th className="text-left text-sm font-semibold text-gray-400 px-3 py-3">รถ</th>
-                <th className="text-left text-sm font-semibold text-gray-400 px-3 py-3">ลูกค้า</th>
-                <th className="text-left text-sm font-semibold text-gray-400 px-3 py-3">อาการ</th>
-                <th className="text-left text-sm font-semibold text-gray-400 px-3 py-3">แท็ก</th>
-                <th className="text-left text-sm font-semibold text-gray-400 pl-3 pr-5 py-3 w-40">วันที่เสร็จ</th>
->>>>>>> origin/Krit_front
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -95,7 +86,6 @@ export default function MechanicHistoryPage() {
                   <td colSpan={6} className="text-center text-sm text-gray-400 py-12">ไม่มีรายการ</td>
                 </tr>
               )}
-<<<<<<< HEAD
               {jobs.map((job) => {
                 const customerName = `${job.motorcycle?.owner?.firstName || ''} ${job.motorcycle?.owner?.lastName || ''}`.trim()
                 return (
@@ -133,46 +123,6 @@ export default function MechanicHistoryPage() {
                   </tr>
                 )
               })}
-=======
-              {jobs.map((job) => (
-                <tr
-                  key={job.id}
-                  onClick={() => navigate(`/mechanic/jobs/${job.id}`)}
-                  className="bg-white hover:bg-gray-50 cursor-pointer transition-colors"
-                >
-                  <td className="pl-5 pr-3 py-3.5">
-                    <div className="w-8 h-8 rounded-lg bg-[#44403C] text-white text-sm font-semibold flex items-center justify-center">
-                      {job.id}
-                    </div>
-                  </td>
-                  <td className="px-3 py-3.5">
-                    <p className="font-medium text-[#1E1E1E]">{job.brand} {job.model}</p>
-                    <p className="text-sm text-gray-400 mt-0.5">{job.licensePlate}</p>
-                  </td>
-                  <td className="px-3 py-3.5 text-gray-600">{job.customerName}</td>
-                  <td className="px-3 py-3.5 max-w-50">
-                    <p className="text-gray-500 italic truncate">"{job.symptom}"</p>
-                  </td>
-                  <td className="px-3 py-3.5">
-                    <div className="flex gap-1.5 flex-wrap">
-                      {job.tags.map((tag) => (
-                        <span key={tag} className="text-sm px-2 py-0.5 rounded-full bg-[#F8981D]/10 text-[#F8981D]">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="pl-3 pr-5 py-3.5 text-sm text-gray-400">
-                    {job.completedAt && (
-                      <>
-                        <p className="text-gray-500">{job.completedAt.split('  ')[0]}</p>
-                        <p>{job.completedAt.split('  ')[1]}</p>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))}
->>>>>>> origin/Krit_front
             </tbody>
           </table>
         </div>
