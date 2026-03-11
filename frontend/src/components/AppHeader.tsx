@@ -31,10 +31,10 @@ export default function AppHeader({ title }: AppHeaderProps) {
   }
 
   return (
-    <div className="flex items-center justify-between pl-7 pr-0 py-5">
+    <div className="flex items-center justify-between pl-6 pr-0 py-5">
       <div className="flex items-center gap-4">
-        <span className="text-white font-bold text-2xl tracking-wide">SM</span>
-        <span className="text-white text-2xl font-light ml-3">{title}</span>
+        <img src="/logo.png" alt="RevUp" className="w-9 h-9 object-contain shrink-0" />
+        <span className="text-white text-xl font-bold">{title}</span>
       </div>
       <div className="relative">
         <button

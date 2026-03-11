@@ -54,6 +54,11 @@ export default function MechanicJobDetailPage() {
     ({ name: '', description: '', disposition: 'คืนลูกค้า' })
   const [addingRemoved, setAddingRemoved]       = useState(false)
 
+  // Pre-delivery cleaning checklist
+  const [cleaningChecked, setCleaningChecked]   = useState(false)
+  const [exteriorChecked, setExteriorChecked]   = useState(false)
+  const [deliveryPhotos, setDeliveryPhotos]     = useState<string[]>([])
+
   // Confirm modal
   const [confirmAction, setConfirmAction] = useState<null | 'notifyForeman' | 'returnParts' | 'submitInspect' | 'closeJob'>(null)
 
@@ -66,6 +71,12 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
   const handleFindingPhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
     const urls = Array.from(e.target.files ?? []).map((f) => URL.createObjectURL(f))
     setFindingPhotos((p) => [...p, ...urls])
+    e.target.value = ''
+  }
+
+  const handleDeliveryPhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const urls = Array.from(e.target.files ?? []).map((f) => URL.createObjectURL(f))
+    setDeliveryPhotos((p) => [...p, ...urls])
     e.target.value = ''
   }
 
@@ -99,8 +110,8 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
       )}
       {confirmAction === 'submitInspect' && (
         <ConfirmModal
-          title="ยืนยันส่งงานให้หัวหน้าตรวจ?"
-          description="หัวหน้าช่างจะได้รับแจ้งเพื่อตรวจสอบงาน ไม่สามารถแก้ไขงานได้อีกจนกว่าจะตรวจเสร็จ"
+          title={baseJob.qcRejectNote ? 'ยืนยันส่งตรวจอีกครั้ง?' : 'ยืนยันส่งงานให้หัวหน้าตรวจ?'}
+          description={baseJob.qcRejectNote ? 'งานจะถูกส่งให้หัวหน้าช่างตรวจสอบใหม่ ไม่สามารถแก้ไขได้จนกว่าจะตรวจเสร็จ' : 'หัวหน้าช่างจะได้รับแจ้งเพื่อตรวจสอบงาน ไม่สามารถแก้ไขงานได้อีกจนกว่าจะตรวจเสร็จ'}
           confirmLabel="ส่งตรวจ"
           onCancel={() => setConfirmAction(null)}
           onConfirm={() => { setStatus('รอตรวจ'); setConfirmAction(null) }}
@@ -191,19 +202,6 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
                 <div className="bg-[#44403C]/5 border border-[#44403C]/15 rounded-xl px-4 py-3">
                   <p className="text-xs text-[#44403C]/70 uppercase tracking-wide mb-1.5">หมายเหตุจากหัวหน้าช่าง</p>
                   <p className="text-sm text-[#44403C]">{baseJob.foremanNote}</p>
-                </div>
-              )}
-
-              {/* QC rejection note */}
-              {baseJob.qcRejectNote && (
-                <div className="bg-[#F8981D]/5 border border-[#F8981D]/30 rounded-xl px-4 py-3 flex items-start gap-3">
-                  <svg className="w-4 h-4 text-[#F8981D] mt-0.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                  <div>
-                    <p className="text-xs font-semibold text-[#F8981D] uppercase tracking-wide mb-1">หัวหน้าช่างตีกลับ — ต้องแก้ไข</p>
-                    <p className="text-sm text-[#F8981D]/80 leading-relaxed">{baseJob.qcRejectNote}</p>
-                  </div>
                 </div>
               )}
 
@@ -494,6 +492,136 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
 
               </div>
 
+              {/* Pre-delivery checklist — visible in คืนของ & เสร็จแล้ว */}
+              {['คืนของ', 'เสร็จแล้ว'].includes(status) && (
+                <div className={`rounded-xl border p-4 shadow-sm ${status === 'คืนของ' ? 'bg-white border-gray-100' : 'bg-white border-gray-100'}`}>
+                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">เตรียมส่งมอบรถ</p>
+                  <div className="flex flex-col gap-2.5">
+
+                    {/* Step 1 */}
+                    <label className={`flex items-center gap-3 rounded-xl px-3 py-2.5 cursor-pointer transition-colors ${
+                      status === 'เสร็จแล้ว' ? 'bg-stone-50' : cleaningChecked ? 'bg-green-50 border border-green-200' : 'bg-stone-50 border border-dashed border-gray-200 hover:border-[#44403C]'
+                    }`}>
+                      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
+                        cleaningChecked ? 'bg-green-500 border-green-500' : 'border-gray-300'
+                      }`}>
+                        {cleaningChecked && (
+                          <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className={`text-sm font-medium leading-snug ${cleaningChecked ? 'text-green-700' : 'text-[#1E1E1E]'}`}>ล้างรถและทำความสะอาด</p>
+                        <p className="text-xs text-gray-400 mt-0.5">ล้างสะอาดทั้งคันก่อนส่งมอบ</p>
+                      </div>
+                      {status === 'คืนของ' && (
+                        <input type="checkbox" className="hidden" checked={cleaningChecked} onChange={(e) => setCleaningChecked(e.target.checked)} />
+                      )}
+                    </label>
+
+                    {/* Step 2 */}
+                    <label className={`flex items-center gap-3 rounded-xl px-3 py-2.5 cursor-pointer transition-colors ${
+                      status === 'เสร็จแล้ว' ? 'bg-stone-50' : exteriorChecked ? 'bg-green-50 border border-green-200' : 'bg-stone-50 border border-dashed border-gray-200 hover:border-[#44403C]'
+                    }`}>
+                      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
+                        exteriorChecked ? 'bg-green-500 border-green-500' : 'border-gray-300'
+                      }`}>
+                        {exteriorChecked && (
+                          <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className={`text-sm font-medium leading-snug ${exteriorChecked ? 'text-green-700' : 'text-[#1E1E1E]'}`}>ตรวจเช็คความเรียบร้อยภายนอก</p>
+                        <p className="text-xs text-gray-400 mt-0.5">ตรวจสอบสภาพรถโดยรวบก่อนคืนลูกค้า</p>
+                      </div>
+                      {status === 'คืนของ' && (
+                        <input type="checkbox" className="hidden" checked={exteriorChecked} onChange={(e) => setExteriorChecked(e.target.checked)} />
+                      )}
+                    </label>
+
+                    {/* Step 3 — Photo upload */}
+                    <div className={`rounded-xl px-3 py-2.5 transition-colors ${
+                      deliveryPhotos.length > 0 ? 'bg-green-50 border border-green-200' : 'bg-stone-50 border border-dashed border-gray-200'
+                    }`}>
+                      <div className="flex items-start gap-3">
+                        <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                          deliveryPhotos.length > 0 ? 'bg-green-500 border-green-500' : 'border-gray-300'
+                        }`}>
+                          {deliveryPhotos.length > 0 && (
+                            <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-medium leading-snug ${deliveryPhotos.length > 0 ? 'text-green-700' : 'text-[#1E1E1E]'}`}>ถ่ายรูปรถก่อนส่งมอบ</p>
+                          <p className="text-xs text-gray-400 mt-0.5">แนบรูปอย่างน้อย 1 ภาพในระบบ</p>
+                        </div>
+                      </div>
+
+                      {/* Uploaded photos */}
+                      {deliveryPhotos.length > 0 && (
+                        <div className="flex gap-2 flex-wrap mt-2.5 ml-8">
+                          {deliveryPhotos.map((p, i) => (
+                            <div key={i} className="relative group shrink-0">
+                              <button onClick={() => openLightbox(deliveryPhotos, i)}
+                                className="w-16 h-16 rounded-xl overflow-hidden border border-green-200 hover:border-green-400 transition-colors p-0 cursor-pointer block">
+                                <img src={p} alt="" className="w-full h-full object-cover" />
+                              </button>
+                              {status === 'คืนของ' && (
+                                <button onClick={() => setDeliveryPhotos((prev) => prev.filter((_, idx) => idx !== i))}
+                                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                                  ✕
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                          {status === 'คืนของ' && (
+                            <label className="w-16 h-16 rounded-xl border-2 border-dashed border-green-200 hover:border-green-400 flex items-center justify-center cursor-pointer transition-colors shrink-0 group">
+                              <svg className="w-4 h-4 text-green-300 group-hover:text-green-500 transition-colors" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                              </svg>
+                              <input type="file" accept="image/*" multiple className="hidden" onChange={handleDeliveryPhotos} />
+                            </label>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Upload button when empty */}
+                      {deliveryPhotos.length === 0 && status === 'คืนของ' && (
+                        <label className="flex items-center gap-2 mt-2.5 ml-8 cursor-pointer group">
+                          <div className="flex items-center gap-2 px-3 py-1.5 border border-gray-200 hover:border-[#44403C] rounded-lg transition-colors">
+                            <svg className="w-4 h-4 text-gray-400 group-hover:text-[#44403C] transition-colors" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span className="text-xs text-gray-400 group-hover:text-[#44403C] transition-colors">อัพโหลดรูป</span>
+                          </div>
+                          <input type="file" accept="image/*" multiple className="hidden" onChange={handleDeliveryPhotos} />
+                        </label>
+                      )}
+                    </div>
+
+                  </div>
+                </div>
+              )}
+
+              {/* QC rejection note */}
+              {baseJob.qcRejectNote && (
+                <div className="bg-[#F8981D]/5 border border-[#F8981D]/30 rounded-xl px-4 py-3 flex items-start gap-3">
+                  <svg className="w-4 h-4 text-[#F8981D] mt-0.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  <div>
+                    <p className="text-xs font-semibold text-[#F8981D] uppercase tracking-wide mb-1">หัวหน้าช่างตีกลับ — ต้องแก้ไข</p>
+                    <p className="text-sm text-[#F8981D]/80 leading-relaxed">{baseJob.qcRejectNote}</p>
+                  </div>
+                </div>
+              )}
+
               {/* Action */}
               <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm flex flex-col gap-2.5">
                 <p className="text-xs text-gray-400 uppercase tracking-wide">การดำเนินงาน</p>
@@ -508,7 +636,7 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
                 {status === 'กำลังซ่อม' && (
                   <button onClick={() => setConfirmAction('submitInspect')}
                     className="w-full bg-[#44403C] hover:bg-black text-white text-sm font-semibold py-3 rounded-xl transition-colors border-none cursor-pointer">
-                    ซ่อมเสร็จ — ส่งให้หัวหน้าตรวจ
+                    {baseJob.qcRejectNote ? 'แก้ไขแล้ว — ส่งตรวจอีกครั้ง' : 'ซ่อมเสร็จ — ส่งให้หัวหน้าตรวจ'}
                   </button>
                 )}
 
@@ -527,12 +655,41 @@ const openLightbox = (srcs: string[], idx: number) => { setLightboxSrc(srcs); se
                       </svg>
                       <p className="text-sm font-medium text-[#1E1E1E]">หัวหน้าช่างตรวจผ่านแล้ว</p>
                     </div>
+                    {/* Checklist progress hint */}
+                    {!(partsReturned && cleaningChecked && exteriorChecked && deliveryPhotos.length > 0) && (
+                      <div className="flex flex-col gap-1 px-1">
+                        {!partsReturned && (
+                          <p className="text-xs text-gray-400 flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
+                            ยืนยันคืนอะไหล่ส่วนที่เหลือ
+                          </p>
+                        )}
+                        {!cleaningChecked && (
+                          <p className="text-xs text-gray-400 flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
+                            ล้างรถและทำความสะอาด
+                          </p>
+                        )}
+                        {!exteriorChecked && (
+                          <p className="text-xs text-gray-400 flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
+                            ตรวจเช็คความเรียบร้อยภายนอก
+                          </p>
+                        )}
+                        {deliveryPhotos.length === 0 && (
+                          <p className="text-xs text-gray-400 flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
+                            ถ่ายรูปรถก่อนส่งมอบ
+                          </p>
+                        )}
+                      </div>
+                    )}
                     <button
-                      onClick={() => { if (partsReturned) setConfirmAction('closeJob') }}
-                      disabled={!partsReturned}
+                      onClick={() => { if (partsReturned && cleaningChecked && exteriorChecked && deliveryPhotos.length > 0) setConfirmAction('closeJob') }}
+                      disabled={!(partsReturned && cleaningChecked && exteriorChecked && deliveryPhotos.length > 0)}
                       className="w-full bg-[#F8981D] hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold py-3 rounded-xl transition-colors border-none cursor-pointer"
                     >
-                      {partsReturned ? 'เสร็จสิ้น — ปิดงาน' : 'ยืนยันคืนอะไหล่ก่อนปิดงาน'}
+                      เสร็จสิ้น — ปิดงาน
                     </button>
                   </>
                 )}
