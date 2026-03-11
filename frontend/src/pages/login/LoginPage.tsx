@@ -43,7 +43,7 @@ export default function LoginPage() {
         {/* Hero image */}
         <img
           src="/background.png"
-          alt="Smart Moto Service Center"
+          alt="RevUp"
           className="absolute inset-0 w-full h-full object-cover object-center"
         />
         {/* Gradient overlay — darkens bottom so text is readable */}
@@ -53,11 +53,11 @@ export default function LoginPage() {
         <div className="relative z-10 flex flex-col justify-end p-10 pb-12">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 bg-[#44403C]/80 backdrop-blur rounded-2xl flex items-center justify-center">
-              <img src="/logo.png" alt="Smart Moto" className="w-9 h-9 object-contain" />
+              <img src="/logo.png" alt="RevUp" className="w-9 h-9 object-contain" />
             </div>
             <div>
               <p className="text-white text-lg font-bold leading-none">RevUp</p>
-              <p className="text-white/50 text-xs mt-0.5">Smart Moto Service Center</p>
+              <p className="text-white/50 text-xs mt-0.5">RevUp</p>
             </div>
           </div>
           <h2 className="text-white text-3xl font-bold leading-snug max-w-xs">
@@ -79,9 +79,9 @@ export default function LoginPage() {
         {/* Mobile logo */}
         <div className="flex items-center gap-2 mb-10 lg:hidden">
           <div className="w-9 h-9 bg-[#44403C] rounded-xl flex items-center justify-center">
-            <img src="/logo.png" alt="Smart Moto" className="w-7 h-7 object-contain" />
+            <img src="/logo.png" alt="RevUp" className="w-7 h-7 object-contain" />
           </div>
-          <span className="text-lg font-bold text-[#1E1E1E]">Smart Moto</span>
+          <span className="text-lg font-bold text-[#1E1E1E]">RevUp</span>
         </div>
 
         {/* Heading */}

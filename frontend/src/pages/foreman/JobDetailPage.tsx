@@ -92,7 +92,7 @@ function PartsModal({
         <div className="px-5 pt-5 pb-4 border-b border-gray-100 flex items-center justify-between shrink-0">
           <div>
             <p className="font-semibold text-[#1E1E1E]">เลือกอะไหล่</p>
-            <p className="text-xs text-gray-400 mt-0.5">กดเพิ่มได้หลายรายการก่อนปิด</p>
+            <p className="text-sm text-gray-400 mt-0.5">กดเพิ่มได้หลายรายการก่อนปิด</p>
           </div>
           <button
             onClick={onClose}
@@ -153,10 +153,10 @@ function PartsModal({
                     {/* Part info */}
                     <div className="p-3">
                       <p className="text-sm font-medium text-[#1E1E1E] leading-snug">{part.name}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{part.partNumber}</p>
+                      <p className="text-sm text-gray-400 mt-0.5">{part.partNumber}</p>
 
                       <div className="flex items-center justify-between mt-2">
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                        <span className={`text-sm font-medium px-2 py-0.5 rounded-full ${
                           part.stock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'
                         }`}>
                           {part.stock > 0 ? `${part.stock} ${part.unit}` : 'หมดสต็อก'}
@@ -172,7 +172,7 @@ function PartsModal({
                           >
                             −
                           </button>
-                          <span className="text-xs font-medium w-6 text-center">{q}</span>
+                          <span className="text-sm font-medium w-6 text-center">{q}</span>
                           <button
                             onClick={() => setQty(part.id, q + 1)}
                             className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-50 bg-transparent border-none cursor-pointer text-sm font-bold"
@@ -182,7 +182,7 @@ function PartsModal({
                         </div>
                         <button
                           onClick={() => isAdded ? onRemove(part.id) : onAdd(part, q)}
-                          className={`flex-1 text-xs font-medium py-1.5 rounded-lg border-none cursor-pointer transition-colors ${
+                          className={`flex-1 text-sm font-medium py-1.5 rounded-lg border-none cursor-pointer transition-colors ${
                             isAdded
                               ? 'bg-red-50 text-red-500 hover:bg-red-100'
                               : 'bg-[#44403C] text-white hover:bg-black'
@@ -239,7 +239,7 @@ function JobTypeDropdown({ value, onChange }: { value: JobType; onChange: (v: Jo
         {selected ? (
           <div>
             <p className="text-sm font-medium text-[#1E1E1E]">{selected.label}</p>
-            <p className="text-xs text-gray-400 mt-0.5">{selected.desc}</p>
+            <p className="text-sm text-gray-400 mt-0.5">{selected.desc}</p>
           </div>
         ) : (
           <span className="text-sm text-gray-400">เลือกประเภทงาน...</span>
@@ -265,7 +265,7 @@ function JobTypeDropdown({ value, onChange }: { value: JobType; onChange: (v: Jo
             >
               <div>
                 <p className="text-sm font-medium text-[#1E1E1E]">{opt.label}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{opt.desc}</p>
+                <p className="text-sm text-gray-400 mt-0.5">{opt.desc}</p>
               </div>
               {value === opt.value && (
                 <span className="text-[#F8981D] font-bold text-sm shrink-0 mt-0.5">✓</span>
@@ -526,23 +526,23 @@ export default function JobDetailPage() {
         >
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-gray-50 rounded-xl p-3">
-              <p className="text-xs text-gray-400 mb-1">ลูกค้า</p>
+              <p className="text-sm text-gray-400 mb-1">ลูกค้า</p>
               <p className="text-sm font-semibold text-[#1E1E1E]">{job.customerName}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{job.customerPhone}</p>
+              <p className="text-sm text-gray-500 mt-0.5">{job.customerPhone}</p>
             </div>
             <div className="bg-gray-50 rounded-xl p-3">
-              <p className="text-xs text-gray-400 mb-1">รถ</p>
+              <p className="text-sm text-gray-400 mb-1">รถ</p>
               <p className="text-sm font-semibold text-[#1E1E1E]">{job.brand} {job.model}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{job.licensePlate} · {job.province}</p>
+              <p className="text-sm text-gray-500 mt-0.5">{job.licensePlate} · {job.province}</p>
             </div>
           </div>
 
           <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
-            <p className="text-xs text-amber-700 font-medium mb-1">ความเสียหาย / อาการที่พบ</p>
+            <p className="text-sm text-amber-700 font-medium mb-1">ความเสียหาย / อาการที่พบ</p>
             {foremanNote.trim() ? (
               <>
                 <p className="text-sm text-[#1E1E1E] leading-relaxed">{foremanNote}</p>
-                <p className="text-xs text-amber-600/70 mt-1.5">อาการที่ลูกค้าแจ้ง: {job.symptom}</p>
+                <p className="text-sm text-amber-600/70 mt-1.5">อาการที่ลูกค้าแจ้ง: {job.symptom}</p>
               </>
             ) : (
               <p className="text-sm text-[#1E1E1E] leading-relaxed">{job.symptom}</p>
@@ -550,17 +550,17 @@ export default function JobDetailPage() {
           </div>
 
           <div>
-            <p className="text-xs text-gray-400 mb-2">อะไหล่ที่ใช้ ({selectedParts.length} รายการ)</p>
+            <p className="text-sm text-gray-400 mb-2">อะไหล่ที่ใช้ ({selectedParts.length} รายการ)</p>
             <div className="flex flex-col gap-1.5">
               {selectedParts.map((sp) => {
                 const enough = sp.part.stock >= sp.qty
                 return (
                   <div key={sp.part.id} className="flex items-center justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-[#1E1E1E] truncate">{sp.part.name} <span className="text-gray-400 text-xs">× {sp.qty} {sp.part.unit}</span></p>
-                      <p className="text-xs text-gray-400">{(sp.qty * sp.part.unitPrice).toLocaleString()} ฿</p>
+                      <p className="text-sm text-[#1E1E1E] truncate">{sp.part.name} <span className="text-gray-400 text-sm">× {sp.qty} {sp.part.unit}</span></p>
+                      <p className="text-sm text-gray-400">{(sp.qty * sp.part.unitPrice).toLocaleString()} ฿</p>
                     </div>
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${enough ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                    <span className={`text-sm font-medium px-2 py-0.5 rounded-full shrink-0 ${enough ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
                       {enough ? 'มีในสต็อก' : 'สั่งซื้อ'}
                     </span>
                   </div>
@@ -583,18 +583,18 @@ export default function JobDetailPage() {
             <div>
               <p className="text-sm text-[#1E1E1E]">ระยะเวลาโดยประมาณ</p>
               {selectedParts.some((sp) => sp.part.stock < sp.qty) && (
-                <p className="text-xs text-amber-600 mt-0.5">รวมระยะเวลารออะไหล่ด้วย</p>
+                <p className="text-sm text-amber-600 mt-0.5">รวมระยะเวลารออะไหล่ด้วย</p>
               )}
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
               <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden h-7">
                 <button onClick={() => setEstimatedDays((d) => Math.max(1, Number(d) - 1))} className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-50 bg-transparent border-none cursor-pointer font-bold transition-colors">−</button>
-                <input type="text" inputMode="numeric" value={estimatedDays} onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setEstimatedDays(v === '' ? '' : Math.max(1, Number(v))) }} className="w-8 h-7 text-xs font-semibold text-center text-[#1E1E1E] outline-none border-x border-gray-200 bg-white" />
+                <input type="text" inputMode="numeric" value={estimatedDays} onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setEstimatedDays(v === '' ? '' : Math.max(1, Number(v))) }} className="w-8 h-7 text-sm font-semibold text-center text-[#1E1E1E] outline-none border-x border-gray-200 bg-white" />
                 <button onClick={() => setEstimatedDays((d) => Number(d) + 1)} className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-50 bg-transparent border-none cursor-pointer font-bold transition-colors">+</button>
               </div>
               <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden h-7">
                 {(['วัน', 'เดือน'] as const).map((u) => (
-                  <button key={u} onClick={() => setEstimatedUnit(u)} className={`px-2.5 h-7 text-xs font-medium border-none cursor-pointer transition-colors ${estimatedUnit === u ? 'bg-[#1E1E1E] text-white' : 'bg-white text-gray-400 hover:bg-gray-50'}`}>{u}</button>
+                  <button key={u} onClick={() => setEstimatedUnit(u)} className={`px-2.5 h-7 text-sm font-medium border-none cursor-pointer transition-colors ${estimatedUnit === u ? 'bg-[#1E1E1E] text-white' : 'bg-white text-gray-400 hover:bg-gray-50'}`}>{u}</button>
                 ))}
               </div>
             </div>
@@ -617,23 +617,23 @@ export default function JobDetailPage() {
         >
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-gray-50 rounded-xl p-3">
-              <p className="text-xs text-gray-400 mb-1">ลูกค้า</p>
+              <p className="text-sm text-gray-400 mb-1">ลูกค้า</p>
               <p className="text-sm font-semibold text-[#1E1E1E]">{job.customerName}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{job.customerPhone}</p>
+              <p className="text-sm text-gray-500 mt-0.5">{job.customerPhone}</p>
             </div>
             <div className="bg-gray-50 rounded-xl p-3">
-              <p className="text-xs text-gray-400 mb-1">รถ</p>
+              <p className="text-sm text-gray-400 mb-1">รถ</p>
               <p className="text-sm font-semibold text-[#1E1E1E]">{job.brand} {job.model}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{job.licensePlate} · {job.province}</p>
+              <p className="text-sm text-gray-500 mt-0.5">{job.licensePlate} · {job.province}</p>
             </div>
           </div>
 
           <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
-            <p className="text-xs text-amber-700 font-medium mb-1">ความเสียหาย / อาการที่พบ</p>
+            <p className="text-sm text-amber-700 font-medium mb-1">ความเสียหาย / อาการที่พบ</p>
             {foremanNote.trim() ? (
               <>
                 <p className="text-sm text-[#1E1E1E] leading-relaxed">{foremanNote}</p>
-                <p className="text-xs text-amber-600/70 mt-1.5">อาการที่ลูกค้าแจ้ง: {job.symptom}</p>
+                <p className="text-sm text-amber-600/70 mt-1.5">อาการที่ลูกค้าแจ้ง: {job.symptom}</p>
               </>
             ) : (
               <p className="text-sm text-[#1E1E1E] leading-relaxed">{job.symptom}</p>
@@ -656,12 +656,12 @@ export default function JobDetailPage() {
             <div className="flex items-center gap-1.5 shrink-0">
               <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden h-7">
                 <button onClick={() => setEstimatedDays((d) => Math.max(1, Number(d) - 1))} className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-50 bg-transparent border-none cursor-pointer font-bold transition-colors">−</button>
-                <input type="text" inputMode="numeric" value={estimatedDays} onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setEstimatedDays(v === '' ? '' : Math.max(1, Number(v))) }} className="w-8 h-7 text-xs font-semibold text-center text-[#1E1E1E] outline-none border-x border-gray-200 bg-white" />
+                <input type="text" inputMode="numeric" value={estimatedDays} onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setEstimatedDays(v === '' ? '' : Math.max(1, Number(v))) }} className="w-8 h-7 text-sm font-semibold text-center text-[#1E1E1E] outline-none border-x border-gray-200 bg-white" />
                 <button onClick={() => setEstimatedDays((d) => Number(d) + 1)} className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-50 bg-transparent border-none cursor-pointer font-bold transition-colors">+</button>
               </div>
               <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden h-7">
                 {(['วัน', 'เดือน'] as const).map((u) => (
-                  <button key={u} onClick={() => setEstimatedUnit(u)} className={`px-2.5 h-7 text-xs font-medium border-none cursor-pointer transition-colors ${estimatedUnit === u ? 'bg-[#1E1E1E] text-white' : 'bg-white text-gray-400 hover:bg-gray-50'}`}>{u}</button>
+                  <button key={u} onClick={() => setEstimatedUnit(u)} className={`px-2.5 h-7 text-sm font-medium border-none cursor-pointer transition-colors ${estimatedUnit === u ? 'bg-[#1E1E1E] text-white' : 'bg-white text-gray-400 hover:bg-gray-50'}`}>{u}</button>
                 ))}
               </div>
             </div>
@@ -696,37 +696,37 @@ export default function JobDetailPage() {
           {/* Customer + Vehicle */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-gray-50 rounded-xl p-3">
-              <p className="text-xs text-gray-400 mb-1">ลูกค้า</p>
+              <p className="text-sm text-gray-400 mb-1">ลูกค้า</p>
               <p className="text-sm font-semibold text-[#1E1E1E]">{job.customerName}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{job.customerPhone}</p>
+              <p className="text-sm text-gray-500 mt-0.5">{job.customerPhone}</p>
             </div>
             <div className="bg-gray-50 rounded-xl p-3">
-              <p className="text-xs text-gray-400 mb-1">รถ</p>
+              <p className="text-sm text-gray-400 mb-1">รถ</p>
               <p className="text-sm font-semibold text-[#1E1E1E]">{job.brand} {job.model}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{job.licensePlate} · {job.province}</p>
+              <p className="text-sm text-gray-500 mt-0.5">{job.licensePlate} · {job.province}</p>
             </div>
           </div>
 
           {/* Reason */}
           {job.mechanicReport && (
             <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
-              <p className="text-xs text-amber-700 font-medium mb-1">สาเหตุ / ปัญหาที่พบเพิ่มเติม</p>
+              <p className="text-sm text-amber-700 font-medium mb-1">สาเหตุ / ปัญหาที่พบเพิ่มเติม</p>
               <p className="text-sm text-[#1E1E1E] leading-relaxed">{job.mechanicReport.note}</p>
-              <p className="text-xs text-amber-500 mt-1.5">รายงานโดยช่าง · {job.mechanicReport.reportedAt}</p>
+              <p className="text-sm text-amber-500 mt-1.5">รายงานโดยช่าง · {job.mechanicReport.reportedAt}</p>
             </div>
           )}
 
           {/* Parts */}
           <div>
-            <p className="text-xs text-gray-400 mb-2">อะไหล่เพิ่มเติม ({addlSelectedParts.length} รายการ)</p>
+            <p className="text-sm text-gray-400 mb-2">อะไหล่เพิ่มเติม ({addlSelectedParts.length} รายการ)</p>
             <div className="flex flex-col gap-1.5">
               {addlSelectedParts.map((sp) => (
                 <div key={sp.part.id} className="flex items-center justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-[#1E1E1E] truncate">{sp.part.name} <span className="text-gray-400 text-xs">× {sp.qty} {sp.part.unit}</span></p>
-                    <p className="text-xs text-gray-400">{(sp.qty * sp.part.unitPrice).toLocaleString()} ฿</p>
+                    <p className="text-sm text-[#1E1E1E] truncate">{sp.part.name} <span className="text-gray-400 text-sm">× {sp.qty} {sp.part.unit}</span></p>
+                    <p className="text-sm text-gray-400">{(sp.qty * sp.part.unitPrice).toLocaleString()} ฿</p>
                   </div>
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${sp.part.stock >= sp.qty ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                  <span className={`text-sm font-medium px-2 py-0.5 rounded-full shrink-0 ${sp.part.stock >= sp.qty ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
                     {sp.part.stock >= sp.qty ? 'มีในสต็อก' : 'สั่งซื้อ'}
                   </span>
                 </div>
@@ -761,7 +761,7 @@ export default function JobDetailPage() {
             <div className="px-6 pt-6 pb-4 border-b border-gray-100">
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div>
-                  <p className="text-xs font-semibold text-[#F8981D] uppercase tracking-widest mb-1">Smart Moto Service Center</p>
+                  <p className="text-sm font-semibold text-[#F8981D] uppercase tracking-widest mb-1">RevUp</p>
                   <h2 className="text-lg font-bold text-[#1E1E1E]">ใบเสนอราคา</h2>
                 </div>
                 <button onClick={() => setQuotPreview(false)} className="text-gray-300 hover:text-gray-500 bg-transparent border-none cursor-pointer text-xl leading-none mt-0.5">✕</button>
@@ -775,16 +775,16 @@ export default function JobDetailPage() {
 
             {/* Items */}
             <div className="px-6 py-4 flex flex-col gap-2 flex-1">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">รายการ</p>
+              <p className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-1">รายการ</p>
               {quotItems.length === 0 && Number(laborCost) === 0 && (
                 <p className="text-sm text-gray-300 italic">ไม่มีรายการ</p>
               )}
               {quotItems.map((item, idx) => (
                 <div key={item.id} className="flex items-center gap-3">
-                  <span className="text-xs text-gray-300 w-5 shrink-0">{idx + 1}.</span>
+                  <span className="text-sm text-gray-300 w-5 shrink-0">{idx + 1}.</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-[#1E1E1E]">{item.name}</p>
-                    <p className="text-xs text-gray-400">{item.qty} × {item.unitPrice.toLocaleString()} ฿</p>
+                    <p className="text-sm text-gray-400">{item.qty} × {item.unitPrice.toLocaleString()} ฿</p>
                   </div>
                   <span className="text-sm font-medium text-[#1E1E1E] shrink-0">{(item.qty * item.unitPrice).toLocaleString()} ฿</span>
                 </div>
@@ -807,7 +807,7 @@ export default function JobDetailPage() {
                 </span>
               </div>
 
-              <p className="text-xs text-gray-300 text-center mt-2">ราคานี้ยังไม่รวมภาษีมูลค่าเพิ่ม</p>
+              <p className="text-sm text-gray-300 text-center mt-2">ราคานี้ยังไม่รวมภาษีมูลค่าเพิ่ม</p>
             </div>
 
             {/* Footer */}
@@ -872,7 +872,7 @@ export default function JobDetailPage() {
 
           <div className="text-right shrink-0">
             <p className="text-white text-sm font-medium">{job.receivedAt}</p>
-            <p className="text-white/70 text-xs mt-0.5">รับโดย {job.receptionist}</p>
+            <p className="text-white/70 text-sm mt-0.5">รับโดย {job.receptionist}</p>
           </div>
         </div>
 
@@ -886,12 +886,12 @@ export default function JobDetailPage() {
               {/* Customer + Vehicle */}
               <div className="grid grid-cols-2 gap-3 shrink-0">
                 <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm">
-                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-1.5">ข้อมูลลูกค้า</p>
+                  <p className="text-sm text-gray-400 uppercase tracking-wide mb-1.5">ข้อมูลลูกค้า</p>
                   <p className="font-semibold text-sm text-[#1E1E1E]">{job.customerName}</p>
                   <p className="text-sm text-gray-500 mt-0.5">{job.customerPhone}</p>
                 </div>
                 <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm">
-                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-1.5">ข้อมูลรถ</p>
+                  <p className="text-sm text-gray-400 uppercase tracking-wide mb-1.5">ข้อมูลรถ</p>
                   <p className="font-semibold text-sm text-[#1E1E1E]">{job.brand} {job.model}</p>
                   <p className="text-sm text-gray-500 mt-0.5">ทะเบียน {job.licensePlate} · {job.province}</p>
                 </div>
@@ -899,7 +899,7 @@ export default function JobDetailPage() {
 
               {/* Symptom */}
               <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm flex flex-col flex-1 min-h-0">
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1.5 shrink-0">อาการ / ปัญหาที่พบ</p>
+                <p className="text-sm text-gray-400 uppercase tracking-wide mb-1.5 shrink-0">อาการ / ปัญหาที่พบ</p>
                 <textarea
                   readOnly
                   value={job.symptom}
@@ -909,7 +909,7 @@ export default function JobDetailPage() {
 
               {/* Foreman note */}
               <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm flex flex-col flex-1 min-h-0">
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1.5 shrink-0">หมายเหตุหัวหน้าช่าง</p>
+                <p className="text-sm text-gray-400 uppercase tracking-wide mb-1.5 shrink-0">หมายเหตุหัวหน้าช่าง</p>
                 <textarea
                   value={foremanNote}
                   onChange={(e) => setForemanNote(e.target.value)}
@@ -920,7 +920,7 @@ export default function JobDetailPage() {
 
               {/* Photos */}
               <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm shrink-0">
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1.5">
+                <p className="text-sm text-gray-400 uppercase tracking-wide mb-1.5">
                   รูปภาพ <span className="text-gray-300 ml-1">({job.photos.length + foremanPhotos.length})</span>
                 </p>
                 <div className="flex gap-2 flex-wrap">
@@ -943,7 +943,7 @@ export default function JobDetailPage() {
                       </button>
                       <button
                         onClick={() => setForemanPhotos((prev) => prev.filter((_, idx) => idx !== i))}
-                        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity leading-none"
+                        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-sm flex items-center justify-center border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity leading-none"
                       >
                         ✕
                       </button>
@@ -964,7 +964,7 @@ export default function JobDetailPage() {
 
               {/* Tags (toggle predefined) */}
               <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">แท็ก</p>
+                <p className="text-sm text-gray-400 uppercase tracking-wide mb-3">แท็ก</p>
                 <div className="flex flex-wrap gap-2">
                   {predefinedTags.map((tag) => {
                     const active = tags.includes(tag)
@@ -1003,7 +1003,7 @@ export default function JobDetailPage() {
 
                 return (
                   <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm flex flex-col gap-3">
-                    <p className="text-xs text-gray-400 uppercase tracking-wide">มอบหมายช่าง</p>
+                    <p className="text-sm text-gray-400 uppercase tracking-wide">มอบหมายช่าง</p>
 
                     {!assignConfirmed ? (
                       <>
@@ -1025,7 +1025,7 @@ export default function JobDetailPage() {
                         <div className="flex gap-1.5 flex-wrap">
                           <button
                             onClick={() => setMechanicSkillFilter('')}
-                            className={`text-xs px-2.5 py-1 rounded-full border transition-colors cursor-pointer ${
+                            className={`text-sm px-2.5 py-1 rounded-full border transition-colors cursor-pointer ${
                               !mechanicSkillFilter ? 'bg-[#44403C] text-white border-[#44403C]' : 'bg-white text-gray-400 border-gray-200 hover:border-gray-300'
                             }`}
                           >
@@ -1035,7 +1035,7 @@ export default function JobDetailPage() {
                             <button
                               key={skill}
                               onClick={() => setMechanicSkillFilter(mechanicSkillFilter === skill ? '' : skill)}
-                              className={`text-xs px-2.5 py-1 rounded-full border transition-colors cursor-pointer ${
+                              className={`text-sm px-2.5 py-1 rounded-full border transition-colors cursor-pointer ${
                                 mechanicSkillFilter === skill ? 'bg-[#F8981D] text-white border-[#F8981D]' : 'bg-white text-gray-400 border-gray-200 hover:border-[#F8981D] hover:text-[#F8981D]'
                               }`}
                             >
@@ -1047,7 +1047,7 @@ export default function JobDetailPage() {
                         {/* Mechanic list */}
                         <div className="flex flex-col gap-2">
                           {filtered.length === 0 && (
-                            <p className="text-center text-xs text-gray-400 py-3">ไม่พบช่างที่ตรงกัน</p>
+                            <p className="text-center text-sm text-gray-400 py-3">ไม่พบช่างที่ตรงกัน</p>
                           )}
                           {filtered.map((m) => {
                             const isSelected = selectedMechanics.includes(m.id)
@@ -1076,9 +1076,9 @@ export default function JobDetailPage() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-medium text-[#1E1E1E]">{m.name}</p>
-                                  <p className="text-xs text-gray-400">{m.skills.join(' · ')}</p>
+                                  <p className="text-sm text-gray-400">{m.skills.join(' · ')}</p>
                                 </div>
-                                <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${
+                                <span className={`text-sm font-medium px-2 py-0.5 rounded-full shrink-0 ${
                                   m.jobs === 0 ? 'bg-stone-100 text-stone-500' :
                                   m.jobs >= 3  ? 'bg-[#44403C]/10 text-[#44403C]' : 'bg-[#F8981D]/15 text-[#F8981D]'
                                 }`}>
@@ -1105,7 +1105,7 @@ export default function JobDetailPage() {
                             const m = mockMechanics.find((x) => x.id === id)!
                             return (
                               <div key={id} className="flex items-center gap-2">
-                                <div className="w-6 h-6 rounded-full bg-[#44403C] text-white text-xs flex items-center justify-center font-semibold shrink-0">
+                                <div className="w-6 h-6 rounded-full bg-[#44403C] text-white text-sm flex items-center justify-center font-semibold shrink-0">
                                   {m.avatar}
                                 </div>
                                 <span className="text-sm text-[#44403C]">{m.name}</span>
@@ -1122,7 +1122,7 @@ export default function JobDetailPage() {
               {/* Workflow — shown only while still in assessment phase */}
               {['รอประเมิน', 'ตรวจเชิงลึก', 'รอลูกค้าอนุมัติ', 'รอสั่งซื้อ'].includes(job.status) && (
               <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm flex flex-col gap-3">
-                <p className="text-xs text-gray-400 uppercase tracking-wide">ประเมินงาน</p>
+                <p className="text-sm text-gray-400 uppercase tracking-wide">ประเมินงาน</p>
 
                 <JobTypeDropdown value={jobType} onChange={handleJobTypeChange} />
 
@@ -1146,23 +1146,23 @@ export default function JobDetailPage() {
                             >
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-[#1E1E1E] truncate">{sp.part.name}</p>
-                                <p className="text-xs text-gray-400">{sp.part.partNumber}</p>
+                                <p className="text-sm text-gray-400">{sp.part.partNumber}</p>
                               </div>
                               <div className="flex items-center gap-1 shrink-0">
                                 <button onClick={() => updateQty(sp.part.id, sp.qty - 1)}
-                                  className="w-5 h-5 rounded border border-gray-200 hover:border-gray-300 text-gray-500 text-xs font-bold cursor-pointer bg-white flex items-center justify-center transition-colors">−</button>
-                                <span className="text-xs font-medium w-5 text-center">{sp.qty}</span>
+                                  className="w-5 h-5 rounded border border-gray-200 hover:border-gray-300 text-gray-500 text-sm font-bold cursor-pointer bg-white flex items-center justify-center transition-colors">−</button>
+                                <span className="text-sm font-medium w-5 text-center">{sp.qty}</span>
                                 <button onClick={() => updateQty(sp.part.id, sp.qty + 1)}
-                                  className="w-5 h-5 rounded border border-gray-200 hover:border-gray-300 text-gray-500 text-xs font-bold cursor-pointer bg-white flex items-center justify-center transition-colors">+</button>
-                                <span className="text-xs text-gray-400 ml-0.5">{sp.part.unit}</span>
+                                  className="w-5 h-5 rounded border border-gray-200 hover:border-gray-300 text-gray-500 text-sm font-bold cursor-pointer bg-white flex items-center justify-center transition-colors">+</button>
+                                <span className="text-sm text-gray-400 ml-0.5">{sp.part.unit}</span>
                               </div>
                               {stockChecked && (
-                                <span className={`text-xs font-semibold shrink-0 ${enough ? 'text-green-600' : 'text-amber-600'}`}>
+                                <span className={`text-sm font-semibold shrink-0 ${enough ? 'text-green-600' : 'text-amber-600'}`}>
                                   {enough ? 'มีพอ' : 'ต้องรอ'}
                                 </span>
                               )}
                               <button onClick={() => removePart(sp.part.id)}
-                                className="text-gray-300 hover:text-red-400 border-none bg-transparent cursor-pointer text-xs transition-colors shrink-0">✕</button>
+                                className="text-gray-300 hover:text-red-400 border-none bg-transparent cursor-pointer text-sm transition-colors shrink-0">✕</button>
                             </div>
                           )
                         })}
@@ -1218,7 +1218,7 @@ export default function JobDetailPage() {
                 {/* ตรวจเชิงลึก */}
                 {jobType === 'deep' && (
                   <div className="flex flex-col gap-3">
-                    <p className="text-xs text-gray-500">
+                    <p className="text-sm text-gray-500">
                       ต้องรื้อ/ผ่าเครื่องก่อน ระบุรายละเอียดในหมายเหตุหัวหน้าช่าง (ซ้าย) แล้วส่งใบประเมินราคา 1,000 ฿ ให้ลูกค้าอนุมัติก่อนดำเนินการ
                     </p>
                     {!deepSent ? (
@@ -1262,7 +1262,7 @@ export default function JobDetailPage() {
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
                         </svg>
                         <p className="text-sm font-semibold text-amber-700">ช่างรายงานปัญหาเพิ่มเติม</p>
-                        <span className="text-xs text-amber-500 ml-auto shrink-0">{job.mechanicReport.reportedAt}</span>
+                        <span className="text-sm text-amber-500 ml-auto shrink-0">{job.mechanicReport.reportedAt}</span>
                       </div>
                       <p className="text-sm text-amber-800 leading-relaxed">{job.mechanicReport.note}</p>
                       {job.mechanicReport.photos.length > 0 && (
@@ -1297,7 +1297,7 @@ export default function JobDetailPage() {
                         />
                       )}
                       <div className="bg-white border border-gray-100 rounded-xl p-4 flex flex-col gap-3 shadow-sm">
-                        <p className="text-xs text-gray-400 uppercase tracking-wide">ใบเสนอราคาเพิ่มเติม</p>
+                        <p className="text-sm text-gray-400 uppercase tracking-wide">ใบเสนอราคาเพิ่มเติม</p>
 
                         {/* Selected parts */}
                         {addlSelectedParts.length > 0 && (
@@ -1306,31 +1306,31 @@ export default function JobDetailPage() {
                               <div key={sp.part.id} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-medium text-[#1E1E1E] truncate">{sp.part.name}</p>
-                                  <p className="text-xs text-gray-400">{sp.part.partNumber}</p>
+                                  <p className="text-sm text-gray-400">{sp.part.partNumber}</p>
                                 </div>
                                 <div className="flex items-center gap-1 shrink-0">
                                   <button
                                     onClick={() => setAddlSelectedParts((prev) => prev.map((p) => p.part.id === sp.part.id ? { ...p, qty: Math.max(1, p.qty - 1) } : p))}
-                                    className="w-5 h-5 rounded border border-gray-200 hover:border-gray-300 text-gray-500 text-xs font-bold cursor-pointer bg-white flex items-center justify-center transition-colors"
+                                    className="w-5 h-5 rounded border border-gray-200 hover:border-gray-300 text-gray-500 text-sm font-bold cursor-pointer bg-white flex items-center justify-center transition-colors"
                                   >−</button>
-                                  <span className="text-xs font-medium w-5 text-center">{sp.qty}</span>
+                                  <span className="text-sm font-medium w-5 text-center">{sp.qty}</span>
                                   <button
                                     onClick={() => setAddlSelectedParts((prev) => prev.map((p) => p.part.id === sp.part.id ? { ...p, qty: p.qty + 1 } : p))}
-                                    className="w-5 h-5 rounded border border-gray-200 hover:border-gray-300 text-gray-500 text-xs font-bold cursor-pointer bg-white flex items-center justify-center transition-colors"
+                                    className="w-5 h-5 rounded border border-gray-200 hover:border-gray-300 text-gray-500 text-sm font-bold cursor-pointer bg-white flex items-center justify-center transition-colors"
                                   >+</button>
-                                  <span className="text-xs text-gray-400 ml-0.5">{sp.part.unit}</span>
+                                  <span className="text-sm text-gray-400 ml-0.5">{sp.part.unit}</span>
                                 </div>
-                                <span className="text-xs font-semibold text-[#1E1E1E] shrink-0 ml-1">
+                                <span className="text-sm font-semibold text-[#1E1E1E] shrink-0 ml-1">
                                   {(sp.qty * sp.part.unitPrice).toLocaleString()} ฿
                                 </span>
                                 <button
                                   onClick={() => setAddlSelectedParts((prev) => prev.filter((p) => p.part.id !== sp.part.id))}
-                                  className="text-gray-300 hover:text-red-400 border-none bg-transparent cursor-pointer text-xs transition-colors shrink-0"
+                                  className="text-gray-300 hover:text-red-400 border-none bg-transparent cursor-pointer text-sm transition-colors shrink-0"
                                 >✕</button>
                               </div>
                             ))}
                             <div className="flex items-center justify-between px-3 py-2 border-t border-gray-100">
-                              <span className="text-xs text-gray-400">รวมทั้งหมด</span>
+                              <span className="text-sm text-gray-400">รวมทั้งหมด</span>
                               <span className="text-sm font-bold text-[#1E1E1E]">
                                 {addlSelectedParts.reduce((s, sp) => s + sp.qty * sp.part.unitPrice, 0).toLocaleString()} ฿
                               </span>
@@ -1387,7 +1387,7 @@ export default function JobDetailPage() {
               {/* ── รอตรวจ: QC inspection ── */}
               {job.status === 'รอตรวจ' && (
                 <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm flex flex-col gap-3">
-                  <p className="text-xs text-gray-400 uppercase tracking-wide">ตรวจสอบงาน (QC)</p>
+                  <p className="text-sm text-gray-400 uppercase tracking-wide">ตรวจสอบงาน (QC)</p>
 
                   {!qcSubmitted ? (
                     <>
@@ -1461,7 +1461,7 @@ export default function JobDetailPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-[#44403C]">ผ่านการตรวจ</p>
-                        <p className="text-xs text-[#44403C]/60 mt-0.5">ส่งต่อขั้นตอนทำความสะอาดแล้ว</p>
+                        <p className="text-sm text-[#44403C]/60 mt-0.5">ส่งต่อขั้นตอนทำความสะอาดแล้ว</p>
                       </div>
                     </div>
 
@@ -1487,7 +1487,7 @@ export default function JobDetailPage() {
                             <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50">
                               <div>
                                 <p className="text-sm font-semibold text-[#1E1E1E]">ใบเสนอราคา</p>
-                                <p className="text-xs text-gray-400 mt-0.5">{job.brand} {job.model} · {job.customerName}</p>
+                                <p className="text-sm text-gray-400 mt-0.5">{job.brand} {job.model} · {job.customerName}</p>
                               </div>
                               <button onClick={() => setShowQuot(false)} className="text-gray-400 hover:text-gray-600 bg-transparent border-none cursor-pointer text-lg leading-none">✕</button>
                             </div>
@@ -1500,11 +1500,11 @@ export default function JobDetailPage() {
                                     <div key={item.id} className="flex items-center gap-2 bg-stone-50 rounded-lg px-3 py-2">
                                       <div className="flex-1 min-w-0">
                                         <p className="text-sm text-[#1E1E1E] truncate">{item.name}</p>
-                                        <p className="text-xs text-gray-400">{item.qty} × {item.unitPrice.toLocaleString()} ฿</p>
+                                        <p className="text-sm text-gray-400">{item.qty} × {item.unitPrice.toLocaleString()} ฿</p>
                                       </div>
                                       <span className="text-sm font-medium text-[#1E1E1E] shrink-0">{(item.qty * item.unitPrice).toLocaleString()} ฿</span>
                                       <button onClick={() => setQuotItems((p) => p.filter((i) => i.id !== item.id))}
-                                        className="text-gray-300 hover:text-[#F8981D] bg-transparent border-none cursor-pointer text-xs shrink-0 transition-colors">✕</button>
+                                        className="text-gray-300 hover:text-[#F8981D] bg-transparent border-none cursor-pointer text-sm shrink-0 transition-colors">✕</button>
                                     </div>
                                   ))}
                                 </div>
@@ -1527,7 +1527,7 @@ export default function JobDetailPage() {
                                     onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setQuotPrice(v === '' ? '' : Number(v)) }}
                                     placeholder="ราคา"
                                     className="w-24 border border-gray-200 rounded-xl pl-3 pr-6 py-2 text-sm outline-none focus:border-[#F8981D] transition-colors" />
-                                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400">฿</span>
+                                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-sm text-gray-400">฿</span>
                                 </div>
                                 <button
                                   onClick={() => {
@@ -1549,7 +1549,7 @@ export default function JobDetailPage() {
                                     onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setLaborCost(v === '' ? '' : Number(v)) }}
                                     placeholder="0"
                                     className="w-32 border border-gray-200 rounded-xl pl-3 pr-6 py-2 text-sm text-right outline-none focus:border-[#F8981D] transition-colors" />
-                                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400">฿</span>
+                                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-sm text-gray-400">฿</span>
                                 </div>
                               </div>
 
@@ -1584,7 +1584,7 @@ export default function JobDetailPage() {
                       <div className="bg-[#44403C]/5 border border-[#44403C]/15 rounded-xl px-4 py-3.5 flex items-center justify-between">
                         <div>
                           <p className="text-sm font-semibold text-[#44403C]">ส่งใบเสนอราคาแล้ว</p>
-                          <p className="text-xs text-[#44403C]/60 mt-0.5">
+                          <p className="text-sm text-[#44403C]/60 mt-0.5">
                             รวม {(quotItems.reduce((s, i) => s + i.qty * i.unitPrice, 0) + Number(laborCost)).toLocaleString()} ฿ · รอลูกค้ายืนยัน
                           </p>
                         </div>
@@ -1603,7 +1603,7 @@ export default function JobDetailPage() {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-[#F8981D]">ไม่ผ่าน — ส่งกลับช่างแก้ไขแล้ว</p>
-                        {qcNote && <p className="text-xs text-[#F8981D]/80 mt-1 leading-relaxed">{qcNote}</p>}
+                        {qcNote && <p className="text-sm text-[#F8981D]/80 mt-1 leading-relaxed">{qcNote}</p>}
                       </div>
                     </div>
                   )}

@@ -73,13 +73,13 @@ export default function JobHistoryPage() {
         <table className="w-full text-sm border-separate border-spacing-0">
           <thead className="sticky top-0 bg-white z-10">
             <tr className="border-b border-gray-200">
-              <th className="text-left text-xs font-semibold text-gray-400 pl-5 pr-3 py-3 w-24">คำขอที่</th>
-              <th className="text-left text-xs font-semibold text-gray-400 px-3 py-3">รถ</th>
-              <th className="text-left text-xs font-semibold text-gray-400 px-3 py-3">ลูกค้า</th>
-              <th className="text-left text-xs font-semibold text-gray-400 px-3 py-3">อาการ</th>
-              <th className="text-left text-xs font-semibold text-gray-400 px-3 py-3">แท็ก</th>
-              <th className="text-left text-xs font-semibold text-gray-400 px-3 py-3">ช่าง</th>
-              <th className="text-left text-xs font-semibold text-gray-400 pl-3 pr-5 py-3 w-40">วันที่เสร็จ</th>
+              <th className="text-left text-sm font-semibold text-gray-400 pl-5 pr-3 py-3 w-24">คำขอที่</th>
+              <th className="text-left text-sm font-semibold text-gray-400 px-3 py-3">รถ</th>
+              <th className="text-left text-sm font-semibold text-gray-400 px-3 py-3">ลูกค้า</th>
+              <th className="text-left text-sm font-semibold text-gray-400 px-3 py-3">อาการ</th>
+              <th className="text-left text-sm font-semibold text-gray-400 px-3 py-3">แท็ก</th>
+              <th className="text-left text-sm font-semibold text-gray-400 px-3 py-3">ช่าง</th>
+              <th className="text-left text-sm font-semibold text-gray-400 pl-3 pr-5 py-3 w-40">วันที่เสร็จ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
@@ -95,13 +95,13 @@ export default function JobHistoryPage() {
                 className="bg-white hover:bg-gray-50 cursor-pointer transition-colors"
               >
                 <td className="pl-5 pr-3 py-3.5">
-                  <div className="w-8 h-8 rounded-lg bg-[#44403C] text-white text-xs font-semibold flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-lg bg-[#44403C] text-white text-sm font-semibold flex items-center justify-center">
                     {job.id}
                   </div>
                 </td>
                 <td className="px-3 py-3.5">
                   <p className="font-medium text-[#1E1E1E]">{job.brand} {job.model}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{job.licensePlate}</p>
+                  <p className="text-sm text-gray-400 mt-0.5">{job.licensePlate}</p>
                 </td>
                 <td className="px-3 py-3.5 text-gray-600">{job.customerName}</td>
                 <td className="px-3 py-3.5 max-w-50">
@@ -110,7 +110,7 @@ export default function JobHistoryPage() {
                 <td className="px-3 py-3.5">
                   <div className="flex gap-1.5 flex-wrap">
                     {job.tags.map((tag) => (
-                      <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-[#F8981D]/10 text-[#F8981D]">
+                      <span key={tag} className="text-sm px-2 py-0.5 rounded-full bg-[#F8981D]/10 text-[#F8981D]">
                         {tag}
                       </span>
                     ))}
@@ -118,13 +118,13 @@ export default function JobHistoryPage() {
                 </td>
                 <td className="px-3 py-3.5">
                   <div className="flex items-center gap-1.5">
-                    <div className="w-6 h-6 rounded-full bg-[#44403C] text-white text-xs flex items-center justify-center font-semibold shrink-0">
+                    <div className="w-6 h-6 rounded-full bg-[#44403C] text-white text-sm flex items-center justify-center font-semibold shrink-0">
                       {job.mechanic[0]}
                     </div>
-                    <span className="text-xs text-gray-600">{job.mechanic}</span>
+                    <span className="text-sm text-gray-600">{job.mechanic}</span>
                   </div>
                 </td>
-                <td className="pl-3 pr-5 py-3.5 text-xs text-gray-400">
+                <td className="pl-3 pr-5 py-3.5 text-sm text-gray-400">
                   <p className="text-gray-500">{job.completedAt.split('  ')[0]}</p>
                   <p>{job.completedAt.split('  ')[1]}</p>
                 </td>

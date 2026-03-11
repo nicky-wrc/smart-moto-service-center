@@ -58,7 +58,18 @@ export class PartRequisitionsController {
         @Body() dto: IssuePartRequisitionDto,
         @CurrentUser() user: UserPayload,
     ) {
-        return this.requisitionsService.issueParts(+id, user.userId, dto.notes);
+        return this.requisitionsService.issueParts(+id, user.userId, dto);
+    }
+
+    @Patch(':id/reject')
+    @Roles('STOCK_KEEPER', 'ADMIN', 'MANAGER', 'FOREMAN')
+    @ApiOperation({ summary: 'คลังสินค้าปฏิเสธการขอเบิกอะไหล่ (สถานะเปลี่ยนเป็น REJECTED)' })
+    rejectRequest(
+        @Param('id') id: string,
+        @Body() dto: IssuePartRequisitionDto,
+        @CurrentUser() user: UserPayload,
+    ) {
+        return this.requisitionsService.rejectRequest(+id, user.userId, dto.notes);
     }
 
     @Post('request')

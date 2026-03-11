@@ -303,7 +303,7 @@ export default function ReportsPage() {
         tfoot td{font-weight:700;background:#f5f5f4}.footer{margin-top:32px;font-size:11px;color:#a8a29e;text-align:right}
       </style></head><body>
       <h1>รายงานการเงิน</h1>
-      <p class="sub">Smart Moto Service Center &nbsp;·&nbsp; ${periodLabel} &nbsp;·&nbsp; พิมพ์เมื่อ ${new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+      <p class="sub">RevUp &nbsp;·&nbsp; ${periodLabel} &nbsp;·&nbsp; พิมพ์เมื่อ ${new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
       <div class="cards">
         <div class="card"><div class="lbl">ใบงาน</div><div class="val">${activeSummary.jobs} ใบ</div></div>
         <div class="card"><div class="lbl">รายได้รวม</div><div class="val">${activeSummary.revenue.toLocaleString()} ฿</div></div>
@@ -316,7 +316,7 @@ export default function ReportsPage() {
         return `<tr><td>${r.date}</td><td class="r">${r.jobs}</td><td class="r">${r.revenue.toLocaleString()}</td><td class="r" style="color:#ef4444">${r.cost.toLocaleString()}</td><td class="r" style="color:#F8981D;font-weight:600">${r.profit.toLocaleString()}</td><td class="r">${m}%</td></tr>`
       }).join('')}</tbody>
       <tfoot><tr><td>รวม</td><td class="r">${activeSummary.jobs}</td><td class="r">${activeSummary.revenue.toLocaleString()}</td><td class="r" style="color:#ef4444">${activeSummary.cost.toLocaleString()}</td><td class="r" style="color:#F8981D">${activeSummary.profit.toLocaleString()}</td><td class="r">${margin}%</td></tr></tfoot>
-      </table><div class="footer">เอกสารนี้สร้างโดยระบบ Smart Moto Service Center</div></body></html>`)
+      </table><div class="footer">เอกสารนี้สร้างโดยระบบ RevUp</div></body></html>`)
     w.document.close(); w.focus(); setTimeout(() => { w.print(); w.close() }, 400)
   }
 

@@ -1,6 +1,4 @@
-import { useLocation, Outlet } from 'react-router-dom'
-import AppHeader from '../../components/AppHeader'
-import Sidebar from '../../components/Sidebar'
+import AppLayout from '../../components/AppLayout'
 import type { NavItem } from '../../components/Sidebar'
 
 const navItems: NavItem[] = [
@@ -50,20 +48,11 @@ const pageTitles: Record<string, string> = {
 }
 
 export default function ForemanLayout() {
-  const location = useLocation()
-  const title = Object.entries(pageTitles).find(([path]) => location.pathname.startsWith(path))?.[1] ?? 'หัวหน้าช่าง'
-
   return (
-    <div className="h-screen overflow-hidden bg-[#44403C] pb-6 pr-6 flex items-stretch font-[Kanit]">
-      <div className="flex-1 bg-[#44403C] rounded-2xl flex flex-col overflow-hidden">
-        <AppHeader title={title} />
-        <div className="flex flex-1 gap-0 overflow-hidden">
-          <Sidebar navItems={navItems} />
-          <div className="flex-1 bg-[#F5F5F5] rounded-xl overflow-hidden">
-            <Outlet />
-          </div>
-        </div>
-      </div>
-    </div>
+    <AppLayout
+      navItems={navItems}
+      pageTitles={pageTitles}
+      defaultTitle="หัวหน้าช่าง"
+    />
   )
 }

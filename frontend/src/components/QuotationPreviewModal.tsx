@@ -17,9 +17,9 @@ export function QuotationPreviewModal({ title, subtitle, onClose, onConfirm, con
         <div className="px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold text-[#F8981D] uppercase tracking-widest mb-0.5">Smart Moto Service Center</p>
+              <p className="text-sm font-semibold text-[#F8981D] uppercase tracking-widest mb-0.5">RevUp</p>
               <h2 className="text-base font-bold text-[#1E1E1E]">{title}</h2>
-              {subtitle && <p className="text-xs text-amber-600 mt-0.5">{subtitle}</p>}
+              {subtitle && <p className="text-sm text-amber-600 mt-0.5">{subtitle}</p>}
             </div>
             <button onClick={onClose} className="text-gray-300 hover:text-gray-500 bg-transparent border-none cursor-pointer text-xl leading-none">✕</button>
           </div>
