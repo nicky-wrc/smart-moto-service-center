@@ -75,9 +75,9 @@ function mapPaymentToReceipt(p: Payment): Receipt {
   }
   if (p.job?.partRequisitions) {
     for (const req of p.job.partRequisitions) {
-      if (req.status === 'APPROVED' && req.items) {
+      if ((req.status === 'APPROVED' || req.status === 'ISSUED') && req.items) {
         for (const ri of req.items) {
-          items.push({ name: ri.part.name, price: Number(ri.unitPrice || ri.part?.unitPrice || 0) * ri.quantity })
+          items.push({ name: ri.part?.name || 'อะไหล่', price: Number(ri.unitPrice || ri.part?.unitPrice || 0) * ri.quantity })
         }
       }
     }
@@ -85,7 +85,10 @@ function mapPaymentToReceipt(p: Payment): Receipt {
   return {
     id: p.paymentNo,
     date: formatDateTH(p.paidAt ?? p.createdAt),
-    customer: p.customer ? `${p.customer.firstName} ${p.customer.lastName}` : '-',
+    customer: (() => {
+      const owner = (p as any).customer || (p.job?.motorcycle as any)?.owner
+      return owner ? `${owner.firstName || ''} ${owner.lastName || ''}`.trim() || '-' : '-'
+    })(),
     plate: p.job?.motorcycle?.licensePlate ?? '-',
     payment: METHOD_LABEL[p.paymentMethod] ?? p.paymentMethod,
     staff: '-',

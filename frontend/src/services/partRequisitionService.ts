@@ -26,6 +26,7 @@ function mapBackendRequisition(r: any): PartRequest {
 
     const items: RequestItem[] = (r.items || []).map((item: any) => ({
         id: item.id,
+        partId: item.partId ?? item.part?.id,
         partCode: item.part?.partNo || item.package?.packageNo || '-',
         partName: item.part?.name || item.package?.name || '-',
         quantity: item.requestedQuantity ?? item.quantity,

@@ -14,10 +14,10 @@ export default function MechanicHistoryPage() {
   useEffect(() => {
     api.get<any[]>('/jobs')
       .then(data => {
-        // Filter to completed/paid jobs assigned to this mechanic
+        // Filter to completed/paid jobs assigned to this mechanic (history = done only)
         const myDone = data.filter(j =>
           (j.technicianId === user?.id) &&
-          ['COMPLETED', 'PAID', 'QC_PENDING', 'CLEANING', 'READY_FOR_DELIVERY'].includes(j.status)
+          ['COMPLETED', 'PAID'].includes(j.status)
         )
         setAllJobs(myDone)
         setLoading(false)

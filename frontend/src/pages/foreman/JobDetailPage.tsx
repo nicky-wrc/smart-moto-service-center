@@ -40,6 +40,7 @@ const STATUS_MAP: Record<string, string> = {
   READY_FOR_DELIVERY: 'พร้อมส่งมอบ',
   COMPLETED: 'เสร็จสิ้น',
   PAID: 'ชำระแล้ว',
+  CANCELLED: 'ยกเลิก',
 }
 
 type Mechanic = { id: number; name: string; avatar: string; jobs: number; skills: string[] }
