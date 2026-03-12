@@ -77,7 +77,7 @@ function mapPaymentToReceipt(p: Payment): Receipt {
     for (const req of p.job.partRequisitions) {
       if (req.status === 'APPROVED' && req.items) {
         for (const ri of req.items) {
-          items.push({ name: ri.part.name, price: Number(ri.unitPrice) * ri.quantity })
+          items.push({ name: ri.part.name, price: Number(ri.unitPrice || ri.part?.unitPrice || 0) * ri.quantity })
         }
       }
     }

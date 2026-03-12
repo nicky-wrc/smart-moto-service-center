@@ -53,9 +53,9 @@ export interface Payment {
       status: string
       items?: Array<{
         id: number
-        part: { name: string; partNo: string }
+        part: { name: string; partNo: string; unitPrice?: string }
         quantity: number
-        unitPrice: string
+        unitPrice?: string
       }>
     }>
   }

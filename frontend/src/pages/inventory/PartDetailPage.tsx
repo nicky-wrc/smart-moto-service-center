@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { type PartItem } from '../../data/partsMockData'
-import { partService } from '../../services/partService'
+import { partService, type PartItem } from '../../services/partService'
 
 // Info Card Component
 function InfoCard({ 
@@ -70,9 +69,8 @@ export default function PartDetailPage() {
             setIsLoading(true)
             setImageLoaded(false)
             try {
-                const result = await partService.getParts({ limit: 1000 })
-                const found = result.data.find((p: PartItem) => p.id === Number(id))
-                setPart(found || null)
+                const found = await partService.getById(Number(id))
+                setPart(found)
             } catch (err) {
                 console.error("Failed to load part details", err)
             } finally {
