@@ -39,7 +39,17 @@ const ROLE_MAP: Record<string, Role> = {
 }
 
 const roles: Role[] = ['ผู้ดูแลระบบ', 'ผู้จัดการ', 'พนักงานรับรถ', 'พนักงานคงคลัง', 'พนักงานบัญชี', 'หัวหน้าช่าง', 'ช่าง']
-const emptyForm = { name: '', role: 'ช่าง' as Role, baseSalary: 18000, commissionPerJob: 300, phone: '', startDate: '' }
+const ROLE_REVERSE_MAP: Record<Role, string> = {
+  'ผู้ดูแลระบบ': 'ADMIN',
+  'ผู้จัดการ': 'MANAGER',
+  'พนักงานรับรถ': 'SERVICE_ADVISOR',
+  'พนักงานคงคลัง': 'STOCK_KEEPER',
+  'พนักงานบัญชี': 'CASHIER',
+  'หัวหน้าช่าง': 'FOREMAN',
+  'ช่าง': 'TECHNICIAN',
+}
+
+const emptyForm = { name: '', role: 'ช่าง' as Role, baseSalary: 18000, commissionPerJob: 300, phone: '', username: '', password: '' }
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([])
@@ -103,30 +113,62 @@ export default function EmployeesPage() {
     .filter(e => e.active)
     .reduce((s, e) => s + e.baseSalary + (e.commissionPerJob ?? 0) * (e.jobsDone ?? 0), 0)
 
-  const handleCreate = () => {
-    const newEmp: Employee = {
-      id: employees.length + 1,
-      name: form.name,
-      role: form.role,
-      salaryType: roleConfig[form.role].salaryType,
-      baseSalary: form.baseSalary,
-      commissionPerJob: roleConfig[form.role].salaryType === 'commission' ? form.commissionPerJob : undefined,
-      jobsDone: roleConfig[form.role].salaryType === 'commission' ? 0 : undefined,
-      phone: form.phone,
-      startDate: form.startDate || new Date().toLocaleDateString('th-TH'),
-      active: true,
+  const handleCreate = async () => {
+    if (!form.name || !form.username || !form.password) {
+      alert('กรุณากรอกชื่อ, username, password')
+      return
     }
-    setEmployees(prev => [...prev, newEmp])
-    setShowCreate(false)
-    setForm(emptyForm)
+    try {
+      const backendRole = ROLE_REVERSE_MAP[form.role] || 'TECHNICIAN'
+      const newUser = await api.post<any>('/users', {
+        username: form.username,
+        password: form.password,
+        name: form.name,
+        role: backendRole,
+      })
+      if (form.baseSalary || form.commissionPerJob) {
+        await api.patch(`/users/${newUser.id}/salary`, {
+          baseSalary: form.baseSalary,
+          commissionRate: form.commissionPerJob,
+        })
+      }
+      const cfg = roleConfig[form.role]
+      const newEmp: Employee = {
+        id: newUser.id,
+        name: form.name,
+        role: form.role,
+        salaryType: cfg.salaryType,
+        baseSalary: form.baseSalary,
+        commissionPerJob: cfg.salaryType === 'commission' ? form.commissionPerJob : undefined,
+        jobsDone: 0,
+        phone: form.phone || '-',
+        startDate: new Date().toLocaleDateString('th-TH'),
+        active: true,
+      }
+      setEmployees(prev => [...prev, newEmp])
+      setShowCreate(false)
+      setForm(emptyForm)
+    } catch (err: any) {
+      console.error('Failed to create employee:', err)
+      alert(err.message || 'ไม่สามารถสร้างพนักงานได้')
+    }
   }
 
-  const handleSaveSalary = () => {
+  const handleSaveSalary = async () => {
     if (!editSalary) return
-    setEmployees(prev => prev.map(e =>
-      e.id === editSalary.id ? { ...e, baseSalary: editSalary.base, commissionPerJob: editSalary.com } : e
-    ))
-    setEditSalary(null)
+    try {
+      await api.patch(`/users/${editSalary.id}/salary`, {
+        baseSalary: editSalary.base,
+        commissionRate: editSalary.com,
+      })
+      setEmployees(prev => prev.map(e =>
+        e.id === editSalary.id ? { ...e, baseSalary: editSalary.base, commissionPerJob: editSalary.com } : e
+      ))
+      setEditSalary(null)
+    } catch (err: any) {
+      console.error('Failed to update salary:', err)
+      alert(err.message || 'ไม่สามารถบันทึกเงินเดือนได้')
+    }
   }
 
   return (
@@ -250,6 +292,16 @@ export default function EmployeesPage() {
                 <label className="text-xs text-stone-500 mb-1 block">ชื่อ-นามสกุล</label>
                 <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                   className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#F8981D] transition-colors" placeholder="ชื่อ นามสกุล" />
+              </div>
+              <div>
+                <label className="text-xs text-stone-500 mb-1 block">Username (สำหรับล็อกอิน)</label>
+                <input value={form.username} onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
+                  className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#F8981D] transition-colors" placeholder="username" />
+              </div>
+              <div>
+                <label className="text-xs text-stone-500 mb-1 block">Password</label>
+                <input type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+                  className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#F8981D] transition-colors" placeholder="รหัสผ่าน" />
               </div>
               <div>
                 <label className="text-xs text-stone-500 mb-1 block">ตำแหน่ง</label>

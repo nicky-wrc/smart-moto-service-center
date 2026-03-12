@@ -1,5 +1,6 @@
 export interface RequestItem {
   id: number
+  partId?: number
   partCode: string
   partName: string
   quantity: number

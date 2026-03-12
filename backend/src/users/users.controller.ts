@@ -63,7 +63,7 @@ export class UsersController {
   @Patch(':id/salary')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth('JWT-auth')
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'MANAGER')
   @ApiOperation({ summary: 'กำหนดเงินเดือนและค่าคอม (Owner/Admin)' })
   updateSalary(@Param('id') id: string, @Body() dto: UpdateSalaryDto) {
     return this.usersService.updateSalary(+id, dto);
