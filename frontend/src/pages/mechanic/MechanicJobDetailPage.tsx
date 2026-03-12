@@ -545,7 +545,7 @@ export default function MechanicJobDetailPage() {
                         const updated = await api.patch(`/jobs/${id}/ready-delivery`, {
                           photos,
                         })
-                        setJob((prev: any) => prev ? { ...prev, ...updated } : updated)
+                        setJob((prev: any) => ({ ...(prev || {}), ...(updated as any) }))
                         setDeliveryPhotos([])
                         alert('เตรียมส่งมอบเรียบร้อย')
                       } catch (err) { console.error(err); alert('อัพเดทสถานะไม่สำเร็จ') }
