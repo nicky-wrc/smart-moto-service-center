@@ -55,17 +55,20 @@ export default function MechanicJobDetailPage() {
     ({ name: '', description: '', disposition: 'คืนลูกค้า' })
   const [addingRemoved, setAddingRemoved] = useState(false)
 
+  // Completion photos (ส่งให้หัวหน้าช่างตรวจ)
+  const [completionPhotos, setCompletionPhotos] = useState<{ file: File; url: string }[]>([])
+
   // Pre-delivery cleaning checklist
   const [cleaningChecked, setCleaningChecked]   = useState(false)
   const [exteriorChecked, setExteriorChecked]   = useState(false)
-  const [deliveryPhotos, setDeliveryPhotos]     = useState<string[]>([])
+  const [deliveryPhotos, setDeliveryPhotos]     = useState<{ file: File; url: string }[]>([])
 
   // Confirm modal
   const [confirmAction, setConfirmAction] = useState<null | 'startJob' | 'submitInspect' | 'notifyForeman'>(null)
 
-  // Parts return tracking
+  // Parts return tracking (key: "q-<id>" for quotation item, "r-<id>" for requisition item)
   const [showActualQty, setShowActualQty] = useState(false)
-  const [partsActual, setPartsActual] = useState<Record<number, number>>({})
+  const [partsActual, setPartsActual] = useState<Record<string, number>>({})
 
   useEffect(() => {
     api.get<any>(`/jobs/${id}`)
@@ -105,18 +108,33 @@ export default function MechanicJobDetailPage() {
     setActionLoading(false)
   }
 
+  const fileToBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const r = new FileReader()
+      r.onload = () => resolve(r.result as string)
+      r.onerror = reject
+      r.readAsDataURL(file)
+    })
+
   const handleCompleteJob = async () => {
     setActionLoading(true)
     try {
-      const updated = await api.patch<any>(`/jobs/${id}/complete`, { mechanicNotes: findingNote || undefined })
+      const photos = completionPhotos.length > 0
+        ? await Promise.all(completionPhotos.map((p) => fileToBase64(p.file)))
+        : undefined
+      const updated = await api.patch<any>(`/jobs/${id}/complete`, {
+        mechanicNotes: findingNote || undefined,
+        photos,
+      })
       setJob(updated); setConfirmAction(null)
+      setCompletionPhotos([])
     } catch (e) { console.error(e) }
     setActionLoading(false)
   }
 
   const handleDeliveryPhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const urls = Array.from(e.target.files ?? []).map((f) => URL.createObjectURL(f))
-    setDeliveryPhotos((p) => [...p, ...urls])
+    const files = Array.from(e.target.files ?? [])
+    setDeliveryPhotos((p) => [...p, ...files.map((f) => ({ file: f, url: URL.createObjectURL(f) }))])
     e.target.value = ''
   }
 
@@ -289,64 +307,72 @@ export default function MechanicJobDetailPage() {
             {/* RIGHT */}
             <div className="flex flex-col gap-3 overflow-y-auto">
 
-              {/* Parts requisitioned — shown for CLEANING status */}
-              {job.status === 'CLEANING' && job.quotation?.items?.length > 0 && (
-                <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm text-gray-400 uppercase tracking-wide">อะไหล่ที่เบิกมา</p>
+              {/* Parts requisitioned — shown for CLEANING status. ใช้เฉพาะ Part Requisitions (ISSUED) ถ้ามี; ถ้าไม่มีใช้ Quotation เป็น fallback เพื่อเลี่ยงซ้ำ */}
+              {(() => {
+                const reqItems = (job.partRequisitions ?? [])
+                  .filter((r: any) => r.status === 'ISSUED')
+                  .flatMap((r: any) => (r.items ?? []).filter((i: any) => i.partId).map((i: any) => ({ ...i, _key: `r-${i.id}`, _type: 'requisition' as const, name: i.part?.name ?? '-', qty: i.issuedQuantity ?? i.quantity })));
+                const quotItems = (job.quotation?.items ?? []).map((i: any) => ({ ...i, _key: `q-${i.id}`, _type: 'quotation' as const, name: i.itemName || i.part?.name, qty: i.quantity }));
+                const allParts = reqItems.length > 0 ? reqItems : quotItems;
+                return job.status === 'CLEANING' && allParts.length > 0 ? (
+                  <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-sm text-gray-400 uppercase tracking-wide">อะไหล่ที่เบิกมา</p>
+                      <button
+                        onClick={() => setShowActualQty(!showActualQty)}
+                        className="text-xs text-[#F8981D] font-medium bg-transparent border-none cursor-pointer hover:underline"
+                      >
+                        กรอกจำนวนที่ใช้จริง
+                      </button>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      {allParts.map((item: any) => {
+                        const actualQty = partsActual[item._key] ?? item.qty
+                        return (
+                          <div key={item._key} className="flex items-center justify-between bg-stone-50 rounded-xl px-3 py-2.5">
+                            <p className="text-sm font-medium text-[#1E1E1E]">{item.name}</p>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => setPartsActual(p => ({ ...p, [item._key]: Math.max(0, (p[item._key] ?? item.qty) - 1) }))}
+                                className="w-7 h-7 rounded-lg bg-white border border-[#F8981D] text-[#F8981D] flex items-center justify-center cursor-pointer hover:bg-[#F8981D]/10 transition-colors text-sm font-bold"
+                              >−</button>
+                              <span className="text-sm font-semibold text-[#1E1E1E] w-6 text-center">{actualQty}</span>
+                              <button
+                                onClick={() => setPartsActual(p => ({ ...p, [item._key]: Math.min(item.qty * 2, (p[item._key] ?? item.qty) + 1) }))}
+                                className="w-7 h-7 rounded-lg bg-white border border-[#F8981D] text-[#F8981D] flex items-center justify-center cursor-pointer hover:bg-[#F8981D]/10 transition-colors text-sm font-bold"
+                              >+</button>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
                     <button
-                      onClick={() => setShowActualQty(!showActualQty)}
-                      className="text-xs text-[#F8981D] font-medium bg-transparent border-none cursor-pointer hover:underline"
+                      onClick={async () => {
+                        try {
+                          setActionLoading(true);
+                          const payload = allParts.map((item: any) =>
+                            item._type === 'quotation'
+                              ? { quotationItemId: item.id, actualQuantity: partsActual[item._key] ?? item.qty }
+                              : { requisitionItemId: item.id, actualQuantity: partsActual[item._key] ?? item.qty }
+                          );
+                          const updated = await api.patch(`/jobs/${id}/return-parts`, { partsActual: payload });
+                          setJob(updated);
+                          alert('คืนอะไหล่ส่วนที่ไม่ได้ใช้เรียบร้อย สต็อกถูกอัปเดตแล้ว');
+                        } catch (e: any) {
+                          console.error(e);
+                          alert(e.response?.data?.message || 'การคืนอะไหล่ล้มเหลว');
+                        } finally {
+                          setActionLoading(false);
+                        }
+                      }}
+                      disabled={actionLoading}
+                      className="w-full mt-3 bg-[#F8981D] hover:bg-orange-500 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors border-none cursor-pointer disabled:opacity-50"
                     >
-                      กรอกจำนวนที่ใช้จริง
+                      {actionLoading ? 'กำลังดำเนินการ...' : 'ยืนยันคืนอะไหล่ส่วนที่เหลือ'}
                     </button>
                   </div>
-                  <div className="flex flex-col gap-2">
-                    {job.quotation.items.map((item: any) => {
-                      const actualQty = partsActual[item.id] ?? item.quantity
-                      return (
-                        <div key={item.id} className="flex items-center justify-between bg-stone-50 rounded-xl px-3 py-2.5">
-                          <p className="text-sm font-medium text-[#1E1E1E]">{item.itemName}</p>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => setPartsActual(p => ({ ...p, [item.id]: Math.max(0, (p[item.id] ?? item.quantity) - 1) }))}
-                              className="w-7 h-7 rounded-lg bg-white border border-[#F8981D] text-[#F8981D] flex items-center justify-center cursor-pointer hover:bg-[#F8981D]/10 transition-colors text-sm font-bold"
-                            >−</button>
-                            <span className="text-sm font-semibold text-[#1E1E1E] w-6 text-center">{actualQty}</span>
-                            <button
-                              onClick={() => setPartsActual(p => ({ ...p, [item.id]: Math.min(item.quantity * 2, (p[item.id] ?? item.quantity) + 1) }))}
-                              className="w-7 h-7 rounded-lg bg-white border border-[#F8981D] text-[#F8981D] flex items-center justify-center cursor-pointer hover:bg-[#F8981D]/10 transition-colors text-sm font-bold"
-                            >+</button>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                  <button
-                    onClick={async () => {
-                      try {
-                        setActionLoading(true);
-                        const payload = job.quotation.items.map((item: any) => ({
-                          quotationItemId: item.id,
-                          actualQuantity: partsActual[item.id] ?? item.quantity
-                        }));
-                        const updated = await api.patch(`/jobs/${id}/return-parts`, { partsActual: payload });
-                        setJob(updated);
-                        alert('คืนอะไหล่ส่วนที่ไม่ได้ใช้เรียบร้อย สต็อกถูกอัปเดตแล้ว');
-                      } catch (e: any) {
-                        console.error(e);
-                        alert(e.response?.data?.message || 'การคืนอะไหล่ล้มเหลว');
-                      } finally {
-                        setActionLoading(false);
-                      }
-                    }}
-                    disabled={actionLoading}
-                    className="w-full mt-3 bg-[#F8981D] hover:bg-orange-500 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors border-none cursor-pointer disabled:opacity-50"
-                  >
-                    {actionLoading ? 'กำลังดำเนินการ...' : 'ยืนยันคืนอะไหล่ส่วนที่เหลือ'}
-                  </button>
-                </div>
-              )}
+                ) : null;
+              })()}
 
               {/* Removed customer parts */}
               <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
@@ -430,14 +456,51 @@ export default function MechanicJobDetailPage() {
                           </label>
                           {deliveryPhotos.length > 0 && (
                             <div className="flex gap-1.5 flex-wrap mt-2">
-                              {deliveryPhotos.map((url, i) => (
-                                <img key={i} src={url} alt="" className="w-12 h-12 rounded-lg object-cover border border-gray-200" />
+                              {deliveryPhotos.map((p, i) => (
+                                <img key={i} src={p.url} alt="" className="w-12 h-12 rounded-lg object-cover border border-gray-200" />
                               ))}
                             </div>
                           )}
                         </div>
                       </div>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Completion photos — shown when IN_PROGRESS, before ซ่อมเสร็จ */}
+              {job.status === 'IN_PROGRESS' && (
+                <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+                  <p className="text-sm text-gray-400 uppercase tracking-wide mb-3">รูปภาพส่งให้หัวหน้าช่างตรวจ</p>
+                  <p className="text-xs text-gray-500 mb-2">ถ่ายรูปงานที่ซ่อมเสร็จ เพื่อให้หัวหน้าช่างดูก่อนตรวจ</p>
+                  <div className="flex flex-wrap gap-2">
+                    {completionPhotos.map((p, i) => (
+                      <div key={i} className="relative group">
+                        <img src={p.url} alt="" className="w-16 h-16 rounded-lg object-cover border border-gray-200" />
+                        <button
+                          type="button"
+                          onClick={() => setCompletionPhotos((prev) => prev.filter((_, idx) => idx !== i))}
+                          className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center border border-white shadow cursor-pointer hover:bg-red-600"
+                        >×</button>
+                      </div>
+                    ))}
+                    <label className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center cursor-pointer hover:border-[#F8981D] hover:bg-[#F8981D]/5 transition-colors">
+                      <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files ?? [])
+                          setCompletionPhotos((prev) => [
+                            ...prev,
+                            ...files.map((f) => ({ file: f, url: URL.createObjectURL(f) })),
+                          ])
+                          e.target.value = ''
+                        }}
+                      />
+                    </label>
                   </div>
                 </div>
               )}
@@ -476,8 +539,14 @@ export default function MechanicJobDetailPage() {
                       }
                       try {
                         setActionLoading(true)
-                        await api.patch(`/jobs/${id}`, { status: 'READY_FOR_DELIVERY' })
-                        setJob((prev: any) => prev ? { ...prev, status: 'READY_FOR_DELIVERY' } : prev)
+                        const photos = deliveryPhotos.length > 0
+                          ? await Promise.all(deliveryPhotos.map((p) => fileToBase64(p.file)))
+                          : undefined
+                        const updated = await api.patch(`/jobs/${id}/ready-delivery`, {
+                          photos,
+                        })
+                        setJob((prev: any) => prev ? { ...prev, ...updated } : updated)
+                        setDeliveryPhotos([])
                         alert('เตรียมส่งมอบเรียบร้อย')
                       } catch (err) { console.error(err); alert('อัพเดทสถานะไม่สำเร็จ') }
                       setActionLoading(false)

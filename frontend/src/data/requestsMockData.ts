@@ -16,6 +16,8 @@ export interface PartRequest {
   licensePlate: string
   requestedAt: string
   items: RequestItem[]
+  /** PENDING | APPROVED | REJECTED | ISSUED */
+  status?: string
 }
 
 export const mockRequests: PartRequest[] = [

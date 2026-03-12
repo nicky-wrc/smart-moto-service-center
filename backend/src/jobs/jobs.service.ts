@@ -168,6 +168,15 @@ export class JobsService {
             },
           },
         },
+        partRequisitions: {
+          include: {
+            items: {
+              include: {
+                part: { select: { id: true, name: true, partNo: true, unitPrice: true, unit: true } },
+              },
+            },
+          },
+        },
       },
     });
   }
@@ -359,7 +368,7 @@ export class JobsService {
     });
   }
 
-  async completeJob(jobId: number, diagnosisNotes?: string, mechanicNotes?: string) {
+  async completeJob(jobId: number, diagnosisNotes?: string, mechanicNotes?: string, photos?: string[]) {
     const job = await this.prisma.job.findUnique({
       where: { id: jobId },
     });
@@ -384,6 +393,7 @@ export class JobsService {
         completedAt: new Date(),
         ...(diagnosisNotes ? { diagnosisNotes } : {}),
         ...(mechanicNotes ? { mechanicNotes } : {}),
+        ...(photos && photos.length > 0 ? { images: { push: photos } } : {}),
       },
       include: {
         technician: {
@@ -538,35 +548,48 @@ export class JobsService {
       include: {
         quotation: {
           include: {
-            items: true
-          }
-        }
-      }
+            items: { include: { part: true } },
+          },
+        },
+        partRequisitions: {
+          where: { status: 'ISSUED' },
+          include: {
+            items: {
+              include: {
+                part: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!job) throw new NotFoundException(`Job ID ${jobId} not found`);
-    if (!job.quotation) throw new BadRequestException(`Job ID ${jobId} does not have a quotation attached`);
 
-    // We process the returns in a transaction
+    const hasQuotation = !!job.quotation;
+    const quotationItems = job.quotation?.items ?? [];
+    const requisitionItems = (job.partRequisitions ?? []).flatMap((r) =>
+      r.items.map((i) => ({ ...i, requisitionNo: r.reqNo })),
+    );
+
     return this.prisma.$transaction(async (tx) => {
-      let totalAmountBeforeReturn = Number(job.quotation!.totalAmount);
-      
+      let totalAmountBeforeReturn = hasQuotation ? Number(job.quotation!.totalAmount) : 0;
+
       for (const returnItem of dto.partsActual) {
-        const quotationItem = job.quotation!.items.find(i => i.id === returnItem.quotationItemId);
-        if (!quotationItem) {
-          throw new BadRequestException(`Quotation item ID ${returnItem.quotationItemId} not found in this job's quotation`);
-        }
-        
-        const returnQuantity = quotationItem.quantity - returnItem.actualQuantity;
-        if (returnQuantity > 0) {
-          if (quotationItem.partId) {
-            // Return part to stock
+        if (returnItem.quotationItemId != null) {
+          // Quotation item
+          const quotationItem = quotationItems.find((i) => i.id === returnItem.quotationItemId);
+          if (!quotationItem) {
+            throw new BadRequestException(
+              `Quotation item ID ${returnItem.quotationItemId} not found in this job`,
+            );
+          }
+          const returnQuantity = quotationItem.quantity - returnItem.actualQuantity;
+          if (returnQuantity > 0 && quotationItem.partId) {
             await tx.part.update({
               where: { id: quotationItem.partId },
-              data: { stockQuantity: { increment: returnQuantity } }
+              data: { stockQuantity: { increment: returnQuantity } },
             });
-            
-            // Create stock movement
             await tx.stockMovement.create({
               data: {
                 partId: quotationItem.partId,
@@ -576,45 +599,77 @@ export class JobsService {
                 reference: job.jobNo,
                 notes: `ช่างทำเรื่องคืนอะไหล่จำนวน ${returnQuantity} ชิ้น จากใบงาน ${job.jobNo}`,
                 createdById: userId,
-              }
+              },
             });
           }
-          
-          // Calculate the original total for THIS item
           const originalItemTotal = Number(quotationItem.totalPrice);
-          // Calculate the NEW total for THIS item based on actual returned quantity
           const newItemTotal = returnItem.actualQuantity * Number(quotationItem.unitPrice);
-          
-          // Update QuotationItem
           await tx.quotationItem.update({
             where: { id: quotationItem.id },
-            data: { 
-              quantity: returnItem.actualQuantity,
-              totalPrice: newItemTotal
-            }
+            data: { quantity: returnItem.actualQuantity, totalPrice: newItemTotal },
           });
-          
-          // Adjust total amount running sum
           totalAmountBeforeReturn = totalAmountBeforeReturn - originalItemTotal + newItemTotal;
-        } else if (returnQuantity < 0) {
-          throw new BadRequestException(`Cannot return negative quantity. Item ID: ${returnItem.quotationItemId}`);
+          if (returnQuantity < 0) {
+            throw new BadRequestException(
+              `Cannot return negative quantity. Quotation item ID: ${returnItem.quotationItemId}`,
+            );
+          }
+        } else if (returnItem.requisitionItemId != null) {
+          // Part requisition item (อะไหล่เพิ่มเติม)
+          const reqItem = requisitionItems.find((i) => i.id === returnItem.requisitionItemId);
+          if (!reqItem) {
+            throw new BadRequestException(
+              `Requisition item ID ${returnItem.requisitionItemId} not found in this job`,
+            );
+          }
+          const issuedQty = reqItem.issuedQuantity ?? reqItem.quantity;
+          const returnQuantity = issuedQty - returnItem.actualQuantity;
+          if (returnQuantity > 0 && reqItem.partId && reqItem.part) {
+            await tx.part.update({
+              where: { id: reqItem.partId },
+              data: { stockQuantity: { increment: returnQuantity } },
+            });
+            await tx.stockMovement.create({
+              data: {
+                partId: reqItem.partId,
+                movementType: StockMovementType.RETURN,
+                quantity: returnQuantity,
+                unitPrice: reqItem.part.unitPrice,
+                reference: job.jobNo,
+                notes: `ช่างทำเรื่องคืนอะไหล่จำนวน ${returnQuantity} ชิ้น จากใบงาน ${job.jobNo}`,
+                createdById: userId,
+              },
+            });
+          } else if (returnQuantity < 0) {
+            throw new BadRequestException(
+              `Cannot return negative quantity. Requisition item ID: ${returnItem.requisitionItemId}`,
+            );
+          }
+        } else {
+          throw new BadRequestException(
+            'Each item must have quotationItemId or requisitionItemId',
+          );
         }
       }
-      
-      // Finally, update the Quotation's total amount
-      await tx.quotation.update({
-        where: { id: job.quotation!.id },
-        data: { totalAmount: totalAmountBeforeReturn }
-      });
-      
-      // Return updated job
+
+      if (hasQuotation) {
+        await tx.quotation.update({
+          where: { id: job.quotation!.id },
+          data: { totalAmount: totalAmountBeforeReturn },
+        });
+      }
+
       return tx.job.findUnique({
         where: { id: jobId },
         include: {
           quotation: { include: { items: true } },
+          partRequisitions: {
+            where: { status: 'ISSUED' },
+            include: { items: { include: { part: true } } },
+          },
           technician: { select: { id: true, name: true, role: true } },
-          motorcycle: { include: { owner: true } }
-        }
+          motorcycle: { include: { owner: true } },
+        },
       });
     });
   }

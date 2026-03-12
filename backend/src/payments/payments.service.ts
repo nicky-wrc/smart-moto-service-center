@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { PaymentStatus, JobStatus, PaymentMethod } from '@prisma/client';
+import { PaymentStatus, JobStatus, PaymentMethod, JobType } from '@prisma/client';
 import { PointsService } from '../customers/points.service';
 
 @Injectable()
@@ -141,8 +141,14 @@ export class PaymentsService {
       0,
     );
 
-    // Calculate subtotal from actual tracked costs
-    let subtotal = laborCost + partsCost + outsourceCost;
+    // Inspection fee (for deep inspection jobs)
+    const inspectionFee =
+      job.jobType === JobType.DEEP_INSPECTION && job.inspectionFee
+        ? Number(job.inspectionFee)
+        : 0;
+
+    // Calculate subtotal from actual tracked costs + inspection fee
+    let subtotal = laborCost + partsCost + outsourceCost + inspectionFee;
 
     // Fallback to quotation total if no actual costs are tracked
     if (subtotal === 0 && job.quotation) {

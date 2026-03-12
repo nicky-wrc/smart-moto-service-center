@@ -137,22 +137,60 @@ class ReceptionApiService {
       let motorcycleId = data.motorcycleId;
 
       if (!data.isExistingCustomer) {
-        const { brand, model } = extractBrand(data.motorcycleData.model)
-        const createRes = await apiClient.post<any>('/customers/with-motorcycle', {
-          phoneNumber: data.customerData.phone,
-          firstName: data.customerData.firstName,
-          lastName: data.customerData.lastName,
-          address: data.customerData.address || '',
-          motorcycle: {
-            licensePlate,
-            brand,
-            model,
-            color: data.motorcycleData.color,
-            vin: `VIN-${Date.now()}`
+        const { brand, model } = extractBrand(data.motorcycleData.model);
+        try {
+          // กรณีลูกค้าใหม่: พยายามสร้างลูกค้า + รถใหม่
+          const createRes = await apiClient.post<any>('/customers/with-motorcycle', {
+            phoneNumber: data.customerData.phone,
+            firstName: data.customerData.firstName,
+            lastName: data.customerData.lastName,
+            address: data.customerData.address || '',
+            motorcycle: {
+              licensePlate,
+              brand,
+              model,
+              color: data.motorcycleData.color,
+              vin: `VIN-${Date.now()}`
+            }
+          });
+          customerId = createRes.id;
+          motorcycleId = createRes.motorcycles[0].id;
+        } catch (err: any) {
+          // ถ้าเบอร์หรือข้อมูลรถซ้ำ ให้ไปใช้ข้อมูลที่มีอยู่แล้วแทน
+          const apiErr = err as { name?: string; statusCode?: number };
+          if (apiErr?.name === 'ApiError' && apiErr?.statusCode === 409) {
+            // 1) หาลูกค้าจากเบอร์โทร
+            const customers = await apiClient.get<any[]>(`/customers/search?query=${encodeURIComponent(data.customerData.phone)}`);
+            if (!customers || customers.length === 0) {
+              throw err;
+            }
+            const customer = customers[0];
+            customerId = customer.id;
+
+            // 2) เช็ครถในระบบว่ามีป้ายทะเบียนนี้อยู่แล้วไหม
+            const existingMotorcycle = (customer.motorcycles || []).find(
+              (m: any) => m.licensePlate === licensePlate
+            );
+
+            if (existingMotorcycle) {
+              motorcycleId = existingMotorcycle.id;
+            } else {
+              // 3) ถ้าไม่มี ให้สร้างรถใหม่ผูกกับลูกค้าเดิม
+              const { brand: motoBrand, model: motoModel } = extractBrand(data.motorcycleData.model);
+              const createMotoRes = await apiClient.post<any>('/motorcycles', {
+                vin: `VIN-${Date.now()}`,
+                licensePlate,
+                brand: motoBrand,
+                model: motoModel,
+                color: data.motorcycleData.color,
+                ownerId: customerId
+              });
+              motorcycleId = createMotoRes.id;
+            }
+          } else {
+            throw err;
           }
-        });
-        customerId = createRes.id;
-        motorcycleId = createRes.motorcycles[0].id;
+        }
       } else {
         // Make sure we have customer ID
         if (!customerId) {

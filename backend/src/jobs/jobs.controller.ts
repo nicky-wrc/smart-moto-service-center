@@ -112,9 +112,9 @@ export class JobsController {
   @ApiOperation({ summary: 'ซ่อมเสร็จสิ้น (เปลี่ยน status เป็น QC_PENDING รอตรวจ)' })
   completeJob(
     @Param('id') id: string,
-    @Body() body?: { diagnosisNotes?: string; mechanicNotes?: string },
+    @Body() body?: { diagnosisNotes?: string; mechanicNotes?: string; photos?: string[] },
   ) {
-    return this.jobsService.completeJob(+id, body?.diagnosisNotes, body?.mechanicNotes);
+    return this.jobsService.completeJob(+id, body?.diagnosisNotes, body?.mechanicNotes, body?.photos);
   }
 
   @Patch(':id/cancel')
@@ -136,7 +136,7 @@ export class JobsController {
   }
 
   @Patch(':id/ready-delivery')
-  @Roles('SERVICE_ADVISOR', 'MANAGER', 'ADMIN', 'FOREMAN')
+  @Roles('TECHNICIAN', 'SERVICE_ADVISOR', 'MANAGER', 'ADMIN', 'FOREMAN')
   @ApiOperation({ summary: 'เตรียมรถพร้อมส่งมอบ (ล้างรถเสร็จ)' })
   readyForDelivery(
     @Param('id') id: string,

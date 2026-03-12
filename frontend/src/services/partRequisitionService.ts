@@ -44,6 +44,7 @@ function mapBackendRequisition(r: any): PartRequest {
             ? new Date(r.createdAt).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
             : '-',
         items,
+        status: r.status || undefined,
     }
 }
 
@@ -68,7 +69,8 @@ export const partRequisitionService = {
 
     getPendingRequests: async (): Promise<PartRequest[]> => {
         if (!USE_MOCK_DATA) {
-            const raw = await apiClient.get<any[]>('/part-requisitions?status=PENDING')
+            // ดึงรายการคำขอเบิกอะไหล่ทั้งหมดจาก backend แล้วแปลงให้พร้อมแสดง
+            const raw = await apiClient.get<any[]>('/part-requisitions')
             return (Array.isArray(raw) ? raw : []).map(mapBackendRequisition)
         }
 

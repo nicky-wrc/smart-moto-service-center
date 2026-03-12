@@ -151,6 +151,8 @@ export default function RequestDetailPage() {
 
     const allRejected = rejectedItemIds.size === request.items.length
 
+    const isAlreadyProcessed = request.status === 'ISSUED' || request.status === 'APPROVED' || request.status === 'REJECTED'
+
     const handleAction = (action: 'approve' | 'reject') => {
         setConfirmAction(action)
     }
@@ -347,6 +349,18 @@ export default function RequestDetailPage() {
                             </svg>
                             <span>รายการคำขอ : {request.items.length} รายการ ({request.items.reduce((s, i) => s + i.quantity, 0)} ชิ้น)</span>
                         </div>
+                        {request.status && (
+                            <div className="flex items-center gap-2">
+                                <span className="text-gray-400 text-sm">สถานะ:</span>
+                                <span className={`text-sm font-medium px-2 py-1 rounded-full ${
+                                    request.status === 'PENDING' ? 'bg-amber-100 text-amber-800' :
+                                    request.status === 'APPROVED' || request.status === 'ISSUED' ? 'bg-green-100 text-green-800' :
+                                    request.status === 'REJECTED' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-700'
+                                }`}>
+                                    {request.status === 'PENDING' ? 'รออนุมัติ' : request.status === 'ISSUED' ? 'เบิกแล้ว' : request.status === 'APPROVED' ? 'อนุมัติแล้ว' : request.status === 'REJECTED' ? 'ปฏิเสธ' : request.status}
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -376,6 +390,7 @@ export default function RequestDetailPage() {
                                     <td className="py-4 px-6">{item.quantity * item.pricePerUnit}</td>
                                     <td className="py-4 px-6">
                                         <div className="flex items-center justify-center gap-4">
+                                            {!isAlreadyProcessed && (
                                             <button
                                                 onClick={() => toggleReject(item.id)}
                                                 className={`flex items-center justify-center gap-1.5 w-32 py-1.5 text-sm font-medium text-white rounded transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)] ${isRejected ? 'bg-[#5fbfb5] hover:bg-[#52a69d]' : 'bg-[#f59e0b] hover:bg-amber-600'}`}
@@ -396,6 +411,7 @@ export default function RequestDetailPage() {
                                                     </>
                                                 )}
                                             </button>
+                                            )}
                                             <button
                                                 onClick={() => {
                                                     if (item.partId) {
@@ -431,29 +447,37 @@ export default function RequestDetailPage() {
                 </table>
             </div>
 
-            {/* Bottom Actions */}
-            <div className="mt-auto flex flex-col items-end gap-2 pt-4">
-                <div className="flex justify-end gap-3">
-                    <button
-                        onClick={() => handleAction('reject')}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-[#dc2626] text-white font-medium rounded-lg hover:bg-red-700 transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
-                    >
-                        ไม่อนุมัติการเบิกสินค้า
-                    </button>
-                    <button
-                        onClick={() => handleAction('approve')}
-                        disabled={allRejected}
-                        className={`flex items-center gap-2 px-6 py-2.5 font-medium rounded-lg transition-colors ${allRejected ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-[#16a34a] text-white hover:bg-green-700 [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]'}`}
-                    >
-                        อนุมัติการเบิกสินค้า
-                    </button>
+            {/* Bottom Actions - แสดงเฉพาะกรณีรออนุมัติ (PENDING) เท่านั้น */}
+            {!isAlreadyProcessed ? (
+                <div className="mt-auto flex flex-col items-end gap-2 pt-4">
+                    <div className="flex justify-end gap-3">
+                        <button
+                            onClick={() => handleAction('reject')}
+                            className="flex items-center gap-2 px-6 py-2.5 bg-[#dc2626] text-white font-medium rounded-lg hover:bg-red-700 transition-colors [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
+                        >
+                            ไม่อนุมัติการเบิกสินค้า
+                        </button>
+                        <button
+                            onClick={() => handleAction('approve')}
+                            disabled={allRejected}
+                            className={`flex items-center gap-2 px-6 py-2.5 font-medium rounded-lg transition-colors ${allRejected ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-[#16a34a] text-white hover:bg-green-700 [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]'}`}
+                        >
+                            อนุมัติการเบิกสินค้า
+                        </button>
+                    </div>
+                    {allRejected && (
+                        <p className="text-sm text-red-500 flex items-center gap-1">
+                            จำเป็นต้องเลือกอย่างน้อยหนึ่งรายการจึงจะสามารถอนุมัติการเบิกสินค้าได้
+                        </p>
+                    )}
                 </div>
-                {allRejected && (
-                    <p className="text-sm text-red-500 flex items-center gap-1">
-                        จำเป็นต้องเลือกอย่างน้อยหนึ่งรายการจึงจะสามารถอนุมัติการเบิกสินค้าได้
+            ) : (
+                <div className="mt-auto pt-4">
+                    <p className="text-gray-500 text-sm text-center py-4">
+                        คำขอเบิกนี้ได้รับการประมวลผลแล้ว ไม่สามารถอนุมัติหรือปฏิเสธซ้ำได้
                     </p>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     )
 }

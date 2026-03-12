@@ -59,7 +59,8 @@ export default function ReceptionSuccessPage() {
                         onClick={() => navigate('/reception/repair', { 
                             state: { 
                                 formData: data,
-                                isExistingCustomer: true,
+                                // กรณีนี้คือ "ลูกค้าใหม่ + แจ้งซ่อมครั้งแรก"
+                                isExistingCustomer: false,
                                 isNewMotorcycle: false
                             } 
                         })}

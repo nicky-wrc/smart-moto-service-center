@@ -383,6 +383,8 @@ export default function JobDetailPage() {
                 photos: [] as string[],
               }
             : undefined,
+          quotation: jobData.quotation,
+          partRequisitions: jobData.partRequisitions ?? [],
         }
         setJob(mapped)
       } catch (err) {
@@ -407,6 +409,45 @@ export default function JobDetailPage() {
   // Foreman note — pre-fill from saved diagnosisNotes
   const [foremanNote, setForemanNote] = useState('')
   useEffect(() => { if (job?.diagnosisNotes) setForemanNote(job.diagnosisNotes) }, [job])
+
+  // Hydrate initial quotation (ประเมินงาน) and additional requisitions (ขอเพิ่มอะไหล่) from API
+  useEffect(() => {
+    if (!job) return
+    const quot = job.quotation
+    if (quot?.items?.length) {
+      setQuotItems(quot.items.map((i: any) => ({
+        id: i.id,
+        name: i.itemName ?? i.part?.name ?? '-',
+        qty: i.quantity ?? 1,
+        unitPrice: Number(i.unitPrice) ?? 0,
+      })))
+      setQuotSent(true)
+      setQuotationSent(true)
+    }
+    // ใบเสนอราคาเพิ่มเติม — hydrate เฉพาะ requisitions ที่มาจาก "ใบเสนอราคาเพิ่มเติม" (ไม่เอาของประเมินงานที่ Auto-generated)
+    const reqs = (job.partRequisitions ?? []).filter((r: any) =>
+      (r.notes ?? '').includes('ใบเสนอราคาเพิ่มเติม')
+    )
+    if (reqs.length > 0) {
+      const items = reqs.flatMap((r: any) => (r.items ?? []).filter((i: any) => i.partId || i.part).map((i: any) => {
+        const p = i.part ?? {}
+        return {
+          _reqKey: `r-${r.id}-${i.id}`,
+          part: {
+            id: p.id,
+            name: p.name ?? '-',
+            partNumber: p.partNo ?? `P-${p.id}`,
+            stock: 0,
+            unit: p.unit ?? 'ชิ้น',
+            unitPrice: Number(p.unitPrice ?? i.unitPrice ?? 0),
+          },
+          qty: i.issuedQuantity ?? i.quantity ?? 1,
+        }
+      }))
+      setAddlSelectedParts(items)
+      setAddlQuotationSent(true)
+    }
+  }, [job?.id, job?.quotation?.id, job?.partRequisitions?.length])
 
   // Foreman photos
   const [foremanPhotos, setForemanPhotos] = useState<string[]>([])
@@ -459,6 +500,7 @@ export default function JobDetailPage() {
   const [addlQuotPreview, setAddlQuotPreview] = useState(false)
   const [addlQuotFullView, setAddlQuotFullView] = useState(false)
   const [addlQuotationSent, setAddlQuotationSent] = useState(false)
+  const [addlSending, setAddlSending] = useState(false)
 
   // Confirm modal
   const [confirmAction, setConfirmAction] = useState<null | 'qcPass' | 'qcFail'>(null)
@@ -847,8 +889,30 @@ export default function JobDetailPage() {
           title="ใบเสนอราคาเพิ่มเติม"
           subtitle={`อ้างอิงใบงาน #${job.id}`}
           onClose={() => setAddlQuotPreview(false)}
-          onConfirm={() => { setAddlQuotationSent(true); setAddlQuotPreview(false) }}
-          confirmLabel="ส่งใบเสนอราคาเพิ่มเติม"
+          onConfirm={async () => {
+            if (addlSelectedParts.length === 0) return
+            setAddlSending(true)
+            try {
+              await api.post('/part-requisitions', {
+                jobId: Number(id),
+                items: addlSelectedParts.map((sp) => ({
+                  partId: sp.part.id,
+                  quantity: sp.qty,
+                })),
+                notes: 'ใบเสนอราคาเพิ่มเติม จากรายงานช่าง',
+              })
+              setAddlQuotationSent(true)
+              setAddlQuotPreview(false)
+              showAlert('ส่งใบเสนอราคาเพิ่มเติมสำเร็จ', 'คำร้องขอเบิกอะไหล่ถูกสร้างแล้ว รอคลังสินค้าอนุมัติ')
+            } catch (err: any) {
+              console.error('Failed to create part requisition:', err)
+              showAlert('ส่งใบเสนอราคาเพิ่มเติมไม่สำเร็จ', err?.response?.data?.message || err?.message || 'เกิดข้อผิดพลาด')
+            } finally {
+              setAddlSending(false)
+            }
+          }}
+          confirmLabel={addlSending ? 'กำลังส่ง...' : 'ส่งใบเสนอราคาเพิ่มเติม'}
+          confirmDisabled={addlSending || addlSelectedParts.length === 0}
         >
           {/* Customer + Vehicle */}
           <div className="grid grid-cols-2 gap-3">
@@ -877,8 +941,8 @@ export default function JobDetailPage() {
           <div>
             <p className="text-sm text-gray-400 mb-2">อะไหล่เพิ่มเติม ({addlSelectedParts.length} รายการ)</p>
             <div className="flex flex-col gap-1.5">
-              {addlSelectedParts.map((sp) => (
-                <div key={sp.part.id} className="flex items-center justify-between gap-2">
+              {addlSelectedParts.map((sp, idx) => (
+                <div key={(sp as any)._reqKey ?? `sp-${sp.part.id}-${idx}`} className="flex items-center justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-[#1E1E1E] truncate">{sp.part.name} <span className="text-gray-400 text-sm">× {sp.qty} {sp.part.unit}</span></p>
                     <p className="text-sm text-gray-400">{(sp.qty * sp.part.unitPrice).toLocaleString()} ฿</p>
@@ -1482,9 +1546,38 @@ export default function JobDetailPage() {
               </div>
               )}
 
-              {/* ── กำลังดำเนินงาน: mechanic report + additional quotation ── */}
+              {/* ── กำลังดำเนินงาน: ประเมินงาน (อะไหล่ครั้งแรก) + mechanic report + additional quotation ── */}
               {job.status === 'กำลังดำเนินงาน' && (
                 <div className="flex flex-col gap-3">
+
+                  {/* ประเมินงาน ขออะไหล่อะไรบ้าง (initial quotation) */}
+                  {job.quotation?.items?.length > 0 && (
+                    <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex flex-col gap-3">
+                      <p className="text-sm text-gray-400 uppercase tracking-wide">ประเมินงาน — อะไหล่ที่ขอครั้งแรก</p>
+                      <div className="flex flex-col gap-1.5">
+                        {job.quotation.items.map((i: any) => (
+                          <div key={i.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-[#1E1E1E] truncate">{i.itemName ?? i.part?.name ?? '-'}</p>
+                              <p className="text-sm text-gray-400">{i.part?.name ? `รหัส: ${i.part.id}` : ''}</p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="text-sm text-gray-500">x {i.quantity}</span>
+                              <span className="text-sm font-semibold text-[#1E1E1E]">
+                                {(Number(i.quantity) * Number(i.unitPrice ?? 0)).toLocaleString()} ฿
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                        <div className="flex justify-between px-3 py-2 border-t border-gray-100">
+                          <span className="text-sm text-gray-400">รวม (ประเมินครั้งแรก)</span>
+                          <span className="text-sm font-bold text-[#1E1E1E]">
+                            {job.quotation.items.reduce((s: number, i: any) => s + Number(i.quantity) * Number(i.unitPrice ?? 0), 0).toLocaleString()} ฿
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Mechanic report card */}
                   {job.mechanicReport ? (
@@ -1534,8 +1627,8 @@ export default function JobDetailPage() {
                         {/* Selected parts */}
                         {addlSelectedParts.length > 0 && (
                           <div className="flex flex-col gap-1.5">
-                            {addlSelectedParts.map((sp) => (
-                              <div key={sp.part.id} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+                            {addlSelectedParts.map((sp, idx) => (
+                              <div key={(sp as any)._reqKey ?? `sp-${sp.part.id}-${idx}`} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-medium text-[#1E1E1E] truncate">{sp.part.name}</p>
                                   <p className="text-sm text-gray-400">{sp.part.partNumber}</p>
@@ -1570,46 +1663,34 @@ export default function JobDetailPage() {
                           </div>
                         )}
 
-                        {!addlQuotationSent && (
-                          <div className="flex flex-col gap-2">
-                            <button
-                              onClick={() => setAddlPartsModalOpen(true)}
-                              className="w-full flex items-center justify-between border-2 border-dashed border-gray-200 hover:border-[#F8981D] rounded-xl px-4 py-3 bg-transparent cursor-pointer transition-colors group"
-                            >
-                              <span className="text-sm text-gray-400 group-hover:text-[#F8981D] transition-colors">
-                                {addlSelectedParts.length > 0
-                                  ? `เลือกแล้ว ${addlSelectedParts.length} รายการ — แก้ไข`
-                                  : 'เพิ่มอะไหล่ที่ต้องใช้เพิ่มเติม...'}
-                              </span>
-                              <svg className="w-4 h-4 text-gray-300 group-hover:text-[#F8981D] transition-colors shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() => setAddlQuotPreview(true)}
-                              disabled={addlSelectedParts.length === 0}
-                              className="w-full bg-[#F8981D] hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium py-2.5 rounded-xl transition-colors border-none cursor-pointer"
-                            >
-                              ดูและส่งใบเสนอราคาเพิ่มเติม
-                            </button>
-                          </div>
-                        )}
-
                         {addlQuotationSent && (
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2 px-1">
-                              <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
-                              <p className="text-green-700 text-sm font-medium">ส่งใบเสนอราคาเพิ่มเติมแล้ว</p>
-                            </div>
-                            <button
-                              onClick={() => setAddlQuotPreview(true)}
-                              className="w-full flex items-center justify-center gap-2 border border-gray-200 hover:border-[#F8981D] hover:text-[#F8981D] rounded-xl py-2.5 text-sm text-gray-500 bg-transparent cursor-pointer transition-colors"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                              ดูใบเสนอราคาเพิ่มเติม
-                            </button>
+                          <div className="flex items-center gap-2 px-1">
+                            <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
+                            <p className="text-green-700 text-sm font-medium">ส่งใบเสนอราคาเพิ่มเติมแล้ว</p>
                           </div>
                         )}
+                        <div className="flex flex-col gap-2">
+                          <button
+                            onClick={() => setAddlPartsModalOpen(true)}
+                            className="w-full flex items-center justify-between border-2 border-dashed border-gray-200 hover:border-[#F8981D] rounded-xl px-4 py-3 bg-transparent cursor-pointer transition-colors group"
+                          >
+                            <span className="text-sm text-gray-400 group-hover:text-[#F8981D] transition-colors">
+                              {addlSelectedParts.length > 0
+                                ? `เลือกแล้ว ${addlSelectedParts.length} รายการ — แก้ไข`
+                                : 'เพิ่มอะไหล่ที่ต้องใช้เพิ่มเติม...'}
+                            </span>
+                            <svg className="w-4 h-4 text-gray-300 group-hover:text-[#F8981D] transition-colors shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => setAddlQuotPreview(true)}
+                            disabled={addlSelectedParts.length === 0}
+                            className="w-full bg-[#F8981D] hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium py-2.5 rounded-xl transition-colors border-none cursor-pointer"
+                          >
+                            ดูและส่งใบเสนอราคาเพิ่มเติม
+                          </button>
+                        </div>
                       </div>
                     </>
                   )}
