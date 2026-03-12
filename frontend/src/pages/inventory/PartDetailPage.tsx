@@ -233,7 +233,7 @@ export default function PartDetailPage() {
                         {/* Price and Quantity Display */}
                         <div className="rounded-2xl">
                             <div className="text-left">
-                                <p className="text-6xl font-medium text-gray-900">ราคา {part.quantity} <span className="text-2xl text-gray-600">/หน่วย</span></p>
+                                <p className="text-6xl font-medium text-gray-900">฿{part.price?.toLocaleString() || '0'} <span className="text-2xl text-gray-600">/หน่วย</span></p>
                                 <p className="text-lg text-gray-600 mt-2">จำนวนคงเหลือ {part.quantity} ชิ้น</p>
                             </div>
                         </div>

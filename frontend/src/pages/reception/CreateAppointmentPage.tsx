@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { appointmentsService } from '../../services/api/appointments.service';
 import { motorcyclesService } from '../../services/api/motorcycles.service';
 import type { Motorcycle, CreateAppointmentDto } from '../../services/api/types';
+import { formatMotorcycleName } from '../../utils/motorcycle';
 
 export const CreateAppointmentPage = () => {
   const navigate = useNavigate();
@@ -86,7 +87,7 @@ export const CreateAppointmentPage = () => {
   const filteredMotorcycles = motorcycles.filter(m => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
-    const full = `${m.licensePlate} ${m.brand} ${m.model} ${m.owner?.firstName} ${m.owner?.lastName} ${m.owner?.phoneNumber}`.toLowerCase();
+    const full = `${m.licensePlate} ${formatMotorcycleName(m.brand, m.model)} ${m.owner?.firstName} ${m.owner?.lastName} ${m.owner?.phoneNumber}`.toLowerCase();
     return full.includes(q);
   });
 
@@ -192,7 +193,7 @@ export const CreateAppointmentPage = () => {
                     <option value={0}>-- เลือกรถ --</option>
                     {filteredMotorcycles.map((m) => (
                       <option key={m.id} value={m.id}>
-                        {m.licensePlate} — {m.brand} {m.model} ({m.owner?.firstName} {m.owner?.lastName})
+                        {m.licensePlate} — {formatMotorcycleName(m.brand, m.model)} ({m.owner?.firstName} {m.owner?.lastName})
                       </option>
                     ))}
                   </select>
@@ -207,7 +208,7 @@ export const CreateAppointmentPage = () => {
                         </div>
                         <div>
                           <span className="text-gray-500 text-xs">ยี่ห้อ/รุ่น</span>
-                          <p className="font-semibold text-gray-800">{selectedMoto.brand} {selectedMoto.model}</p>
+                          <p className="font-semibold text-gray-800">{formatMotorcycleName(selectedMoto.brand, selectedMoto.model)}</p>
                         </div>
                         <div>
                           <span className="text-gray-500 text-xs">เจ้าของ</span>

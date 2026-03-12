@@ -9,12 +9,12 @@ class AuthService {
   }
 
   logout() {
-    localStorage.removeItem('token');
+    localStorage.removeItem('access_token');
     localStorage.removeItem('user');
   }
 
   getToken(): string | null {
-    return localStorage.getItem('token');
+    return localStorage.getItem('access_token');
   }
 
   getUser(): User | null {
@@ -23,7 +23,7 @@ class AuthService {
   }
 
   setAuth(token: string, user: User) {
-    localStorage.setItem('token', token);
+    localStorage.setItem('access_token', token);
     localStorage.setItem('user', JSON.stringify(user));
   }
 

@@ -9,6 +9,7 @@ import { FaClipboardCheck } from "react-icons/fa";
 import { IoPrint } from "react-icons/io5";
 import { FiDownload } from "react-icons/fi";
 import { paymentsService, type Payment } from '../../services/payments'
+import { formatMotorcycleName } from '../../utils/motorcycle'
 
 type JobDisplayData = {
   jobNo: string
@@ -46,7 +47,7 @@ function mapPaymentToJobData(p: Payment): JobDisplayData {
     customer: {
       name: p.customer ? `${p.customer.firstName} ${p.customer.lastName}` : '-',
       vehicle: p.job?.motorcycle
-        ? `${p.job.motorcycle.brand} ${p.job.motorcycle.model} ทะเบียน ${p.job.motorcycle.licensePlate}`
+        ? `${formatMotorcycleName(p.job.motorcycle.brand, p.job.motorcycle.model)} ทะเบียน ${p.job.motorcycle.licensePlate}`
         : '-',
       phone: p.customer?.phoneNumber ?? '-',
     },

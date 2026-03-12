@@ -36,52 +36,151 @@ export interface PaginatedPOResponse {
     currentPage: number
 }
 
-/**
- * Service for Purchase Order CRUD operations.
- */
+const STATUS_MAP: Record<string, POStatus> = {
+    DRAFT: 'draft',
+    PENDING_APPROVAL: 'pending',
+    APPROVED: 'approved',
+    ORDERED: 'approved',
+    PARTIAL_RECEIVED: 'approved',
+    COMPLETED: 'approved',
+    CANCELLED: 'cancelled',
+}
+
+function mapBackendPO(po: any): PurchaseOrder {
+    const items: POItem[] = (po.items || []).map((item: any) => ({
+        id: item.part?.id ?? item.partId,
+        partCode: item.part?.partNo || '-',
+        name: item.part?.name || '-',
+        category: item.part?.category || '',
+        location: '',
+        quantity: item.part?.stockQuantity ?? 0,
+        price: Number(item.unitPrice) || 0,
+        imageUrl: '',
+        orderQuantity: item.quantity,
+    }))
+
+    return {
+        id: po.poNo || String(po.id),
+        supplierId: po.supplierId,
+        supplierName: po.supplier?.name || '-',
+        createdAt: po.createdAt ? new Date(po.createdAt).toISOString().split('T')[0] : '-',
+        deliveryDate: po.expectedDate ? new Date(po.expectedDate).toISOString().split('T')[0] : '-',
+        totalAmount: Number(po.totalAmount) || 0,
+        status: STATUS_MAP[po.status] || 'draft',
+        items,
+        remarks: po.notes || undefined,
+    }
+}
+
 export const purchaseOrderService = {
 
-    /**
-     * Get all purchase orders with optional filters
-     */
     getAll: async (params: GetPOsParams = {}): Promise<PaginatedPOResponse> => {
-        const qs = buildQuery({ ...params })
-        return apiClient.get<PaginatedPOResponse>(`/purchase-orders${qs}`)
+        const backendStatus = params.status
+            ? Object.entries(STATUS_MAP).find(([, v]) => v === params.status)?.[0]
+            : undefined
+        const qs = buildQuery({
+            status: backendStatus,
+            supplierId: params.supplierId,
+        })
+        const raw = await apiClient.get<any>(`/purchase-orders${qs}`)
+
+        let allPOs: PurchaseOrder[]
+        if (Array.isArray(raw)) {
+            allPOs = raw.map(mapBackendPO)
+        } else if (raw && Array.isArray(raw.data)) {
+            return raw as PaginatedPOResponse
+        } else {
+            allPOs = []
+        }
+
+        if (params.search) {
+            const q = params.search.toLowerCase()
+            allPOs = allPOs.filter(po =>
+                po.id.toLowerCase().includes(q) ||
+                po.supplierName.toLowerCase().includes(q)
+            )
+        }
+
+        const page = params.page || 1
+        const limit = params.limit || 20
+        const totalDocs = allPOs.length
+        const totalPages = Math.max(1, Math.ceil(totalDocs / limit))
+        const start = (page - 1) * limit
+
+        return {
+            data: allPOs.slice(start, start + limit),
+            totalDocs,
+            totalPages,
+            currentPage: page,
+        }
     },
 
-    /**
-     * Get a single purchase order by ID
-     */
     getById: async (id: string): Promise<PurchaseOrder | null> => {
-        return apiClient.get<PurchaseOrder>(`/purchase-orders/${id}`)
+        try {
+            const numId = parseInt(id, 10)
+            const endpoint = isNaN(numId) ? `/purchase-orders/${id}` : `/purchase-orders/${numId}`
+            const raw = await apiClient.get<any>(endpoint)
+            return mapBackendPO(raw)
+        } catch {
+            return null
+        }
     },
 
-    /**
-     * Create a new purchase order
-     */
     create: async (dto: CreatePODto): Promise<PurchaseOrder> => {
-        return apiClient.post<PurchaseOrder>('/purchase-orders', dto)
+        const payload = {
+            supplierId: dto.supplierId,
+            notes: dto.remarks,
+            expectedDate: dto.deliveryDate,
+            items: dto.items.map(item => ({
+                partId: item.id,
+                quantity: item.orderQuantity,
+                unitPrice: item.price,
+            })),
+        }
+        const raw = await apiClient.post<any>('/purchase-orders', payload)
+        return mapBackendPO(raw)
     },
 
-    /**
-     * Update an existing purchase order
-     */
     update: async (id: string, dto: UpdatePODto): Promise<PurchaseOrder> => {
-        return apiClient.put<PurchaseOrder>(`/purchase-orders/${id}`, dto)
+        const numId = parseInt(id, 10)
+        const payload: any = {}
+        if (dto.remarks !== undefined) payload.notes = dto.remarks
+        if (dto.deliveryDate) payload.expectedDate = dto.deliveryDate
+        if (dto.items) {
+            payload.items = dto.items.map(item => ({
+                partId: item.id,
+                quantity: item.orderQuantity,
+                unitPrice: item.price,
+            }))
+        }
+        const raw = await apiClient.patch<any>(`/purchase-orders/${isNaN(numId) ? id : numId}`, payload)
+        return mapBackendPO(raw)
     },
 
-    /**
-     * Update only the status of a purchase order
-     */
+    submit: async (id: string): Promise<PurchaseOrder> => {
+        const numId = parseInt(id, 10)
+        const raw = await apiClient.patch<any>(`/purchase-orders/${isNaN(numId) ? id : numId}/submit`, {})
+        return mapBackendPO(raw)
+    },
+
     updateStatus: async (id: string, status: POStatus): Promise<PurchaseOrder> => {
-        return apiClient.patch<PurchaseOrder>(`/purchase-orders/${id}/status`, { status })
+        const numId = parseInt(id, 10)
+        const endpoint = isNaN(numId) ? id : numId
+        if (status === 'approved') {
+            const raw = await apiClient.patch<any>(`/purchase-orders/${endpoint}/approve`, {})
+            return mapBackendPO(raw)
+        }
+        if (status === 'cancelled') {
+            const raw = await apiClient.patch<any>(`/purchase-orders/${endpoint}/cancel`, {})
+            return mapBackendPO(raw)
+        }
+        const raw = await apiClient.patch<any>(`/purchase-orders/${endpoint}/submit`, {})
+        return mapBackendPO(raw)
     },
 
-    /**
-     * Delete a purchase order
-     */
     delete: async (id: string): Promise<void> => {
-        return apiClient.delete<void>(`/purchase-orders/${id}`)
+        const numId = parseInt(id, 10)
+        return apiClient.delete<void>(`/purchase-orders/${isNaN(numId) ? id : numId}`)
     },
 }
 

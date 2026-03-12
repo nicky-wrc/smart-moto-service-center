@@ -5,6 +5,7 @@ import { motorcyclesService } from '../../services/api/motorcycles.service';
 import { jobsService } from '../../services/api/jobs.service';
 import type { Motorcycle, CreateJobDto, JobType } from '../../services/api/types';
 import { warrantiesService } from '../../services/api/warranties.service';
+import { formatMotorcycleName } from '../../utils/motorcycle';
 
 export const JobCreatePage = () => {
   const navigate = useNavigate();
@@ -101,7 +102,7 @@ export const JobCreatePage = () => {
               <option value="">-- เลือกรถ --</option>
               {motorcycles.map((moto) => (
                 <option key={moto.id} value={moto.id}>
-                  {moto.licensePlate} - {moto.brand} {moto.model} ({moto.owner.firstName} {moto.owner.lastName})
+                  {moto.licensePlate} - {formatMotorcycleName(moto.brand, moto.model)} ({moto.owner.firstName} {moto.owner.lastName})
                 </option>
               ))}
             </select>
@@ -120,7 +121,7 @@ export const JobCreatePage = () => {
                 </div>
                 <div>
                   <span className="text-gray-600">ยี่ห้อ/รุ่น:</span>
-                  <span className="ml-2 font-medium">{selectedMotorcycle.brand} {selectedMotorcycle.model}</span>
+                  <span className="ml-2 font-medium">{formatMotorcycleName(selectedMotorcycle.brand, selectedMotorcycle.model)}</span>
                 </div>
                 <div>
                   <span className="text-gray-600">เลขไมล์:</span>

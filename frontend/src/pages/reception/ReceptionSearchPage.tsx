@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import SearchBox from '../../components/SearchBox'
 import { customersService, type Customer, type Motorcycle } from '../../services/customers'
+import { formatMotorcycleName } from '../../utils/motorcycle'
 
 
 
@@ -42,7 +43,7 @@ export default function ReceptionSearchPage() {
         return allCustomers.filter(customer => {
             const fullName = `${customer.firstName} ${customer.lastName}`.toLowerCase()
             const allPlates = (customer.motorcycles || []).map(m => m.licensePlate).join(' ').toLowerCase()
-            const allModels = (customer.motorcycles || []).map(m => `${m.brand} ${m.model}`).join(' ').toLowerCase()
+            const allModels = (customer.motorcycles || []).map(m => formatMotorcycleName(m.brand, m.model)).join(' ').toLowerCase()
 
             if (searchQuery) {
                 const query = searchQuery.toLowerCase()
@@ -88,7 +89,7 @@ export default function ReceptionSearchPage() {
                     lastName: customer.lastName,
                     phone: customer.phoneNumber,
                     address: customer.address || '',
-                    model: motorcycle.model ? `${motorcycle.brand || ''} ${motorcycle.model}`.trim() : '',
+                    model: formatMotorcycleName(motorcycle.brand, motorcycle.model),
                     color: motorcycle.color || '',
                     plateLine1,
                     plateLine2,
@@ -267,7 +268,7 @@ export default function ReceptionSearchPage() {
                                             <div className="flex flex-col gap-2">
                                                 {(customer.motorcycles || []).map(m => (
                                                     <div key={m.id} className="py-1 text-xs">
-                                                        {m.brand} {m.model} <span className="text-gray-400">({m.color})</span>
+                                                        {formatMotorcycleName(m.brand, m.model)} <span className="text-gray-400">({m.color})</span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -330,7 +331,7 @@ export default function ReceptionSearchPage() {
                                                 </svg>
                                             </div>
                                             <div className="flex flex-col gap-1">
-                                                <h4 className="font-semibold text-gray-800 group-hover:text-amber-600 transition-colors">{m.brand} {m.model}</h4>
+                                                <h4 className="font-semibold text-gray-800 group-hover:text-amber-600 transition-colors">{formatMotorcycleName(m.brand, m.model)}</h4>
                                                 <div className="flex flex-wrap items-center gap-2">
                                                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold tracking-wide bg-gray-100 text-gray-700 border border-gray-200">
                                                         {m.licensePlate}

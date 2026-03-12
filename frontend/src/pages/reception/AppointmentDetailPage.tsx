@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Calendar, Clock, User, Bike, ArrowLeft, AlertCircle, Wrench, Phone } from 'lucide-react';
 import { appointmentsService } from '../../services/api/appointments.service';
 import type { Appointment, ConvertToJobDto } from '../../services/api/types';
+import { formatMotorcycleName } from '../../utils/motorcycle';
 
 export const AppointmentDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -249,7 +250,7 @@ export const AppointmentDetailPage = () => {
               รุ่นรถ
             </label>
             <p className="text-gray-900">
-              {appointment.motorcycle.brand} {appointment.motorcycle.model}
+              {formatMotorcycleName(appointment.motorcycle.brand, appointment.motorcycle.model)}
             </p>
           </div>
 

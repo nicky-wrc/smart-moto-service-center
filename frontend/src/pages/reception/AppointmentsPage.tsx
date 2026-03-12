@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { appointmentsService } from '../../services/api/appointments.service';
 import type { Appointment, AppointmentStatus } from '../../services/api/types';
+import { formatMotorcycleName } from '../../utils/motorcycle';
 
 export const AppointmentsPage = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -222,7 +223,7 @@ export const AppointmentsPage = () => {
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                                 </svg>
-                                <span>{apt.motorcycle?.licensePlate} — {apt.motorcycle?.brand} {apt.motorcycle?.model}</span>
+                                <span>{apt.motorcycle?.licensePlate} — {formatMotorcycleName(apt.motorcycle?.brand, apt.motorcycle?.model)}</span>
                               </span>
                             </div>
 

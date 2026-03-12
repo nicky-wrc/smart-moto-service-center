@@ -8,6 +8,17 @@
  */
 import { apiClient } from './api'
 
+const KNOWN_BRANDS = ['Honda', 'Yamaha', 'Vespa', 'Suzuki', 'Kawasaki', 'BMW', 'Ducati', 'KTM', 'Harley-Davidson', 'Royal Enfield']
+
+function extractBrand(modelName: string): { brand: string; model: string } {
+  for (const b of KNOWN_BRANDS) {
+    if (modelName.startsWith(b + ' ')) {
+      return { brand: b, model: modelName.slice(b.length + 1) }
+    }
+  }
+  return { brand: modelName.split(' ')[0] || 'อื่นๆ', model: modelName }
+}
+
 export interface RepairRequestDTO {
   // Customer Information
   customerId?: number // If existing customer
@@ -126,7 +137,7 @@ class ReceptionApiService {
       let motorcycleId = data.motorcycleId;
 
       if (!data.isExistingCustomer) {
-        // Create new Customer and Motorcycle using nested DTO endpoint
+        const { brand, model } = extractBrand(data.motorcycleData.model)
         const createRes = await apiClient.post<any>('/customers/with-motorcycle', {
           phoneNumber: data.customerData.phone,
           firstName: data.customerData.firstName,
@@ -134,10 +145,10 @@ class ReceptionApiService {
           address: data.customerData.address || '',
           motorcycle: {
             licensePlate,
-            brand: 'ไม่ระบุ',
-            model: data.motorcycleData.model,
+            brand,
+            model,
             color: data.motorcycleData.color,
-            vin: `VIN-${Date.now()}` // Mock VIN since frontend doesn't collect it
+            vin: `VIN-${Date.now()}`
           }
         });
         customerId = createRes.id;
@@ -155,11 +166,12 @@ class ReceptionApiService {
         
         // Handle potentially new motorcycle for existing customer
         if (data.isNewMotorcycle || !motorcycleId) {
+          const { brand: motoBrand, model: motoModel } = extractBrand(data.motorcycleData.model)
           const createMotoRes = await apiClient.post<any>('/motorcycles', {
             vin: `VIN-${Date.now()}`,
             licensePlate,
-            brand: 'ไม่ระบุ',
-            model: data.motorcycleData.model,
+            brand: motoBrand,
+            model: motoModel,
             color: data.motorcycleData.color,
             ownerId: customerId
           });
@@ -244,11 +256,12 @@ class ReceptionApiService {
   async createOrGetMotorcycle(data: MotorcycleDTO): Promise<{ id: number; isNew: boolean }> {
     try {
       const licensePlate = `${data.plateLine1} ${data.province} ${data.plateLine2}`.trim();
+      const { brand, model } = extractBrand(data.model)
       const createRes = await apiClient.post<any>('/motorcycles', {
         vin: `VIN-${Date.now()}`,
         licensePlate,
-        brand: 'ไม่ระบุ',
-        model: data.model,
+        brand,
+        model,
         color: data.color,
         ownerId: data.customerId
       });

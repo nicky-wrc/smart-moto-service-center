@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../lib/api'
+import { formatMotorcycleName } from '../../utils/motorcycle'
 
 const STATUS_LABEL: Record<string, string> = {
   COMPLETED: 'เสร็จสิ้น', PAID: 'ชำระแล้ว',
@@ -102,7 +103,7 @@ export default function JobHistoryPage() {
                   </div>
                 </td>
                 <td className="px-3 py-3.5">
-                  <p className="font-medium text-[#1E1E1E]">{job.motorcycle?.brand} {job.motorcycle?.model}</p>
+                  <p className="font-medium text-[#1E1E1E]">{formatMotorcycleName(job.motorcycle?.brand, job.motorcycle?.model)}</p>
                   <p className="text-xs text-gray-400 mt-0.5">{job.motorcycle?.licensePlate}</p>
                 </td>
                 <td className="px-3 py-3.5 text-gray-600">{customerName}</td>

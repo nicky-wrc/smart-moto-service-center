@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../lib/api'
+import { formatMotorcycleName } from '../../utils/motorcycle'
 
 /* ── Map backend JobStatus → Thai label ── */
 const STATUS_LABEL: Record<string, string> = {
@@ -190,7 +191,7 @@ export default function JobOrdersPage() {
                           <span className="text-xs text-gray-300">{formatTime(job.createdAt)}</span>
                         </div>
                         <p className="text-sm font-semibold text-[#1E1E1E] leading-snug">
-                          {job.motorcycle?.brand} {job.motorcycle?.model}
+                          {formatMotorcycleName(job.motorcycle?.brand, job.motorcycle?.model)}
                         </p>
                         <p className="text-xs text-gray-400 mt-0.5">
                           {job.motorcycle?.owner?.firstName} {job.motorcycle?.owner?.lastName} · {job.motorcycle?.licensePlate}
@@ -252,7 +253,7 @@ export default function JobOrdersPage() {
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-[#1E1E1E] truncate">{customerName}</p>
                       <p className="text-xs text-gray-400 mt-0.5 truncate">
-                        {job.motorcycle?.brand} {job.motorcycle?.model} · <span className="font-medium">{job.motorcycle?.licensePlate}</span>
+                        {formatMotorcycleName(job.motorcycle?.brand, job.motorcycle?.model)} · <span className="font-medium">{job.motorcycle?.licensePlate}</span>
                       </p>
                     </div>
                     <div className="min-w-0">

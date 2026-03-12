@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../lib/api'
 import { useAuth } from '../../context/AuthContext'
+import { formatMotorcycleName } from '../../utils/motorcycle'
 
 const STATUS_LABEL: Record<string, string> = {
   READY: 'รอเริ่ม', IN_PROGRESS: 'กำลังซ่อม', WAITING_PARTS: 'รออะไหล่',
@@ -86,7 +87,7 @@ export default function MechanicJobsPage() {
                         </span>
                       </div>
                       <p className="text-sm font-semibold text-[#1E1E1E] leading-snug">
-                        {job.motorcycle?.brand} {job.motorcycle?.model}
+                        {formatMotorcycleName(job.motorcycle?.brand, job.motorcycle?.model)}
                       </p>
                       <p className="text-xs text-gray-400 mt-0.5">
                         {job.motorcycle?.owner?.firstName} {job.motorcycle?.owner?.lastName} · {job.motorcycle?.licensePlate}

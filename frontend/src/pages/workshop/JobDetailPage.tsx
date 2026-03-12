@@ -22,6 +22,7 @@ import type {
   CreateChecklistItemDto,
 } from '../../services/api/types';
 import { OutsourceModal } from './OutsourceModal';
+import { formatMotorcycleName } from '../../utils/motorcycle';
 
 export const JobDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -183,7 +184,7 @@ export const JobDetailPage = () => {
                 <div>
                   <span className="text-gray-600">รถ:</span>
                   <span className="ml-2 font-medium">
-                    {job.motorcycle.licensePlate} - {job.motorcycle.brand} {job.motorcycle.model}
+                    {job.motorcycle.licensePlate} - {formatMotorcycleName(job.motorcycle.brand, job.motorcycle.model)}
                   </span>
                 </div>
               </div>

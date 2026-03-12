@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 // @ts-ignore – Cell is deprecated in recharts v3 types but still functional
 import { PieChart, Pie, Cell, Tooltip as ReTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts'
 import { api } from '../../lib/api'
+import { formatMotorcycleName } from '../../utils/motorcycle'
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: 'รอประเมิน', IN_PROGRESS: 'กำลังดำเนินงาน', WAITING_PARTS: 'รอสั่งซื้อ',
@@ -186,7 +187,7 @@ export default function DashboardPage() {
                   <div key={job.id} onClick={() => navigate(`/foreman/jobs/${job.id}`)} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer transition-colors group">
                     <span className="text-xs text-gray-300 font-mono w-16 shrink-0 truncate">{job.jobNo}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[#1E1E1E] truncate">{job.motorcycle?.brand} {job.motorcycle?.model}</p>
+                      <p className="text-sm font-medium text-[#1E1E1E] truncate">{formatMotorcycleName(job.motorcycle?.brand, job.motorcycle?.model)}</p>
                       <p className="text-xs text-gray-400 truncate">{job.motorcycle?.owner?.firstName} {job.motorcycle?.owner?.lastName}</p>
                     </div>
                     <span className="text-xs font-medium px-2 py-0.5 rounded-full shrink-0" style={{ backgroundColor: `${color}18`, color }}>

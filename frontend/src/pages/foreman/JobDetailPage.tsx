@@ -5,6 +5,7 @@ import { QuotationA4Document } from '../../components/QuotationA4Document'
 import { QuotationPreviewModal } from '../../components/QuotationPreviewModal'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import type { Part, SelectedPart } from './types'
+import { formatMotorcycleName } from '../../utils/motorcycle'
 
 // ─── Parts Catalog (fetched from API) ─────────────────────────────────────────
 
@@ -354,25 +355,13 @@ export default function JobDetailPage() {
           customerName:
             `${jobData.motorcycle?.owner?.firstName ?? ''} ${jobData.motorcycle?.owner?.lastName ?? ''}`.trim() || '-',
           customerPhone: jobData.motorcycle?.owner?.phoneNumber ?? '-',
-          tags: [],
-          photos: [],
+          tags: jobData.tags ?? [],
+          photos: jobData.images ?? [],
           mechanicId: jobData.technicianId ?? undefined,
           motorcycleId: jobData.motorcycleId,
           customerId: jobData.motorcycle?.owner?.id ?? jobData.motorcycle?.ownerId,
           diagnosisNotes: jobData.diagnosisNotes ?? null,
-          mechanicReport: jobData.diagnosisNotes
-            ? {
-                note: jobData.diagnosisNotes,
-                photos: [],
-                reportedAt: jobData.updatedAt
-                  ? new Date(jobData.updatedAt).toLocaleDateString('th-TH', {
-                      day: '2-digit', month: '2-digit', year: 'numeric',
-                    }) + '  ' + new Date(jobData.updatedAt).toLocaleTimeString('th-TH', {
-                      hour: '2-digit', minute: '2-digit',
-                    }) + ' น.'
-                  : '-',
-              }
-            : undefined,
+          mechanicReport: undefined,
         }
         setJob(mapped)
       } catch (err) {
@@ -394,8 +383,9 @@ export default function JobDetailPage() {
   const [tags, setTags] = useState<string[]>([])
   useEffect(() => { if (job?.tags) setTags(job.tags) }, [job])
 
-  // Foreman note
+  // Foreman note — pre-fill from saved diagnosisNotes
   const [foremanNote, setForemanNote] = useState('')
+  useEffect(() => { if (job?.diagnosisNotes) setForemanNote(job.diagnosisNotes) }, [job])
 
   // Foreman photos
   const [foremanPhotos, setForemanPhotos] = useState<string[]>([])
@@ -662,7 +652,7 @@ export default function JobDetailPage() {
             </div>
             <div className="bg-gray-50 rounded-xl p-3">
               <p className="text-sm text-gray-400 mb-1">รถ</p>
-              <p className="text-sm font-semibold text-[#1E1E1E]">{job.brand} {job.model}</p>
+              <p className="text-sm font-semibold text-[#1E1E1E]">{formatMotorcycleName(job.brand, job.model)}</p>
               <p className="text-sm text-gray-500 mt-0.5">{job.licensePlate} · {job.province}</p>
             </div>
           </div>
@@ -761,7 +751,7 @@ export default function JobDetailPage() {
             </div>
             <div className="bg-gray-50 rounded-xl p-3">
               <p className="text-sm text-gray-400 mb-1">รถ</p>
-              <p className="text-sm font-semibold text-[#1E1E1E]">{job.brand} {job.model}</p>
+              <p className="text-sm font-semibold text-[#1E1E1E]">{formatMotorcycleName(job.brand, job.model)}</p>
               <p className="text-sm text-gray-500 mt-0.5">{job.licensePlate} · {job.province}</p>
             </div>
           </div>
@@ -840,7 +830,7 @@ export default function JobDetailPage() {
             </div>
             <div className="bg-gray-50 rounded-xl p-3">
               <p className="text-sm text-gray-400 mb-1">รถ</p>
-              <p className="text-sm font-semibold text-[#1E1E1E]">{job.brand} {job.model}</p>
+              <p className="text-sm font-semibold text-[#1E1E1E]">{formatMotorcycleName(job.brand, job.model)}</p>
               <p className="text-sm text-gray-500 mt-0.5">{job.licensePlate} · {job.province}</p>
             </div>
           </div>
@@ -906,7 +896,7 @@ export default function JobDetailPage() {
               </div>
               <div className="flex flex-col gap-0.5 text-sm text-gray-500">
                 <span><span className="font-medium text-[#1E1E1E]">ลูกค้า:</span> {job.customerName}</span>
-                <span><span className="font-medium text-[#1E1E1E]">รถ:</span> {job.brand} {job.model} · {job.licensePlate}</span>
+                <span><span className="font-medium text-[#1E1E1E]">รถ:</span> {formatMotorcycleName(job.brand, job.model)} · {job.licensePlate}</span>
                 <span><span className="font-medium text-[#1E1E1E]">วันที่:</span> {new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
               </div>
             </div>
@@ -1044,7 +1034,7 @@ export default function JobDetailPage() {
                 </div>
                 <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm">
                   <p className="text-sm text-gray-400 uppercase tracking-wide mb-1.5">ข้อมูลรถ</p>
-                  <p className="font-semibold text-sm text-[#1E1E1E]">{job.brand} {job.model}</p>
+                  <p className="font-semibold text-sm text-[#1E1E1E]">{formatMotorcycleName(job.brand, job.model)}</p>
                   <p className="text-sm text-gray-500 mt-0.5">ทะเบียน {job.licensePlate} · {job.province}</p>
                 </div>
               </div>
@@ -1058,19 +1048,6 @@ export default function JobDetailPage() {
                   className="flex-1 min-h-0 w-full border border-gray-100 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-700 resize-none outline-none leading-relaxed"
                 />
               </div>
-
-              {/* Mechanic finding report */}
-              {job.diagnosisNotes && (
-                <div className="bg-amber-50 rounded-xl border border-amber-200 px-4 py-3 shadow-sm shrink-0">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                    </svg>
-                    <p className="text-sm font-semibold text-amber-700 uppercase tracking-wide">รายงานจากช่าง</p>
-                  </div>
-                  <p className="text-sm text-amber-800 whitespace-pre-wrap leading-relaxed">{job.diagnosisNotes}</p>
-                </div>
-              )}
 
               {/* Foreman note */}
               <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm flex flex-col flex-1 min-h-0">
@@ -1705,7 +1682,7 @@ export default function JobDetailPage() {
                             <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50">
                               <div>
                                 <p className="text-sm font-semibold text-[#1E1E1E]">ใบเสนอราคา</p>
-                                <p className="text-sm text-gray-400 mt-0.5">{job.brand} {job.model} · {job.customerName}</p>
+                                <p className="text-sm text-gray-400 mt-0.5">{formatMotorcycleName(job.brand, job.model)} · {job.customerName}</p>
                               </div>
                               <button onClick={() => setShowQuot(false)} className="text-gray-400 hover:text-gray-600 bg-transparent border-none cursor-pointer text-lg leading-none">✕</button>
                             </div>

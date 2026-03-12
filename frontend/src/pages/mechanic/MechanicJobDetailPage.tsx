@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { api } from '../../lib/api'
 import { ConfirmModal } from '../../components/ConfirmModal'
+import { formatMotorcycleName } from '../../utils/motorcycle'
 
 const STATUS_LABEL: Record<string, string> = {
   READY: 'รอเริ่ม', IN_PROGRESS: 'กำลังซ่อม', WAITING_PARTS: 'รออะไหล่',
@@ -195,7 +196,7 @@ export default function MechanicJobDetailPage() {
                 </div>
                 <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm">
                   <p className="text-xs text-gray-400 uppercase tracking-wide mb-1.5">รถ</p>
-                  <p className="font-semibold text-sm text-[#1E1E1E]">{job.motorcycle?.brand} {job.motorcycle?.model}</p>
+                  <p className="font-semibold text-sm text-[#1E1E1E]">{formatMotorcycleName(job.motorcycle?.brand, job.motorcycle?.model)}</p>
                   <p className="text-sm text-gray-500 mt-0.5">ทะเบียน {job.motorcycle?.licensePlate}</p>
                 </div>
               </div>

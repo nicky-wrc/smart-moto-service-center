@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Plus, Bike, Wrench, Calendar } from 'lucide-react';
 import { customersService } from '../../services/api/customers.service';
 import type { Customer } from '../../services/api/types';
+import { formatMotorcycleName } from '../../utils/motorcycle';
 import { motorcyclesService } from '../../services/api/motorcycles.service';
 import type { Motorcycle } from '../../services/api/types';
 
@@ -145,7 +146,7 @@ export const CustomerDetailPage = () => {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                       <div>
                         <span className="text-gray-600">ยี่ห้อ/รุ่น:</span>
-                        <span className="ml-2 font-medium">{moto.brand} {moto.model}</span>
+                        <span className="ml-2 font-medium">{formatMotorcycleName(moto.brand, moto.model)}</span>
                       </div>
                       <div>
                         <span className="text-gray-600">สี:</span>

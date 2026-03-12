@@ -37,7 +37,7 @@ class PurchaseOrderWebSocketService {
     try {
       // Connect realistically
       const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:3000/ws'
-      const token = localStorage.getItem('token') || localStorage.getItem('auth_token')
+      const token = localStorage.getItem('access_token')
       
       this.socket = new WebSocket(`${wsUrl}?token=${token}`)
       

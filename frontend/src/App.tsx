@@ -72,6 +72,19 @@ import { CreateAppointmentPage } from './pages/reception/CreateAppointmentPage'
 import { AppointmentDetailPage } from './pages/reception/AppointmentDetailPage'
 import { AppointmentCalendarPage } from './pages/reception/AppointmentCalendarPage'
 
+// Workshop (ช่างซ่อม)
+import WorkshopLayout from './pages/workshop/WorkshopLayout'
+import WorkshopIndex from './pages/workshop'
+import { JobQueuePage } from './pages/workshop/JobQueuePage'
+import { JobDetailPage as WorkshopJobDetailPage } from './pages/workshop/JobDetailPage'
+import { PartRequisitionPage } from './pages/workshop/PartRequisitionPage'
+
+// Billing (การเงิน)
+import BillingLayout from './pages/billing/BillingLayout'
+import BillingIndex from './pages/billing'
+import { QuotationsPage } from './pages/billing/QuotationsPage'
+import { PaymentsPage } from './pages/billing/PaymentsPage'
+
 export default function App() {
   return (
     <RequestHistoryProvider>
@@ -182,6 +195,28 @@ export default function App() {
             <Route path="appointments/new" element={<CreateAppointmentPage />} />
             <Route path="appointments/calendar" element={<AppointmentCalendarPage />} />
             <Route path="appointments/:id" element={<AppointmentDetailPage />} />
+          </Route>
+          {/* ช่างซ่อม (Workshop) */}
+          <Route path="/workshop" element={
+            <ProtectedRoute roles={['TECHNICIAN', 'FOREMAN', 'ADMIN', 'MANAGER']}>
+              <WorkshopLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<WorkshopIndex />} />
+            <Route path="queue" element={<JobQueuePage />} />
+            <Route path="jobs/:id" element={<WorkshopJobDetailPage />} />
+            <Route path="requisitions" element={<PartRequisitionPage />} />
+          </Route>
+
+          {/* การเงิน (Billing) */}
+          <Route path="/billing" element={
+            <ProtectedRoute roles={['CASHIER', 'ADMIN', 'MANAGER']}>
+              <BillingLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<BillingIndex />} />
+            <Route path="quotations" element={<QuotationsPage />} />
+            <Route path="payments" element={<PaymentsPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

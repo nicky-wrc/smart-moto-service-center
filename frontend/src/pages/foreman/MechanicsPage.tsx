@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../lib/api'
+import { formatMotorcycleName } from '../../utils/motorcycle'
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: 'รอประเมิน', IN_PROGRESS: 'กำลังดำเนินงาน', WAITING_PARTS: 'รอสั่งซื้อ',
@@ -181,7 +182,7 @@ export default function MechanicsPage() {
                             >
                               <span className="text-xs text-gray-300 font-mono w-16 shrink-0 truncate">{job.jobNo}</span>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-[#1E1E1E] truncate">{job.motorcycle?.brand} {job.motorcycle?.model}</p>
+                                <p className="text-sm font-medium text-[#1E1E1E] truncate">{formatMotorcycleName(job.motorcycle?.brand, job.motorcycle?.model)}</p>
                                 <p className="text-xs text-gray-400 truncate">{job.symptom}</p>
                               </div>
                               <span className="text-xs font-medium px-2 py-0.5 rounded-full shrink-0" style={{ backgroundColor: `${color}18`, color }}>

@@ -52,6 +52,9 @@ export interface ForemanResponse {
     // Timestamps
     createdAt: string
     updatedAt: string
+
+    // Computed from job list (items count when full items not loaded)
+    _itemsCount?: number
 }
 
 export interface RequiredPart {

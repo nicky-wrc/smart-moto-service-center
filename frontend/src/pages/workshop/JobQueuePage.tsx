@@ -3,7 +3,8 @@ import { Wrench, Clock, AlertCircle, CheckCircle, Play, User } from 'lucide-reac
 import { Link } from 'react-router-dom';
 import { jobsService } from '../../services/api/jobs.service';
 import type { Job } from '../../services/api/types';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../context/AuthContext';
+import { formatMotorcycleName } from '../../utils/motorcycle';
 
 export const JobQueuePage = () => {
   const { user } = useAuth();
@@ -245,7 +246,7 @@ const JobCard = ({ job, getStatusBadge, getJobTypeBadge, onStartJob }: JobCardPr
           <span className="ml-2 font-medium">{job.motorcycle.licensePlate}</span>
         </div>
         <div>
-          <span className="text-gray-600">{job.motorcycle.brand} {job.motorcycle.model}</span>
+          <span className="text-gray-600">{formatMotorcycleName(job.motorcycle.brand, job.motorcycle.model)}</span>
         </div>
         <div>
           <span className="text-gray-600">ลูกค้า:</span>

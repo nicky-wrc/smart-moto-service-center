@@ -81,6 +81,15 @@ export class QuotationsService {
       })),
     });
 
+    const totalAmount = data.items.reduce(
+      (sum, item) => sum + item.quantity * item.unitPrice,
+      0,
+    );
+    await this.prisma.quotation.update({
+      where: { id: quotation.id },
+      data: { totalAmount },
+    });
+
     return this.prisma.quotation.findUnique({
       where: { id: quotation.id },
       include: {
