@@ -97,14 +97,17 @@ export class ServiceHistoryService {
     });
 
     // Format history by date
-    const historyByDate = jobs.reduce((acc, job) => {
-      const dateKey = job.createdAt.toISOString().split('T')[0];
-      if (!acc[dateKey]) {
-        acc[dateKey] = [];
-      }
-      acc[dateKey].push(job);
-      return acc;
-    }, {} as Record<string, typeof jobs>);
+    const historyByDate = jobs.reduce(
+      (acc, job) => {
+        const dateKey = job.createdAt.toISOString().split('T')[0];
+        if (!acc[dateKey]) {
+          acc[dateKey] = [];
+        }
+        acc[dateKey].push(job);
+        return acc;
+      },
+      {} as Record<string, typeof jobs>,
+    );
 
     return {
       customer: {

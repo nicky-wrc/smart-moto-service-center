@@ -132,35 +132,35 @@ export class LostSalesService {
     });
 
     // Group by part
-    const summary = lostSales.reduce((acc, lostSale) => {
-      const partId = lostSale.partId;
-      if (!acc[partId]) {
-        acc[partId] = {
-          partId,
-          partNo: lostSale.part.partNo,
-          partName: lostSale.part.name,
-          totalQuantity: 0,
-          totalValue: 0,
-          count: 0,
-        };
-      }
+    const summary = lostSales.reduce(
+      (acc, lostSale) => {
+        const partId = lostSale.partId;
+        if (!acc[partId]) {
+          acc[partId] = {
+            partId,
+            partNo: lostSale.part.partNo,
+            partName: lostSale.part.name,
+            totalQuantity: 0,
+            totalValue: 0,
+            count: 0,
+          };
+        }
 
-      acc[partId].totalQuantity += lostSale.quantity;
-      acc[partId].totalValue += Number(lostSale.totalValue);
-      acc[partId].count += 1;
+        acc[partId].totalQuantity += lostSale.quantity;
+        acc[partId].totalValue += Number(lostSale.totalValue);
+        acc[partId].count += 1;
 
-      return acc;
-    }, {} as Record<number, any>);
+        return acc;
+      },
+      {} as Record<number, any>,
+    );
 
     const summaryArray = Object.values(summary);
     summaryArray.sort((a: any, b: any) => b.totalValue - a.totalValue);
 
     return {
       totalLostSales: lostSales.length,
-      totalValue: lostSales.reduce(
-        (sum, ls) => sum + Number(ls.totalValue),
-        0,
-      ),
+      totalValue: lostSales.reduce((sum, ls) => sum + Number(ls.totalValue), 0),
       byPart: summaryArray,
     };
   }

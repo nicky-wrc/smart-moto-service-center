@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateReceiptDto } from './dto/create-receipt.dto';
 import { StockMovementType } from '@prisma/client';
@@ -328,32 +328,35 @@ export class PartsService {
     });
 
     // Group by reference (receiptNo)
-    const grouped = movements.reduce((acc, movement) => {
-      const receiptNo = movement.reference || 'UNKNOWN';
-      if (!acc[receiptNo]) {
-        acc[receiptNo] = {
-          receiptNo,
-          receiptDate: movement.createdAt,
-          items: [],
-          totalValue: 0,
-          createdBy: movement.createdBy,
-        };
-      }
+    const grouped = movements.reduce(
+      (acc, movement) => {
+        const receiptNo = movement.reference || 'UNKNOWN';
+        if (!acc[receiptNo]) {
+          acc[receiptNo] = {
+            receiptNo,
+            receiptDate: movement.createdAt,
+            items: [],
+            totalValue: 0,
+            createdBy: movement.createdBy,
+          };
+        }
 
-      const itemValue = Number(movement.unitPrice || 0) * movement.quantity;
-      acc[receiptNo].items.push({
-        partId: movement.part.id,
-        partNo: movement.part.partNo,
-        partName: movement.part.name,
-        quantity: movement.quantity,
-        unitPrice: movement.unitPrice,
-        totalPrice: itemValue,
-        notes: movement.notes,
-      });
-      acc[receiptNo].totalValue += itemValue;
+        const itemValue = Number(movement.unitPrice || 0) * movement.quantity;
+        acc[receiptNo].items.push({
+          partId: movement.part.id,
+          partNo: movement.part.partNo,
+          partName: movement.part.name,
+          quantity: movement.quantity,
+          unitPrice: movement.unitPrice,
+          totalPrice: itemValue,
+          notes: movement.notes,
+        });
+        acc[receiptNo].totalValue += itemValue;
 
-      return acc;
-    }, {} as Record<string, any>);
+        return acc;
+      },
+      {} as Record<string, any>,
+    );
 
     return Object.values(grouped);
   }

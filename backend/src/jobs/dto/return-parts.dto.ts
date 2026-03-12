@@ -1,4 +1,10 @@
-import { IsArray, ValidateNested, IsNumber, Min, IsOptional } from 'class-validator';
+import {
+  IsArray,
+  ValidateNested,
+  IsNumber,
+  Min,
+  IsOptional,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 class ReturnPartItemDto {

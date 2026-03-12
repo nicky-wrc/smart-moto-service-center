@@ -20,7 +20,7 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
-  ) { }
+  ) {}
 
   // ฟังก์ชันเช็ค User/Pass
   async validateUser(
@@ -43,7 +43,9 @@ export class AuthService {
   }
 
   // ฟังก์ชันสร้าง Token
-  async login(loginDto: LoginDto): Promise<{ access_token: string; user: UserWithoutPassword }> {
+  async login(
+    loginDto: LoginDto,
+  ): Promise<{ access_token: string; user: UserWithoutPassword }> {
     const user = await this.validateUser(loginDto.username, loginDto.password);
 
     if (!user) {

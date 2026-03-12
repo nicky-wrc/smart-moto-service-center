@@ -23,7 +23,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
     let message: any = 'Internal server error';
-    
+
     if (exception instanceof HttpException) {
       message = exception.getResponse();
     } else if (exception instanceof Error) {
@@ -36,9 +36,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       timestamp: new Date().toISOString(),
       path: request.url,
       message:
-        typeof message === 'string'
-          ? message
-          : (message as any).message || message,
+        typeof message === 'string' ? message : message.message || message,
     });
   }
 }

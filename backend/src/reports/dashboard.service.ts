@@ -37,21 +37,24 @@ export class DashboardService {
     });
 
     // Group by day
-    const byDay = payments.reduce((acc, payment) => {
-      const dateKey = payment.paidAt
-        ? payment.paidAt.toISOString().split('T')[0]
-        : payment.createdAt.toISOString().split('T')[0];
-      if (!acc[dateKey]) {
-        acc[dateKey] = {
-          date: dateKey,
-          count: 0,
-          totalAmount: 0,
-        };
-      }
-      acc[dateKey].count += 1;
-      acc[dateKey].totalAmount += Number(payment.totalAmount);
-      return acc;
-    }, {} as Record<string, any>);
+    const byDay = payments.reduce(
+      (acc, payment) => {
+        const dateKey = payment.paidAt
+          ? payment.paidAt.toISOString().split('T')[0]
+          : payment.createdAt.toISOString().split('T')[0];
+        if (!acc[dateKey]) {
+          acc[dateKey] = {
+            date: dateKey,
+            count: 0,
+            totalAmount: 0,
+          };
+        }
+        acc[dateKey].count += 1;
+        acc[dateKey].totalAmount += Number(payment.totalAmount);
+        return acc;
+      },
+      {} as Record<string, any>,
+    );
 
     const totalAmount = payments.reduce(
       (sum, p) => sum + Number(p.totalAmount),
@@ -179,8 +182,7 @@ export class DashboardService {
             for (const packageItem of package_.items) {
               const part = packageItem.part;
               if (part) {
-                const totalQty =
-                  packageItem.quantity * item.issuedQuantity;
+                const totalQty = packageItem.quantity * item.issuedQuantity;
                 const existing = partStats.get(part.id) || {
                   partId: part.id,
                   partNo: part.partNo,
@@ -381,8 +383,7 @@ export class DashboardService {
     for (const [techId, times] of byTechnician.entries()) {
       const stat = techIdleTimes.get(techId)!;
       const sortedTimes = times.sort(
-        (a, b) =>
-          (a.startedAt?.getTime() || 0) - (b.startedAt?.getTime() || 0),
+        (a, b) => (a.startedAt?.getTime() || 0) - (b.startedAt?.getTime() || 0),
       );
 
       for (let i = 0; i < sortedTimes.length - 1; i++) {

@@ -4,7 +4,11 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { PartRequisitionStatus, StockMovementType, JobStatus } from '@prisma/client';
+import {
+  PartRequisitionStatus,
+  StockMovementType,
+  JobStatus,
+} from '@prisma/client';
 import { ApproveRequisitionDto } from './dto/approve-requisition.dto';
 import { IssueRequisitionDto } from './dto/issue-requisition.dto';
 import { CreateRequisitionDto } from './dto/create-requisition.dto';
@@ -243,7 +247,7 @@ export class PartRequisitionsService {
     return requisition;
   }
 
-  async approve(id: number, dto: ApproveRequisitionDto, userId: number) {
+  async approve(id: number, dto: ApproveRequisitionDto, _userId: number) {
     const requisition = await this.prisma.partRequisition.findUnique({
       where: { id },
       include: {
@@ -336,7 +340,7 @@ export class PartRequisitionsService {
     });
   }
 
-  async reject(id: number, reason: string, userId: number) {
+  async reject(id: number, reason: string, _userId: number) {
     const requisition = await this.prisma.partRequisition.findUnique({
       where: { id },
     });
@@ -406,9 +410,7 @@ export class PartRequisitionsService {
     }
 
     // Create a map of item updates
-    const itemUpdates = new Map(
-      dto.items.map((item) => [item.itemId, item]),
-    );
+    const itemUpdates = new Map(dto.items.map((item) => [item.itemId, item]));
 
     // Process each requisition item
     for (const reqItem of requisition.items) {
@@ -565,7 +567,12 @@ export class PartRequisitionsService {
       const pendingReqs = await this.prisma.partRequisition.count({
         where: {
           jobId: requisition.jobId,
-          status: { notIn: [PartRequisitionStatus.ISSUED, PartRequisitionStatus.REJECTED] },
+          status: {
+            notIn: [
+              PartRequisitionStatus.ISSUED,
+              PartRequisitionStatus.REJECTED,
+            ],
+          },
         },
       });
 

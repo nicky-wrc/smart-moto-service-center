@@ -50,5 +50,4 @@ import { ForemanResponsesModule } from './foreman-responses/foreman-responses.mo
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
-
+export class AppModule {}

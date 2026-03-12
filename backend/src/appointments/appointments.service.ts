@@ -286,13 +286,13 @@ export class AppointmentsService {
     // Generate job number (find max existing jobNo for today)
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const prefix = `JOB-${dateStr}-`;
-    
+
     const lastJob = await this.prisma.job.findFirst({
       where: { jobNo: { startsWith: prefix } },
       orderBy: { jobNo: 'desc' },
       select: { jobNo: true },
     });
-    
+
     let nextNum = 1;
     if (lastJob?.jobNo) {
       const lastNum = parseInt(lastJob.jobNo.replace(prefix, ''), 10);

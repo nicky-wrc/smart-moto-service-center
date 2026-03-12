@@ -3,8 +3,8 @@ import { ServiceCatalogController } from './service-catalog.controller';
 import { ServiceCatalogService } from './service-catalog.service';
 
 @Module({
-    controllers: [ServiceCatalogController],
-    providers: [ServiceCatalogService],
-    exports: [ServiceCatalogService],
+  controllers: [ServiceCatalogController],
+  providers: [ServiceCatalogService],
+  exports: [ServiceCatalogService],
 })
-export class ServiceCatalogModule { }
+export class ServiceCatalogModule {}

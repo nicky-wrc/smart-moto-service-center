@@ -27,7 +27,7 @@ import { ProcessPaymentDto } from './dto/process-payment.dto';
 @ApiBearerAuth('JWT-auth')
 @Controller('payments')
 export class PaymentsController {
-  constructor(private readonly paymentsService: PaymentsService) { }
+  constructor(private readonly paymentsService: PaymentsService) {}
 
   @Get('job/:jobId/calculate')
   @Roles('CASHIER', 'ADMIN', 'MANAGER')

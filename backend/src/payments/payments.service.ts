@@ -4,7 +4,12 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { PaymentStatus, JobStatus, PaymentMethod, JobType } from '@prisma/client';
+import {
+  PaymentStatus,
+  JobStatus,
+  PaymentMethod,
+  JobType,
+} from '@prisma/client';
 import { PointsService } from '../customers/points.service';
 
 @Injectable()
@@ -13,7 +18,6 @@ export class PaymentsService {
     private prisma: PrismaService,
     private pointsService: PointsService,
   ) {}
-
 
   async calculateBilling(jobId: number) {
     const job = await this.prisma.job.findUnique({
@@ -213,7 +217,10 @@ export class PaymentsService {
       throw new NotFoundException(`Job with ID ${data.jobId} not found`);
     }
 
-    if (job.status !== JobStatus.COMPLETED && job.status !== JobStatus.READY_FOR_DELIVERY) {
+    if (
+      job.status !== JobStatus.COMPLETED &&
+      job.status !== JobStatus.READY_FOR_DELIVERY
+    ) {
       throw new BadRequestException(
         `Cannot create payment for job with status ${job.status}. Job must be COMPLETED or READY_FOR_DELIVERY.`,
       );
@@ -296,7 +303,10 @@ export class PaymentsService {
     });
   }
 
-  async processPayment(id: number, dto: { amountReceived: number; paymentMethod?: string }) {
+  async processPayment(
+    id: number,
+    dto: { amountReceived: number; paymentMethod?: string },
+  ) {
     const payment = await this.prisma.payment.findUnique({
       where: { id },
     });
@@ -309,9 +319,14 @@ export class PaymentsService {
       throw new BadRequestException('Payment already processed');
     }
 
-    const totalAmount = typeof payment.totalAmount === 'number' ? payment.totalAmount : Number(payment.totalAmount);
+    const totalAmount =
+      typeof payment.totalAmount === 'number'
+        ? payment.totalAmount
+        : Number(payment.totalAmount);
     if (dto.amountReceived < totalAmount) {
-      throw new BadRequestException(`Amount received (${dto.amountReceived}) is less than total amount (${totalAmount})`);
+      throw new BadRequestException(
+        `Amount received (${dto.amountReceived}) is less than total amount (${totalAmount})`,
+      );
     }
 
     const change = dto.amountReceived - totalAmount;
@@ -334,7 +349,9 @@ export class PaymentsService {
         amountReceived: dto.amountReceived,
         change,
         paidAt: new Date(),
-        ...(dto.paymentMethod ? { paymentMethod: dto.paymentMethod as PaymentMethod } : {}),
+        ...(dto.paymentMethod
+          ? { paymentMethod: dto.paymentMethod as PaymentMethod }
+          : {}),
       },
     });
 
@@ -352,7 +369,10 @@ export class PaymentsService {
     }
 
     // Earn points if applicable (after deducting used points)
-    if (payment.pointsEarned > 0 && payment.pointsEarned > (payment.pointsUsed || 0)) {
+    if (
+      payment.pointsEarned > 0 &&
+      payment.pointsEarned > (payment.pointsUsed || 0)
+    ) {
       await this.pointsService.earn({
         customerId: job.motorcycle.ownerId,
         points: payment.pointsEarned - (payment.pointsUsed || 0),
@@ -361,7 +381,6 @@ export class PaymentsService {
         description: `สะสมแต้มจากงาน ${job.jobNo}`,
       });
     }
-
 
     return this.prisma.payment.findUnique({
       where: { id },
@@ -403,11 +422,11 @@ export class PaymentsService {
         },
         ...(filters?.dateFrom || filters?.dateTo
           ? {
-            createdAt: {
-              ...(filters?.dateFrom ? { gte: filters.dateFrom } : {}),
-              ...(filters?.dateTo ? { lte: filters.dateTo } : {}),
-            },
-          }
+              createdAt: {
+                ...(filters?.dateFrom ? { gte: filters.dateFrom } : {}),
+                ...(filters?.dateTo ? { lte: filters.dateTo } : {}),
+              },
+            }
           : {}),
       };
     }

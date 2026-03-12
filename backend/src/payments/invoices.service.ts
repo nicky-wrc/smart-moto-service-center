@@ -11,7 +11,7 @@ import { CreateInvoiceDto } from './dto/create-invoice.dto';
 export class InvoicesService {
   constructor(private prisma: PrismaService) {}
 
-  async create(dto: CreateInvoiceDto, userId: number) {
+  async create(dto: CreateInvoiceDto, _userId: number) {
     const job = await this.prisma.job.findUnique({
       where: { id: dto.jobId },
       include: {
@@ -111,8 +111,7 @@ export class InvoicesService {
             for (const packageItem of package_.items) {
               const part = packageItem.part;
               if (part) {
-                const totalQty =
-                  packageItem.quantity * item.issuedQuantity;
+                const totalQty = packageItem.quantity * item.issuedQuantity;
                 partsCost += Number(part.unitPrice) * totalQty;
               }
             }

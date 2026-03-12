@@ -20,13 +20,15 @@ import { UpdateCustomerDecisionDto } from './dto/update-customer-decision.dto';
 @ApiTags('Foreman Responses')
 @Controller('foreman-responses')
 export class ForemanResponsesController {
-  constructor(private readonly foremanResponsesService: ForemanResponsesService) {}
+  constructor(
+    private readonly foremanResponsesService: ForemanResponsesService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new foreman response' })
-  @ApiResponse({ 
-    status: HttpStatus.CREATED, 
-    description: 'Foreman response created successfully' 
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Foreman response created successfully',
   })
   create(@Body() createDto: CreateForemanResponseDto) {
     return this.foremanResponsesService.create(createDto);
@@ -34,19 +36,21 @@ export class ForemanResponsesController {
 
   @Get()
   @ApiOperation({ summary: 'Get all foreman responses with pagination' })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
-    description: 'Return list of foreman responses' 
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Return list of foreman responses',
   })
   findAll(@Query() query: QueryForemanResponseDto) {
     return this.foremanResponsesService.findAll(query);
   }
 
   @Get('pending')
-  @ApiOperation({ summary: 'Get pending foreman responses (waiting for customer decision)' })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
-    description: 'Return pending foreman responses' 
+  @ApiOperation({
+    summary: 'Get pending foreman responses (waiting for customer decision)',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Return pending foreman responses',
   })
   findPending() {
     return this.foremanResponsesService.findPending();
@@ -54,9 +58,9 @@ export class ForemanResponsesController {
 
   @Get('stats')
   @ApiOperation({ summary: 'Get foreman response statistics' })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
-    description: 'Return statistics' 
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Return statistics',
   })
   getStats() {
     return this.foremanResponsesService.getStats();
@@ -65,9 +69,9 @@ export class ForemanResponsesController {
   @Get('job/:jobId')
   @ApiOperation({ summary: 'Get foreman responses by job ID' })
   @ApiParam({ name: 'jobId', description: 'Job ID' })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
-    description: 'Return foreman responses for the job' 
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Return foreman responses for the job',
   })
   findByJobId(@Param('jobId', ParseIntPipe) jobId: number) {
     return this.foremanResponsesService.findByJobId(jobId);
@@ -76,13 +80,13 @@ export class ForemanResponsesController {
   @Get(':id')
   @ApiOperation({ summary: 'Get a single foreman response by ID' })
   @ApiParam({ name: 'id', description: 'Foreman Response ID' })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
-    description: 'Return the foreman response' 
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Return the foreman response',
   })
-  @ApiResponse({ 
-    status: HttpStatus.NOT_FOUND, 
-    description: 'Foreman response not found' 
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Foreman response not found',
   })
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.foremanResponsesService.findOne(id);
@@ -91,9 +95,9 @@ export class ForemanResponsesController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update a foreman response' })
   @ApiParam({ name: 'id', description: 'Foreman Response ID' })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
-    description: 'Foreman response updated successfully' 
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Foreman response updated successfully',
   })
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -105,13 +109,13 @@ export class ForemanResponsesController {
   @Patch(':id/decision')
   @ApiOperation({ summary: 'Update customer decision (approve/reject)' })
   @ApiParam({ name: 'id', description: 'Foreman Response ID' })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
-    description: 'Customer decision updated successfully' 
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Customer decision updated successfully',
   })
-  @ApiResponse({ 
-    status: HttpStatus.BAD_REQUEST, 
-    description: 'Decision already made or invalid status' 
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Decision already made or invalid status',
   })
   updateCustomerDecision(
     @Param('id', ParseIntPipe) id: number,
@@ -123,9 +127,9 @@ export class ForemanResponsesController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a foreman response' })
   @ApiParam({ name: 'id', description: 'Foreman Response ID' })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
-    description: 'Foreman response deleted successfully' 
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Foreman response deleted successfully',
   })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.foremanResponsesService.remove(id);

@@ -33,7 +33,7 @@ export class QuotationsService {
   }) {
     const now = new Date();
     const dateStr = `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}`;
-    
+
     // ใช้ findFirst เพื่อหาเลขล่าสุดของวันนี้ ป้องกันบั๊กเวลาโซน
     const lastQuotation = await this.prisma.quotation.findFirst({
       where: {
@@ -48,7 +48,10 @@ export class QuotationsService {
 
     let runNoInt = 1;
     if (lastQuotation) {
-      const lastRunNo = parseInt(lastQuotation.quotationNo.split('-').pop() || '0', 10);
+      const lastRunNo = parseInt(
+        lastQuotation.quotationNo.split('-').pop() || '0',
+        10,
+      );
       runNoInt = lastRunNo + 1;
     }
     const runNo = runNoInt.toString().padStart(4, '0');

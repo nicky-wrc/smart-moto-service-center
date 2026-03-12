@@ -36,7 +36,7 @@ import { JobStatus, JobType } from '@prisma/client';
 @ApiBearerAuth('JWT-auth')
 @Controller('jobs')
 export class JobsController {
-  constructor(private readonly jobsService: JobsService) { }
+  constructor(private readonly jobsService: JobsService) {}
 
   @Post()
   @Roles('SERVICE_ADVISOR', 'ADMIN', 'MANAGER')
@@ -109,12 +109,24 @@ export class JobsController {
 
   @Patch(':id/complete')
   @Roles('TECHNICIAN', 'FOREMAN', 'ADMIN', 'MANAGER')
-  @ApiOperation({ summary: 'ซ่อมเสร็จสิ้น (เปลี่ยน status เป็น QC_PENDING รอตรวจ)' })
+  @ApiOperation({
+    summary: 'ซ่อมเสร็จสิ้น (เปลี่ยน status เป็น QC_PENDING รอตรวจ)',
+  })
   completeJob(
     @Param('id') id: string,
-    @Body() body?: { diagnosisNotes?: string; mechanicNotes?: string; photos?: string[] },
+    @Body()
+    body?: {
+      diagnosisNotes?: string;
+      mechanicNotes?: string;
+      photos?: string[];
+    },
   ) {
-    return this.jobsService.completeJob(+id, body?.diagnosisNotes, body?.mechanicNotes, body?.photos);
+    return this.jobsService.completeJob(
+      +id,
+      body?.diagnosisNotes,
+      body?.mechanicNotes,
+      body?.photos,
+    );
   }
 
   @Patch(':id/cancel')
@@ -159,7 +171,9 @@ export class JobsController {
 
   @Patch(':id/request-inspection')
   @Roles('FOREMAN', 'MANAGER', 'ADMIN')
-  @ApiOperation({ summary: 'ระบุว่าต้องตรวจสอบเชิงลึก (ผ่าเครื่อง) + ประเมินค่าตรวจ' })
+  @ApiOperation({
+    summary: 'ระบุว่าต้องตรวจสอบเชิงลึก (ผ่าเครื่อง) + ประเมินค่าตรวจ',
+  })
   requestInspection(
     @Param('id') id: string,
     @Body() dto: RequestInspectionDto,
@@ -170,10 +184,7 @@ export class JobsController {
   @Post(':id/old-parts')
   @Roles('TECHNICIAN', 'FOREMAN', 'ADMIN', 'MANAGER')
   @ApiOperation({ summary: 'บันทึกอะไหล่เก่าที่ถอดออกจากรถลูกค้า' })
-  createOldPart(
-    @Param('id') id: string,
-    @Body() dto: CreateOldPartDto,
-  ) {
+  createOldPart(@Param('id') id: string, @Body() dto: CreateOldPartDto) {
     return this.jobsService.createOldPart(+id, dto);
   }
 
@@ -190,4 +201,3 @@ export class JobsController {
     return this.jobsService.remove(+id);
   }
 }
-

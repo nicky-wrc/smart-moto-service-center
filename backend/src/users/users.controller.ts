@@ -20,7 +20,7 @@ import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 @ApiTags('Users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService) {}
 
   // สร้าง User (ยังเปิด Public ไว้ เพื่อให้สมัคร Admin คนแรกได้สะดวก)
   @Post()
