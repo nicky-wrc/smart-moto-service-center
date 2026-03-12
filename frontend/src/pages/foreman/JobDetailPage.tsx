@@ -175,20 +175,28 @@ function PartsModal({
                         <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden shrink-0">
                           <button
                             onClick={() => setQty(part.id, q - 1)}
-                            className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-50 bg-transparent border-none cursor-pointer text-sm font-bold"
+                            disabled={q <= 1}
+                            className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-50 bg-transparent border-none cursor-pointer text-sm font-bold disabled:opacity-30 disabled:cursor-not-allowed"
                           >
                             −
                           </button>
                           <span className="text-sm font-medium w-6 text-center">{q}</span>
                           <button
-                            onClick={() => setQty(part.id, q + 1)}
-                            className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-50 bg-transparent border-none cursor-pointer text-sm font-bold"
+                            onClick={() => setQty(part.id, Math.min(q + 1, part.stock))}
+                            disabled={q >= part.stock}
+                            className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-50 bg-transparent border-none cursor-pointer text-sm font-bold disabled:opacity-30 disabled:cursor-not-allowed"
                           >
                             +
                           </button>
                         </div>
                         <button
-                          onClick={() => isAdded ? onRemove(part.id) : onAdd(part, q)}
+                          onClick={() => {
+                            if (q > part.stock) {
+                              alert(`จำนวนอะไหล่ไม่เพียงพอ! (มีแค่ ${part.stock} ชิ้นในสต็อก)`);
+                              return;
+                            }
+                            isAdded ? onRemove(part.id) : onAdd(part, Math.min(q, part.stock))
+                          }}
                           className={`flex-1 text-sm font-medium py-1.5 rounded-lg border-none cursor-pointer transition-colors ${
                             isAdded
                               ? 'bg-red-50 text-red-500 hover:bg-red-100'
@@ -629,7 +637,6 @@ export default function JobDetailPage() {
           title="ใบประเมินราคา (ร่าง)"
           onClose={() => { setStockQuotPreview(false); setStockChecked(false) }}
           onConfirm={async () => {
-            try {
               // 1. Create quotation with items
               const quotationPayload = {
                 customerId: job.customerId,
@@ -641,15 +648,21 @@ export default function JobDetailPage() {
                   unitPrice: sp.part.unitPrice,
                   partId: sp.part.id,
                 })),
+                jobId: Number(id),
                 notes: foremanNote || undefined,
               }
+            try {
               const quotation = await api.post('/quotations', quotationPayload)
               // 2. Link quotation to job and update status
               await api.patch(`/jobs/${id}`, { status: 'WAITING_APPROVAL', diagnosisNotes: foremanNote || undefined, tags, quotationId: (quotation as any).id })
               setQuotationSent(true)
               setStockQuotPreview(false)
               setJob((prev: any) => prev ? { ...prev, status: 'รอลูกค้าอนุมัติ' } : prev)
-            } catch (err) { console.error('Failed to send quotation:', err); alert('ส่งใบประเมินราคาไม่สำเร็จ') }
+            } catch (err: any) { 
+              console.error('Failed to send quotation payload:', quotationPayload);
+              console.error('Error details:', err.response?.data || err.message); 
+              alert('ส่งใบประเมินราคาไม่สำเร็จ: ' + (err.response?.data?.message || err.message));
+            }
           }}
           confirmLabel="ส่งใบประเมินราคา"
         >
@@ -747,7 +760,7 @@ export default function JobDetailPage() {
               if (tags.length > 0) await api.patch(`/jobs/${id}`, { tags })
               setDeepSent(true)
               setDeepQuotPreview(false)
-              setJob((prev: any) => prev ? { ...prev, status: 'ตรวจเชิงลึก' } : prev)
+              setJob((prev: any) => prev ? { ...prev, status: 'รอลูกค้าอนุมัติ' } : prev)
             } catch (err) { console.error('Failed to request inspection:', err); alert('ส่งคำขอตรวจเชิงลึกไม่สำเร็จ') }
           }}
           confirmLabel="ส่งใบประเมินราคา"
@@ -1354,10 +1367,18 @@ export default function JobDetailPage() {
                               </div>
                               <div className="flex items-center gap-1 shrink-0">
                                 <button onClick={() => updateQty(sp.part.id, sp.qty - 1)}
-                                  className="w-5 h-5 rounded border border-gray-200 hover:border-gray-300 text-gray-500 text-sm font-bold cursor-pointer bg-white flex items-center justify-center transition-colors">−</button>
+                                  disabled={sp.qty <= 1}
+                                  className="w-5 h-5 rounded border border-gray-200 hover:border-gray-300 text-gray-500 text-sm font-bold cursor-pointer bg-white flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed">−</button>
                                 <span className="text-sm font-medium w-5 text-center">{sp.qty}</span>
-                                <button onClick={() => updateQty(sp.part.id, sp.qty + 1)}
-                                  className="w-5 h-5 rounded border border-gray-200 hover:border-gray-300 text-gray-500 text-sm font-bold cursor-pointer bg-white flex items-center justify-center transition-colors">+</button>
+                                <button onClick={() => {
+                                    if (sp.qty >= sp.part.stock) {
+                                      alert(`จำนวนอะไหล่ไม่เพียงพอ! (มีแค่ ${sp.part.stock} ชิ้นในสต็อก)`);
+                                      return;
+                                    }
+                                    updateQty(sp.part.id, sp.qty + 1)
+                                  }}
+                                  disabled={sp.qty >= sp.part.stock}
+                                  className="w-5 h-5 rounded border border-gray-200 hover:border-gray-300 text-gray-500 text-sm font-bold cursor-pointer bg-white flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed">+</button>
                                 <span className="text-sm text-gray-400 ml-0.5">{sp.part.unit}</span>
                               </div>
                               {stockChecked && (

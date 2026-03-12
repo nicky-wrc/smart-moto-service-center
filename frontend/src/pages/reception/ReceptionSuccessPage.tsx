@@ -56,7 +56,13 @@ export default function ReceptionSuccessPage() {
                         {returnTo === 'search' ? 'กลับหน้าค้นหา' : 'กลับหน้าหลัก'}
                     </button>
                     <button
-                        onClick={() => navigate('/reception/repair', { state: { formData: data } })}
+                        onClick={() => navigate('/reception/repair', { 
+                            state: { 
+                                formData: data,
+                                isExistingCustomer: true,
+                                isNewMotorcycle: false
+                            } 
+                        })}
                         className="w-full sm:w-auto px-6 py-2.5 rounded-xl border border-transparent text-white font-medium bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-sm"
                     >
                         เพิ่มอาการแจ้งซ่อม

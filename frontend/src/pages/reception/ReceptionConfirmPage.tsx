@@ -44,22 +44,26 @@ export default function ReceptionConfirmPage() {
             // Create customer + motorcycle in the backend database
             const licensePlateStr = `${data.plateLine1} ${data.province} ${data.plateLine2}`.trim()
             
-            await receptionApiService.createOrGetCustomer({
+            const customerResult = await receptionApiService.createOrGetCustomer({
                 firstName: data.firstName,
                 lastName: data.lastName,
                 phone: data.phone,
                 address: data.address || '',
-            }).then(async (customerResult) => {
-                // Create motorcycle for this customer
-                await receptionApiService.createOrGetMotorcycle({
-                    customerId: customerResult.id,
-                    model: data.model,
-                    color: data.color,
-                    plateLine1: data.plateLine1,
-                    plateLine2: data.plateLine2,
-                    province: data.province,
-                })
-            })
+            });
+            
+            // Create motorcycle for this customer
+            const motoResult = await receptionApiService.createOrGetMotorcycle({
+                customerId: customerResult.id,
+                model: data.model,
+                color: data.color,
+                plateLine1: data.plateLine1,
+                plateLine2: data.plateLine2,
+                province: data.province,
+            });
+
+            // Make sure to pass IDs to next step
+            data.customerId = customerResult.id;
+            data.motorcycleId = motoResult.id;
 
             // Also save to local reception history as a log
             addReceptionHistory({

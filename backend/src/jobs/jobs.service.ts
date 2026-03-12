@@ -15,7 +15,7 @@ export class JobsService {
   async create(createJobDto: CreateJobDto, userId: number) {
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const prefix = `JOB-${dateStr}-`;
-    
+
     // Find the highest existing jobNo for today to avoid unique constraint violations
     const lastJob = await this.prisma.job.findFirst({
       where: {
@@ -24,7 +24,7 @@ export class JobsService {
       orderBy: { jobNo: 'desc' },
       select: { jobNo: true },
     });
-    
+
     let nextNum = 1;
     if (lastJob?.jobNo) {
       const lastNum = parseInt(lastJob.jobNo.replace(prefix, ''), 10);
@@ -548,6 +548,7 @@ export class JobsService {
       where: { id: jobId },
       data: {
         jobType: JobType.DEEP_INSPECTION,
+        status: JobStatus.WAITING_APPROVAL,
         inspectionFee: dto.inspectionFee,
         diagnosisNotes: job.diagnosisNotes ? job.diagnosisNotes + notesAddition : notesAddition.trim(),
       },

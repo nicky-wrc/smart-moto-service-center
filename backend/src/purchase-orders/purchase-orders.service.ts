@@ -2,8 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { POStatus } from '@prisma/client';
 
-const APPROVAL_THRESHOLD = 10000; // 10,000 THB
-
+    
 @Injectable()
 export class PurchaseOrdersService {
     constructor(private prisma: PrismaService) { }
@@ -138,24 +137,10 @@ export class PurchaseOrdersService {
             throw new BadRequestException('Only DRAFT PO can be submitted');
         }
 
-        const total = Number(po.totalAmount);
-
-        // If total > 10,000 THB → needs owner approval
-        if (total > APPROVAL_THRESHOLD) {
-            return this.prisma.purchaseOrder.update({
-                where: { id },
-                data: { status: POStatus.PENDING_APPROVAL },
-                include: { items: { include: { part: true } }, supplier: true },
-            });
-        }
-
-        // Otherwise auto-approve
+        // All POs need owner approval regardless of total amount
         return this.prisma.purchaseOrder.update({
             where: { id },
-            data: {
-                status: POStatus.ORDERED,
-                orderedAt: new Date(),
-            },
+            data: { status: POStatus.PENDING_APPROVAL },
             include: { items: { include: { part: true } }, supplier: true },
         });
     }

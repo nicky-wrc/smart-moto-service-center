@@ -36,11 +36,18 @@ export class QuotationsController {
   @Roles('SERVICE_ADVISOR', 'CASHIER', 'ADMIN', 'MANAGER', 'FOREMAN', 'TECHNICIAN')
   @ApiOperation({ summary: 'สร้าง Quotation ใหม่' })
   create(@Body() data: CreateQuotationDto, @CurrentUser() user: UserPayload) {
-    return this.quotationsService.create({
-      ...data,
-      validUntil: data.validUntil ? new Date(data.validUntil) : undefined,
-      createdById: user.userId,
-    });
+    console.log('--- DEBUG: POST /quotations ---');
+    console.log('Payload:', data);
+    try {
+      return this.quotationsService.create({
+        ...data,
+        validUntil: data.validUntil ? new Date(data.validUntil) : undefined,
+        createdById: user.userId,
+      });
+    } catch (err) {
+      console.error('Error creating quotation:', err);
+      throw err;
+    }
   }
 
   @Get()

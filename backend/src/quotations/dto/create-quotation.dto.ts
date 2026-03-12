@@ -22,6 +22,12 @@ export class CreateQuotationDto {
   @IsNotEmpty()
   motorcycleId: number;
 
+  @ApiPropertyOptional({ example: 10, description: 'ID ของ Job (ถ้ามี)' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  jobId?: number;
+
   @ApiProperty({
     type: [QuotationItemDto],
     example: [

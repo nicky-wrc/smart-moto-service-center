@@ -1,9 +1,17 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ForemanResponseStatus, PartRequisitionStatus } from '@prisma/client';
 import { CreateForemanResponseDto } from './dto/create-foreman-response.dto';
 import { UpdateForemanResponseDto } from './dto/update-foreman-response.dto';
 import { QueryForemanResponseDto } from './dto/query-foreman-response.dto';
-import { UpdateCustomerDecisionDto } from './dto/update-customer-decision.dto';
+import {
+  CustomerDecision,
+  UpdateCustomerDecisionDto,
+} from './dto/update-customer-decision.dto';
 
 @Injectable()
 export class ForemanResponsesService {
@@ -64,8 +72,17 @@ export class ForemanResponsesService {
    * Get all foreman responses with pagination and filters
    */
   async findAll(query: QueryForemanResponseDto) {
-    const { page = 1, limit = 10, status, search, sortBy = 'respondedAt', sortOrder = 'desc', dateFrom, dateTo } = query;
-    
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      search,
+      sortBy = 'respondedAt',
+      sortOrder = 'desc',
+      dateFrom,
+      dateTo,
+    } = query;
+
     const skip = (page - 1) * limit;
 
     // Build where clause
@@ -78,8 +95,20 @@ export class ForemanResponsesService {
     if (search) {
       where.OR = [
         { job: { jobNo: { contains: search, mode: 'insensitive' } } },
-        { job: { motorcycle: { owner: { firstName: { contains: search, mode: 'insensitive' } } } } },
-        { job: { motorcycle: { owner: { lastName: { contains: search, mode: 'insensitive' } } } } },
+        {
+          job: {
+            motorcycle: {
+              owner: { firstName: { contains: search, mode: 'insensitive' } },
+            },
+          },
+        },
+        {
+          job: {
+            motorcycle: {
+              owner: { lastName: { contains: search, mode: 'insensitive' } },
+            },
+          },
+        },
       ];
     }
 
@@ -251,7 +280,10 @@ export class ForemanResponsesService {
   /**
    * Update customer decision (approve/reject)
    */
-  async updateCustomerDecision(id: number, updateDto: UpdateCustomerDecisionDto) {
+  async updateCustomerDecision(
+    id: number,
+    updateDto: UpdateCustomerDecisionDto,
+  ) {
     const foremanResponse = await this.prisma.foremanResponse.findUnique({
       where: { id },
     });
@@ -265,7 +297,10 @@ export class ForemanResponsesService {
     }
 
     // Map decision to status
-    const status = updateDto.decision === 'APPROVED' ? 'APPROVED' : 'REJECTED';
+    const status =
+      updateDto.decision === CustomerDecision.APPROVED
+        ? ForemanResponseStatus.APPROVED
+        : ForemanResponseStatus.REJECTED;
 
     const updated = await this.prisma.foremanResponse.update({
       where: { id },
@@ -304,11 +339,49 @@ export class ForemanResponsesService {
       },
     });
 
+    // Auto-generate Part Requisition if APPROVED and has parts
+    if (
+      status === 'APPROVED' &&
+      updated.requiredParts &&
+      updated.requiredParts.length > 0
+    ) {
+      const partsToRequest = updated.requiredParts.filter(
+        (part) => part.partId !== null,
+      );
+
+      if (partsToRequest.length > 0) {
+        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const reqCount = await this.prisma.partRequisition.count({
+          where: {
+            createdAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
+          },
+        });
+        const reqNo = `REQ-${dateStr}-${(reqCount + 1).toString().padStart(4, '0')}`;
+
+        await this.prisma.partRequisition.create({
+          data: {
+            reqNo,
+            jobId: updated.jobId,
+            requestedById: updated.foremanId, // คนที่เพิ่มรายการประเมินคือคนขอเบิก
+            status: PartRequisitionStatus.PENDING,
+            notes: `Auto-generated from Foreman Assessment (Job: ${updated.job.jobNo})`,
+            items: {
+              create: partsToRequest.map((item) => ({
+                partId: item.partId as number,
+                quantity: item.quantity,
+                requestedQuantity: item.quantity,
+              })),
+            },
+          },
+        });
+      }
+    }
+
     // TODO: Notify foreman about customer decision
 
     return {
       success: true,
-      message: `Customer ${updateDto.decision === 'APPROVED' ? 'approved' : 'rejected'} the quotation`,
+      message: `Customer ${updateDto.decision === CustomerDecision.APPROVED ? 'approved' : 'rejected'} the quotation`,
       data: updated,
     };
   }
@@ -389,7 +462,9 @@ export class ForemanResponsesService {
    */
   async getStats() {
     const [pending, approved, rejected, total] = await Promise.all([
-      this.prisma.foremanResponse.count({ where: { status: 'PENDING_CUSTOMER' } }),
+      this.prisma.foremanResponse.count({
+        where: { status: 'PENDING_CUSTOMER' },
+      }),
       this.prisma.foremanResponse.count({ where: { status: 'APPROVED' } }),
       this.prisma.foremanResponse.count({ where: { status: 'REJECTED' } }),
       this.prisma.foremanResponse.count(),

@@ -43,6 +43,17 @@ function mapJobToForemanResponse(job: any): ForemanResponse {
     const brandParts = [moto.brand, moto.model].filter((v: string) => v && v !== 'ไม่ระบุ')
     const modelDisplay = brandParts.join(' ') || '-'
 
+    let customerDecision: 'approved' | 'rejected' | undefined = undefined;
+    if (['READY', 'WAITING_PARTS', 'IN_PROGRESS', 'QC_PENDING', 'CLEANING', 'READY_FOR_DELIVERY', 'COMPLETED', 'PAID'].includes(job.status)) {
+        customerDecision = 'approved';
+    } else if (job.status === 'CANCELLED') {
+        customerDecision = 'rejected';
+    }
+
+    let status: import('../types/foremanResponse.types').ForemanResponseStatus = 'PENDING_CUSTOMER';
+    if (customerDecision === 'approved') status = 'APPROVED';
+    if (customerDecision === 'rejected') status = 'REJECTED';
+
     return {
         id: String(job.id),
         jobId: String(job.id),
@@ -70,8 +81,8 @@ function mapJobToForemanResponse(job: any): ForemanResponse {
         respondedBy: job.technician?.name || job.reception?.name || '-',
         foremanId: String(job.technicianId || ''),
         assessmentNumber: 1,
-        customerDecision: undefined,
-        status: 'PENDING_CUSTOMER',
+        customerDecision,
+        status,
         createdAt: job.createdAt || new Date().toISOString(),
         updatedAt: job.updatedAt || new Date().toISOString(),
         _itemsCount: itemsCount,

@@ -76,14 +76,14 @@ export class PurchaseOrdersController {
 
     @Patch(':id/submit')
     @Roles('STOCK_KEEPER', 'ADMIN', 'MANAGER')
-    @ApiOperation({ summary: 'ส่ง PO (ถ้า >10,000 บาท → รอเจ้าของร้านอนุมัติ)' })
+    @ApiOperation({ summary: 'ส่ง PO (เข้าสู่สถานะรอเจ้าของร้าน/ผู้จัดการอนุมัติ)' })
     submit(@Param('id') id: string) {
         return this.service.submit(+id);
     }
 
     @Patch(':id/approve')
     @Roles('MANAGER', 'ADMIN')
-    @ApiOperation({ summary: 'เจ้าของร้านอนุมัติ PO (เฉพาะ PO >10,000 บาท)' })
+    @ApiOperation({ summary: 'เจ้าของร้านอนุมัติ PO' })
     approve(@Param('id') id: string, @CurrentUser() user: UserPayload) {
         return this.service.approve(+id, user.userId);
     }
