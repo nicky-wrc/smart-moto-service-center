@@ -323,10 +323,27 @@ export default function MechanicJobDetailPage() {
                     })}
                   </div>
                   <button
-                    onClick={() => { alert('ยืนยันคืนอะไหล่เรียบร้อย') }}
-                    className="w-full mt-3 bg-[#F8981D] hover:bg-orange-500 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors border-none cursor-pointer"
+                    onClick={async () => {
+                      try {
+                        setActionLoading(true);
+                        const payload = job.quotation.items.map((item: any) => ({
+                          quotationItemId: item.id,
+                          actualQuantity: partsActual[item.id] ?? item.quantity
+                        }));
+                        const updated = await api.patch(`/jobs/${id}/return-parts`, { partsActual: payload });
+                        setJob(updated);
+                        alert('คืนอะไหล่ส่วนที่ไม่ได้ใช้เรียบร้อย สต็อกถูกอัปเดตแล้ว');
+                      } catch (e: any) {
+                        console.error(e);
+                        alert(e.response?.data?.message || 'การคืนอะไหล่ล้มเหลว');
+                      } finally {
+                        setActionLoading(false);
+                      }
+                    }}
+                    disabled={actionLoading}
+                    className="w-full mt-3 bg-[#F8981D] hover:bg-orange-500 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors border-none cursor-pointer disabled:opacity-50"
                   >
-                    ยืนยันคืนอะไหล่ส่วนที่เหลือ
+                    {actionLoading ? 'กำลังดำเนินการ...' : 'ยืนยันคืนอะไหล่ส่วนที่เหลือ'}
                   </button>
                 </div>
               )}

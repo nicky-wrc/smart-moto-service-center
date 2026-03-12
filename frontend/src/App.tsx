@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute'
 import LoginPage from './pages/login/LoginPage'
 import { RequestHistoryProvider } from './contexts/RequestHistoryContext'
+import { AlertProvider } from './contexts/AlertContext'
+import { AlertInterceptor } from './components/AlertInterceptor'
 
 // Inventory (พนักงานคงคลัง)
 import InventoryLayout from './pages/inventory/InventoryLayout'
@@ -87,7 +89,9 @@ import { PaymentsPage } from './pages/billing/PaymentsPage'
 
 export default function App() {
   return (
-    <RequestHistoryProvider>
+    <AlertProvider>
+      <AlertInterceptor />
+      <RequestHistoryProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
@@ -221,5 +225,6 @@ export default function App() {
         </Routes>
       </BrowserRouter>
     </RequestHistoryProvider>
+    </AlertProvider>
   )
 }

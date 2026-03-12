@@ -17,6 +17,7 @@ import { QcJobDto } from './dto/qc-job.dto';
 import { ReadyDeliveryJobDto } from './dto/ready-delivery-job.dto';
 import { RequestInspectionDto } from './dto/request-inspection.dto';
 import { CreateOldPartDto } from './dto/create-old-part.dto';
+import { ReturnPartsDto } from './dto/return-parts.dto';
 import {
   ApiBearerAuth,
   ApiTags,
@@ -143,6 +144,17 @@ export class JobsController {
     @CurrentUser() user: UserPayload,
   ) {
     return this.jobsService.readyForDelivery(+id, dto, user.userId);
+  }
+
+  @Patch(':id/return-parts')
+  @Roles('TECHNICIAN', 'FOREMAN', 'MANAGER', 'ADMIN')
+  @ApiOperation({ summary: 'คืนอะไหล่ส่วนที่ไม่ได้ใช้กลับเข้าคลัง' })
+  returnParts(
+    @Param('id') id: string,
+    @Body() dto: ReturnPartsDto,
+    @CurrentUser() user: UserPayload,
+  ) {
+    return this.jobsService.returnParts(+id, dto, user.userId);
   }
 
   @Patch(':id/request-inspection')

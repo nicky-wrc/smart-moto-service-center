@@ -6,7 +6,8 @@ import {
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
 import { PrismaService } from '../prisma/prisma.service';
-import { JobStatus, JobType } from '@prisma/client';
+import { JobStatus, JobType, StockMovementType } from '@prisma/client';
+import { ReturnPartsDto } from './dto/return-parts.dto';
 
 @Injectable()
 export class JobsService {
@@ -528,6 +529,93 @@ export class JobsService {
         technician: { select: { id: true, name: true, role: true } },
         motorcycle: { include: { owner: true } },
       }
+    });
+  }
+
+  async returnParts(jobId: number, dto: ReturnPartsDto, userId: number) {
+    const job = await this.prisma.job.findUnique({
+      where: { id: jobId },
+      include: {
+        quotation: {
+          include: {
+            items: true
+          }
+        }
+      }
+    });
+
+    if (!job) throw new NotFoundException(`Job ID ${jobId} not found`);
+    if (!job.quotation) throw new BadRequestException(`Job ID ${jobId} does not have a quotation attached`);
+
+    // We process the returns in a transaction
+    return this.prisma.$transaction(async (tx) => {
+      let totalAmountBeforeReturn = Number(job.quotation!.totalAmount);
+      
+      for (const returnItem of dto.partsActual) {
+        const quotationItem = job.quotation!.items.find(i => i.id === returnItem.quotationItemId);
+        if (!quotationItem) {
+          throw new BadRequestException(`Quotation item ID ${returnItem.quotationItemId} not found in this job's quotation`);
+        }
+        
+        const returnQuantity = quotationItem.quantity - returnItem.actualQuantity;
+        if (returnQuantity > 0) {
+          if (quotationItem.partId) {
+            // Return part to stock
+            await tx.part.update({
+              where: { id: quotationItem.partId },
+              data: { stockQuantity: { increment: returnQuantity } }
+            });
+            
+            // Create stock movement
+            await tx.stockMovement.create({
+              data: {
+                partId: quotationItem.partId,
+                movementType: StockMovementType.RETURN,
+                quantity: returnQuantity,
+                unitPrice: quotationItem.unitPrice,
+                reference: job.jobNo,
+                notes: `ช่างทำเรื่องคืนอะไหล่จำนวน ${returnQuantity} ชิ้น จากใบงาน ${job.jobNo}`,
+                createdById: userId,
+              }
+            });
+          }
+          
+          // Calculate the original total for THIS item
+          const originalItemTotal = Number(quotationItem.totalPrice);
+          // Calculate the NEW total for THIS item based on actual returned quantity
+          const newItemTotal = returnItem.actualQuantity * Number(quotationItem.unitPrice);
+          
+          // Update QuotationItem
+          await tx.quotationItem.update({
+            where: { id: quotationItem.id },
+            data: { 
+              quantity: returnItem.actualQuantity,
+              totalPrice: newItemTotal
+            }
+          });
+          
+          // Adjust total amount running sum
+          totalAmountBeforeReturn = totalAmountBeforeReturn - originalItemTotal + newItemTotal;
+        } else if (returnQuantity < 0) {
+          throw new BadRequestException(`Cannot return negative quantity. Item ID: ${returnItem.quotationItemId}`);
+        }
+      }
+      
+      // Finally, update the Quotation's total amount
+      await tx.quotation.update({
+        where: { id: job.quotation!.id },
+        data: { totalAmount: totalAmountBeforeReturn }
+      });
+      
+      // Return updated job
+      return tx.job.findUnique({
+        where: { id: jobId },
+        include: {
+          quotation: { include: { items: true } },
+          technician: { select: { id: true, name: true, role: true } },
+          motorcycle: { include: { owner: true } }
+        }
+      });
     });
   }
 

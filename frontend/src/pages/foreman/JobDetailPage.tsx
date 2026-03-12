@@ -4,6 +4,7 @@ import { api } from '../../lib/api'
 import { QuotationA4Document } from '../../components/QuotationA4Document'
 import { QuotationPreviewModal } from '../../components/QuotationPreviewModal'
 import { ConfirmModal } from '../../components/ConfirmModal'
+import { useAlert } from '../../contexts/AlertContext'
 import type { Part, SelectedPart } from './types'
 import { formatMotorcycleName } from '../../utils/motorcycle'
 
@@ -65,11 +66,13 @@ function PartsModal({
   onAdd,
   onRemove,
   onClose,
+  onError,
 }: {
   selectedParts: SelectedPart[]
   onAdd: (part: Part, qty: number) => void
   onRemove: (id: number) => void
   onClose: () => void
+  onError?: (msg: string) => void
 }) {
   const [search, setSearch] = useState('')
   const [modalQty, setModalQty] = useState<Record<number, number>>({})
@@ -192,7 +195,7 @@ function PartsModal({
                         <button
                           onClick={() => {
                             if (q > part.stock) {
-                              alert(`จำนวนอะไหล่ไม่เพียงพอ! (มีแค่ ${part.stock} ชิ้นในสต็อก)`);
+                              if (onError) onError(`จำนวนอะไหล่ไม่เพียงพอ! (มีแค่ ${part.stock} ชิ้นในสต็อก)`);
                               return;
                             }
                             isAdded ? onRemove(part.id) : onAdd(part, Math.min(q, part.stock))
@@ -458,6 +461,8 @@ export default function JobDetailPage() {
 
   // Confirm modal
   const [confirmAction, setConfirmAction] = useState<null | 'qcPass' | 'qcFail'>(null)
+  
+  const { showAlert } = useAlert()
 
   // Mechanic report photo lightbox
   const [mrLightboxOpen, setMrLightboxOpen] = useState(false)
@@ -526,6 +531,7 @@ export default function JobDetailPage() {
           onAdd={handleAddPart}
           onRemove={removePart}
           onClose={() => setPartsModalOpen(false)}
+          onError={(msg) => showAlert('จำนวนอะไหล่ไม่เพียงพอ!', msg)}
         />
       )}
 
@@ -661,7 +667,7 @@ export default function JobDetailPage() {
             } catch (err: any) { 
               console.error('Failed to send quotation payload:', quotationPayload);
               console.error('Error details:', err.response?.data || err.message); 
-              alert('ส่งใบประเมินราคาไม่สำเร็จ: ' + (err.response?.data?.message || err.message));
+              showAlert('ส่งใบประเมินราคาไม่สำเร็จ', err.response?.data?.message || err.message);
             }
           }}
           confirmLabel="ส่งใบประเมินราคา"
@@ -761,7 +767,7 @@ export default function JobDetailPage() {
               setDeepSent(true)
               setDeepQuotPreview(false)
               setJob((prev: any) => prev ? { ...prev, status: 'รอลูกค้าอนุมัติ' } : prev)
-            } catch (err) { console.error('Failed to request inspection:', err); alert('ส่งคำขอตรวจเชิงลึกไม่สำเร็จ') }
+            } catch (err) { console.error('Failed to request inspection:', err); showAlert('ส่งคำขอตรวจเชิงลึกไม่สำเร็จ') }
           }}
           confirmLabel="ส่งใบประเมินราคา"
         >
@@ -993,7 +999,7 @@ export default function JobDetailPage() {
               setQcSubmitted(true)
               setConfirmAction(null)
               setJob((prev: any) => prev ? { ...prev, status: 'เสร็จสิ้น' } : prev)
-            } catch (err) { console.error('QC pass failed:', err); alert('บันทึก QC ไม่สำเร็จ'); setConfirmAction(null) }
+            } catch (err) { console.error('QC pass failed:', err); showAlert('บันทึก QC ไม่สำเร็จ'); setConfirmAction(null) }
           }}
         />
       )}
@@ -1009,7 +1015,7 @@ export default function JobDetailPage() {
               setQcSubmitted(true)
               setConfirmAction(null)
               setJob((prev: any) => prev ? { ...prev, status: 'กำลังดำเนินงาน' } : prev)
-            } catch (err) { console.error('QC fail failed:', err); alert('บันทึก QC ไม่สำเร็จ'); setConfirmAction(null) }
+            } catch (err) { console.error('QC fail failed:', err); showAlert('บันทึก QC ไม่สำเร็จ'); setConfirmAction(null) }
           }}
         />
       )}
@@ -1261,7 +1267,7 @@ export default function JobDetailPage() {
                             if (tags.length > 0) await api.patch(`/jobs/${id}`, { tags })
                             setAssignConfirmed(true)
                             setJob((prev: any) => prev ? { ...prev, mechanicId: selectedMechanics[0] } : prev)
-                          } catch (err) { console.error('Assign failed:', err); alert('มอบหมายช่างไม่สำเร็จ') }
+                          } catch (err) { console.error('Assign failed:', err); showAlert('มอบหมายช่างไม่สำเร็จ') }
                         }}
                           disabled={selectedMechanics.length === 0}
                           className="w-full bg-[#F8981D] hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium py-2.5 rounded-xl transition-colors border-none cursor-pointer"
@@ -1301,8 +1307,8 @@ export default function JobDetailPage() {
                       try {
                         await api.patch(`/jobs/${id}`, { status: 'READY' })
                         setJob((prev: any) => prev ? { ...prev, status: 'พร้อมซ่อม' } : prev)
-                        alert('อนุมัติเรียบร้อย — งานพร้อมซ่อม')
-                      } catch (err) { console.error(err); alert('อัพเดทสถานะไม่สำเร็จ') }
+                        showAlert('อนุมัติเรียบร้อย', 'งานถูกเปลี่ยนเป็นสถานะ พร้อมซ่อม แล้ว')
+                      } catch (err) { console.error(err); showAlert('อัพเดทสถานะไม่สำเร็จ') }
                     }}
                     className="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2.5 rounded-xl transition-colors border-none cursor-pointer"
                   >
@@ -1313,8 +1319,8 @@ export default function JobDetailPage() {
                       try {
                         await api.patch(`/jobs/${id}`, { status: 'WAITING_PARTS' })
                         setJob((prev: any) => prev ? { ...prev, status: 'รอสั่งซื้อ' } : prev)
-                        alert('อนุมัติเรียบร้อย — รอสั่งซื้ออะไหล่')
-                      } catch (err) { console.error(err); alert('อัพเดทสถานะไม่สำเร็จ') }
+                        showAlert('อนุมัติเรียบร้อย', 'งานถูกเปลี่ยนเป็นสถานะ รอสั่งซื้ออะไหล่ แล้ว')
+                      } catch (err) { console.error(err); showAlert('อัพเดทสถานะไม่สำเร็จ') }
                     }}
                     className="w-full bg-stone-600 hover:bg-stone-700 text-white text-sm font-medium py-2.5 rounded-xl transition-colors border-none cursor-pointer"
                   >
@@ -1326,8 +1332,8 @@ export default function JobDetailPage() {
                       try {
                         await api.patch(`/jobs/${id}/cancel`, { reason: 'ลูกค้าไม่อนุมัติ' })
                         setJob((prev: any) => prev ? { ...prev, status: 'ยกเลิก' } : prev)
-                        alert('ยกเลิกงานเรียบร้อย')
-                      } catch (err) { console.error(err); alert('ยกเลิกงานไม่สำเร็จ') }
+                        showAlert('ยกเลิกงานเรียบร้อย')
+                      } catch (err) { console.error(err); showAlert('ยกเลิกงานไม่สำเร็จ') }
                     }}
                     className="w-full bg-white hover:bg-red-50 text-red-500 text-sm font-medium py-2.5 rounded-xl transition-colors border border-red-200 cursor-pointer"
                   >
@@ -1372,7 +1378,7 @@ export default function JobDetailPage() {
                                 <span className="text-sm font-medium w-5 text-center">{sp.qty}</span>
                                 <button onClick={() => {
                                     if (sp.qty >= sp.part.stock) {
-                                      alert(`จำนวนอะไหล่ไม่เพียงพอ! (มีแค่ ${sp.part.stock} ชิ้นในสต็อก)`);
+                                      showAlert('จำนวนอะไหล่ไม่เพียงพอ!', `มีแค่ ${sp.part.stock} ชิ้นในสต็อก`);
                                       return;
                                     }
                                     updateQty(sp.part.id, sp.qty + 1)

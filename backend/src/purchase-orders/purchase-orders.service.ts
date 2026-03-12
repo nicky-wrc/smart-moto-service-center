@@ -151,14 +151,70 @@ export class PurchaseOrdersService {
             throw new BadRequestException('Only PENDING_APPROVAL PO can be approved');
         }
 
-        return this.prisma.purchaseOrder.update({
-            where: { id },
-            data: {
-                status: POStatus.ORDERED,
-                approvedById: userId,
-                orderedAt: new Date(),
-            },
-            include: { items: { include: { part: true } }, supplier: true },
+        return this.prisma.$transaction(async (tx) => {
+            // 1. Update PO status to COMPLETED (since we auto-receive fully)
+            const updatedPO = await tx.purchaseOrder.update({
+                where: { id },
+                data: {
+                    status: POStatus.COMPLETED,
+                    approvedById: userId,
+                    orderedAt: new Date(),
+                },
+                include: { items: { include: { part: true } }, supplier: true },
+            });
+
+            // 2. Auto-create Receive record
+            const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            const count = await tx.purchaseReceive.count({
+                where: { createdAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
+            });
+            const receiveNo = `RCV-${dateStr}-${(count + 1).toString().padStart(4, '0')}`;
+
+            const receive = await tx.purchaseReceive.create({
+                data: {
+                    receiveNo,
+                    purchaseOrderId: id,
+                    receivedById: userId,
+                    notes: 'Auto-received upon PO approval',
+                    items: {
+                        create: po.items.map((poItem) => ({
+                            purchaseOrderItemId: poItem.id,
+                            quantity: poItem.quantity,
+                            partId: poItem.partId,
+                        })),
+                    },
+                },
+            });
+
+            // 3. Update PO items received quantities + stock + movements
+            for (const poItem of po.items) {
+                // Update PO item received quantity
+                await tx.purchaseOrderItem.update({
+                    where: { id: poItem.id },
+                    data: { receivedQuantity: poItem.quantity },
+                });
+
+                // Add stock
+                await tx.part.update({
+                    where: { id: poItem.partId },
+                    data: { stockQuantity: { increment: poItem.quantity } },
+                });
+
+                // Create stock movement
+                await tx.stockMovement.create({
+                    data: {
+                        partId: poItem.partId,
+                        movementType: 'IN',
+                        quantity: poItem.quantity,
+                        unitPrice: poItem.unitPrice,
+                        reference: `PO-${po.poNo} / RCV-${receiveNo}`,
+                        notes: `รับสินค้าอัตโนมัติจากการอนุมัติ PO ${po.poNo}`,
+                        createdById: userId,
+                    },
+                });
+            }
+
+            return updatedPO;
         });
     }
 
