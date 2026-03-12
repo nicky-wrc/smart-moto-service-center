@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 
 const ROLE_REDIRECT: Record<string, string> = {
-  ADMIN:          '/owner/dashboard',
+  ADMIN:          '/admin/dashboard',
   MANAGER:        '/owner/dashboard',
   SERVICE_ADVISOR:'/reception',
   FOREMAN:        '/foreman/dashboard',
@@ -27,6 +27,13 @@ export default function LoginPage() {
     try {
       await login(username, password)
       const user = JSON.parse(localStorage.getItem('user') ?? '{}')
+
+      // ถ้าเป็น admin ให้บังคับเข้าแดชบอร์ดผู้ดูแลระบบเสมอ
+      if (user.role === 'ADMIN' || user.username === 'admin') {
+        navigate('/admin/dashboard', { replace: true })
+        return
+      }
+
       navigate(ROLE_REDIRECT[user.role] ?? '/foreman/jobs', { replace: true })
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'เข้าสู่ระบบไม่สำเร็จ')
@@ -53,11 +60,11 @@ export default function LoginPage() {
         <div className="relative z-10 flex flex-col justify-end p-10 pb-12">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 bg-[#44403C]/80 backdrop-blur rounded-2xl flex items-center justify-center">
-              <img src="/logo.png" alt="RevUp" className="w-9 h-9 object-contain" />
+              <img src="/logo.png" alt="Smart Moto Service Center" className="w-9 h-9 object-contain" />
             </div>
             <div>
-              <p className="text-white text-lg font-bold leading-none">RevUp</p>
-              <p className="text-white/50 text-xs mt-0.5">RevUp</p>
+              <p className="text-white text-2xl font-bold leading-tight">RevUp</p>
+              <p className="text-white/80 text-sm mt-0.5 tracking-wide">Smart Moto Service Center</p>
             </div>
           </div>
           <h2 className="text-white text-3xl font-bold leading-snug max-w-xs">
@@ -79,9 +86,9 @@ export default function LoginPage() {
         {/* Mobile logo */}
         <div className="flex items-center gap-2 mb-10 lg:hidden">
           <div className="w-9 h-9 bg-[#44403C] rounded-xl flex items-center justify-center">
-            <img src="/logo.png" alt="RevUp" className="w-7 h-7 object-contain" />
+            <img src="/logo.png" alt="Smart Moto Service Center" className="w-7 h-7 object-contain" />
           </div>
-          <span className="text-lg font-bold text-[#1E1E1E]">RevUp</span>
+          <span className="text-xl font-bold text-[#1E1E1E]">Smart Moto Service Center</span>
         </div>
 
         {/* Heading */}

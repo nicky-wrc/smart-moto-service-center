@@ -141,12 +141,12 @@ export default function EditPurchaseOrderPage() {
         const supplier = suppliers.find(s => s.id === supplierId)
 
         try {
+            // 1) อัปเดตข้อมูลรายการในใบสั่งซื้อ
             await purchaseOrderService.update(id!, {
                 supplierId: supplierId as number,
                 supplierName: (supplier as any)?.companyName || supplier?.name || 'Unknown Supplier',
                 deliveryDate,
                 totalAmount,
-                status: (action === 'submit' ? 'pending' : 'draft') as 'draft' | 'pending',
                 remarks,
                 managerMessage,
                 items: orderItems.map(item => ({
@@ -161,6 +161,11 @@ export default function EditPurchaseOrderPage() {
                     orderQuantity: item.orderQuantity
                 })),
             })
+
+            // 2) ถ้าเป็นการกด "ยืนยันการแก้ไขและส่งคำขอ" ให้เปลี่ยนสถานะเป็นรออนุมัติใน backend
+            if (action === 'submit') {
+                await purchaseOrderService.submit(id!)
+            }
 
             setValidationModal({
                 isOpen: true,

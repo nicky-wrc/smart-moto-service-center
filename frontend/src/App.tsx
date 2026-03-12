@@ -45,6 +45,11 @@ import PaymentHistoryDetailPage from './pages/accountant/PaymentHistoryDetailPag
 import Pendingpayment from './pages/accountant/Pendingpayment'
 import PendingpaymentDetail from './pages/accountant/PendingpaymentDetail'
 
+// Admin (ผู้ดูแลระบบ)
+import AdminLayout from './pages/admin/AdminLayout'
+import AdminIndex from './pages/admin'
+import AdminDashboardPage from './pages/admin/AdminDashboardPage'
+
 // Owner (เจ้าของร้าน)
 import OwnerLayout from './pages/owner/OwnerLayout'
 import OwnerIndex from './pages/owner'
@@ -160,6 +165,22 @@ export default function App() {
             <Route path="historys/:id" element={<PaymentHistoryDetailPage />} />
             <Route path="pendingpayment" element={<Pendingpayment />} />
             <Route path="pendingpayment/:id" element={<PendingpaymentDetail />} />
+          </Route>
+
+          {/* ผู้ดูแลระบบ (Admin) */}
+          <Route path="/admin" element={
+            <ProtectedRoute roles={['ADMIN']}>
+              <AdminLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<AdminIndex />} />
+            <Route path="dashboard" element={<AdminDashboardPage />} />
+            <Route path="reports" element={<OwnerReportsPage />} />
+            <Route path="employees" element={<OwnerEmployeesPage />} />
+            <Route path="stock" element={<OwnerStockPage />} />
+            <Route path="pending-jobs" element={<OwnerPendingJobsPage />} />
+            <Route path="purchase-requests" element={<OwnerPurchaseRequestsPage />} />
+            <Route path="purchase-requests/:id" element={<OwnerPurchaseRequestDetailPage />} />
           </Route>
 
           {/* เจ้าของร้าน */}

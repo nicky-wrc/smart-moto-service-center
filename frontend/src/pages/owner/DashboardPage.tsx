@@ -63,6 +63,15 @@ const STATUS_COLORS: Record<string, string> = {
 
 type Mode = 'daily' | 'weekly' | 'yearly' | 'custom'
 
+function isSameLocalDay(a: Date, b: Date) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  )
+}
+
+const today = new Date()
 const todayStr = new Date().toISOString().split('T')[0]
 const weekAgo = new Date(Date.now() - 6 * 86400000).toISOString().split('T')[0]
 
@@ -123,10 +132,12 @@ export default function DashboardPage() {
         setPendingCount(pendPay.length)
 
         // ─── Today stats ───
-        const todayDate = new Date().toISOString().split('T')[0]
-        const paidToday = payments.filter(p =>
-          p.paymentStatus === 'PAID' && (p.paidAt ?? p.createdAt).startsWith(todayDate)
-        )
+        const paidToday = payments.filter(p => {
+          if (p.paymentStatus !== 'PAID') return false
+          const ts = p.paidAt ?? p.createdAt
+          if (!ts) return false
+          return isSameLocalDay(new Date(ts), today)
+        })
         const rev = paidToday.reduce((s, p) => s + Number(p.totalAmount), 0)
         const cost = rev * 0.57 // estimated
         const prof = rev - cost
@@ -149,8 +160,11 @@ export default function DashboardPage() {
     const paid = payments.filter((p: any) => p.paymentStatus === 'PAID')
     if (m === 'daily') {
       // Hourly breakdown for today
-      const today = new Date().toISOString().split('T')[0]
-      const todayPaid = paid.filter((p: any) => (p.paidAt ?? p.createdAt).startsWith(today))
+      const todayPaid = paid.filter((p: any) => {
+        const ts = p.paidAt ?? p.createdAt
+        if (!ts) return false
+        return isSameLocalDay(new Date(ts), today)
+      })
       const hours = Array.from({ length: 11 }, (_, i) => {
         const h = 8 + i
         const hStr = `${String(h).padStart(2, '0')}:00`
@@ -173,7 +187,11 @@ export default function DashboardPage() {
         d.setDate(d.getDate() - (6 - i))
         const dayStr = d.toISOString().split('T')[0]
         const rev = paid
-          .filter((p: any) => (p.paidAt ?? p.createdAt).startsWith(dayStr))
+          .filter((p: any) => {
+            const ts = p.paidAt ?? p.createdAt
+            if (!ts) return false
+            return isSameLocalDay(new Date(ts), d)
+          })
           .reduce((s: number, p: any) => s + Number(p.totalAmount), 0)
         const cost = Math.round(rev * 0.57)
         return { time: DAY_LABELS[d.getDay()], revenue: rev, cost, profit: rev - cost }
@@ -185,7 +203,13 @@ export default function DashboardPage() {
       const months = Array.from({ length: 12 }, (_, i) => {
         const monthStr = `${year}-${String(i + 1).padStart(2, '0')}`
         const rev = paid
-          .filter((p: any) => (p.paidAt ?? p.createdAt).startsWith(monthStr))
+          .filter((p: any) => {
+            const ts = p.paidAt ?? p.createdAt
+            if (!ts) return false
+            const d2 = new Date(ts)
+            const d2Str = `${d2.getFullYear()}-${String(d2.getMonth() + 1).padStart(2, '0')}`
+            return d2Str === monthStr
+          })
           .reduce((s: number, p: any) => s + Number(p.totalAmount), 0)
         const cost = Math.round(rev * 0.57)
         return { time: MONTH_LABELS[i], revenue: rev, cost, profit: rev - cost }
@@ -199,7 +223,11 @@ export default function DashboardPage() {
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
         const dayStr = d.toISOString().split('T')[0]
         const rev = paid
-          .filter((p: any) => (p.paidAt ?? p.createdAt).startsWith(dayStr))
+          .filter((p: any) => {
+            const ts = p.paidAt ?? p.createdAt
+            if (!ts) return false
+            return isSameLocalDay(new Date(ts), d)
+          })
           .reduce((s: number, p: any) => s + Number(p.totalAmount), 0)
         const cost = Math.round(rev * 0.57)
         result.push({ time: `${d.getDate()}/${d.getMonth() + 1}`, revenue: rev, cost, profit: rev - cost })

@@ -139,9 +139,22 @@ function JobDetailModal({ job, onClose }: { job: JobOrder; onClose: () => void }
 const MONTH_LABELS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
 const DAY_LABELS = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส']
 
+function isSameLocalDay(a: Date, b: Date) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  )
+}
+
 function buildHourlySlots(payments: Payment[]): HourSlot[] {
-  const todayStr = new Date().toISOString().split('T')[0]
-  const todayPaid = payments.filter(p => p.paymentStatus === 'PAID' && (p.paidAt ?? p.createdAt).startsWith(todayStr))
+  const today = new Date()
+  const todayPaid = payments.filter(p => {
+    if (p.paymentStatus !== 'PAID') return false
+    const ts = p.paidAt || p.createdAt
+    if (!ts) return false
+    return isSameLocalDay(new Date(ts), today)
+  })
   return Array.from({ length: 10 }, (_, i) => {
     const h = 8 + i
     const key = `${String(h).padStart(2, '0')}:00`
@@ -158,14 +171,21 @@ function buildWeeklyDays(payments: Payment[], jobs: any[]): DayRow[] {
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(now)
     d.setDate(d.getDate() - (6 - i))
-    const dayStr = d.toISOString().split('T')[0]
-    const dayPaid = payments.filter(p => p.paymentStatus === 'PAID' && (p.paidAt ?? p.createdAt).startsWith(dayStr))
+    const dayPaid = payments.filter(p => {
+      if (p.paymentStatus !== 'PAID') return false
+      const ts = p.paidAt || p.createdAt
+      if (!ts) return false
+      return isSameLocalDay(new Date(ts), d)
+    })
     const rev = dayPaid.reduce((s, p) => s + Number(p.totalAmount), 0)
     const cost = Math.round(rev * 0.57)
-    const dayJobs = jobs.filter(j => j.createdAt?.startsWith(dayStr)).length
+    const dayJobs = jobs.filter(j => {
+      if (!j.createdAt) return false
+      return isSameLocalDay(new Date(j.createdAt), d)
+    }).length
     return {
       label: `${DAY_LABELS[d.getDay()]} ${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`,
-      date: dayStr,
+      date: d.toISOString().split('T')[0],
       jobs: dayJobs || dayPaid.length,
       revenue: rev, cost, profit: rev - cost,
     }
@@ -177,7 +197,14 @@ function buildMonthlyRows(payments: Payment[], jobs: any[]): MonthRow[] {
   return Array.from({ length: 12 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1)
     const monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-    const monthPaid = payments.filter(p => p.paymentStatus === 'PAID' && (p.paidAt ?? p.createdAt).startsWith(monthStr))
+    const monthPaid = payments.filter(p => {
+      if (p.paymentStatus !== 'PAID') return false
+      const ts = p.paidAt || p.createdAt
+      if (!ts) return false
+      const d2 = new Date(ts)
+      const d2Str = `${d2.getFullYear()}-${String(d2.getMonth() + 1).padStart(2, '0')}`
+      return d2Str === monthStr
+    })
     const rev = monthPaid.reduce((s, p) => s + Number(p.totalAmount), 0)
     const cost = Math.round(rev * 0.57)
     const monthJobs = jobs.filter(j => j.createdAt?.startsWith(monthStr)).length
@@ -190,9 +217,13 @@ function buildMonthlyRows(payments: Payment[], jobs: any[]): MonthRow[] {
 }
 
 function buildJobOrders(jobs: any[], payments: Payment[]): JobOrder[] {
-  const todayStr = new Date().toISOString().split('T')[0]
+  const today = new Date()
   return jobs
-    .filter(j => ['COMPLETED', 'PAID'].includes(j.status) && j.createdAt?.startsWith(todayStr))
+    .filter(j => {
+      if (!['COMPLETED', 'PAID'].includes(j.status)) return false
+      if (!j.createdAt) return false
+      return isSameLocalDay(new Date(j.createdAt), today)
+    })
     .map(j => {
       const payment = payments.find(p => p.jobId === j.id)
       const revenue = Number(payment?.totalAmount) || 0

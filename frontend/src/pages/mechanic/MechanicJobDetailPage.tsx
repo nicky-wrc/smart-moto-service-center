@@ -485,7 +485,7 @@ export default function MechanicJobDetailPage() {
                     disabled={actionLoading}
                     className="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-semibold py-3 rounded-xl transition-colors border-none cursor-pointer disabled:opacity-50"
                   >
-                    {actionLoading ? 'กำลังดำเนินการ...' : '✅ คืนของ + ส่งมอบรถเรียบร้อย'}
+                    {actionLoading ? 'กำลังดำเนินการ...' : 'คืนของ + ส่งมอบรถเรียบร้อย'}
                   </button>
                 )}
 

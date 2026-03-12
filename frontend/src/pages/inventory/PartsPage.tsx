@@ -216,17 +216,39 @@ export default function PartsPage() {
                 onClick={() => navigate(`/inventory/parts/${item.id}`)}
                 className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl hover:border-amber-300 transition-all duration-300 group flex flex-col cursor-pointer hover:-translate-y-1"
               >
-                {/* Image Container */}
-                <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
-                  <img
-                    src={item.imageUrl}
-                    alt={item.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://placehold.co/400x300/f8fafc/94a3b8.png?text=No+Image'
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                {/* Image / Icon Container */}
+                <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden flex items-center justify-center">
+                  {/* Default gear icon (always visible as base) */}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    className="w-14 h-14 text-gray-300 group-hover:text-amber-400 transition-colors duration-300"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.6}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M11.25 3.11c.46-1.48 2.04-1.48 2.5 0l.23.74a1.5 1.5 0 002.21.9l.7-.4c1.36-.78 2.96.82 2.18 2.18l-.4.7a1.5 1.5 0 00.9 2.21l.74.23c1.48.46 1.48 2.04 0 2.5l-.74.23a1.5 1.5 0 00-.9 2.21l.4.7c.78 1.36-.82 2.96-2.18 2.18l-.7-.4a1.5 1.5 0 00-2.21.9l-.23.74c-.46 1.48-2.04 1.48-2.5 0l-.23-.74a1.5 1.5 0 00-2.21-.9l-.7.4c-1.36.78-2.96-.82-2.18-2.18l.4-.7a1.5 1.5 0 00-.9-2.21l-.74-.23c-1.48-.46-1.48-2.04 0-2.5l.74-.23a1.5 1.5 0 00.9-2.21l-.4-.7C4.8 5.07 6.4 3.47 7.76 4.25l.7.4a1.5 1.5 0 002.21-.9l.23-.74z"
+                    />
+                    <circle cx="12" cy="12" r="3.25" />
+                  </svg>
+
+                  {/* If part has imageUrl, overlay it on top of the icon */}
+                  {item.imageUrl && (
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out"
+                      onError={(e) => {
+                        // ถ้าโหลดรูปไม่ได้ ให้ซ่อนรูป กลับไปใช้ไอคอนฟันเฟืองอย่างเดียว
+                        (e.target as HTMLImageElement).style.display = 'none'
+                      }}
+                    />
+                  )}
+
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-gray-900/35 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
                   {/* Status Badges */}
                   <div className="absolute top-3 right-3 flex flex-col gap-2 items-end z-10">

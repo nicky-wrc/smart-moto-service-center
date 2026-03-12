@@ -20,10 +20,29 @@ export class PurchaseOrdersService {
         if (!supplier) throw new NotFoundException(`Supplier ${data.supplierId} not found`);
 
         const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-        const count = await this.prisma.purchaseOrder.count({
-            where: { createdAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
+
+        // หาเลขรันล่าสุดของวันนั้นจาก poNo ปัจจุบัน แล้ว +1 เพื่อเลี่ยงชนกับข้อมูลเก่า
+        const latestToday = await this.prisma.purchaseOrder.findFirst({
+            where: {
+                poNo: {
+                    startsWith: `PO-${dateStr}-`,
+                },
+            },
+            orderBy: { poNo: 'desc' },
+            select: { poNo: true },
         });
-        const poNo = `PO-${dateStr}-${(count + 1).toString().padStart(4, '0')}`;
+
+        let nextSeq = 1;
+        if (latestToday?.poNo) {
+            const parts = latestToday.poNo.split('-');
+            const last = parts[2];
+            const parsed = parseInt(last, 10);
+            if (!Number.isNaN(parsed)) {
+                nextSeq = parsed + 1;
+            }
+        }
+
+        const poNo = `PO-${dateStr}-${nextSeq.toString().padStart(4, '0')}`;
 
         const totalAmount = data.items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0);
 

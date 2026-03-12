@@ -33,7 +33,13 @@ export default function AppHeader({ title }: AppHeaderProps) {
   return (
     <div className="flex items-center justify-between pl-6 pr-0 py-5">
       <div className="flex items-center gap-4">
-        <span className="text-white font-bold text-2xl tracking-wide drop-shadow-md">SM</span>
+        <div className="w-9 h-9 rounded-2xl bg-white/5 border border-white/20 flex items-center justify-center overflow-hidden shadow-sm">
+          <img
+            src="/logo.png"
+            alt="Smart Moto"
+            className="w-7 h-7 object-contain"
+          />
+        </div>
         <span className="text-white text-2xl font-medium drop-shadow-md">{title}</span>
       </div>
       <div className="relative">

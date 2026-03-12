@@ -233,18 +233,29 @@ export class PaymentsService {
     }
 
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const count = await this.prisma.payment.count({
+
+    // หาเลขรันล่าสุดของวันนั้นจาก paymentNo ที่มีอยู่ แล้ว +1 เพื่อเลี่ยงชน
+    const latestToday = await this.prisma.payment.findFirst({
       where: {
-        createdAt: {
-          gte: new Date(
-            new Date().getFullYear(),
-            new Date().getMonth(),
-            new Date().getDate(),
-          ),
+        paymentNo: {
+          startsWith: `PAY-${dateStr}-`,
         },
       },
+      orderBy: { paymentNo: 'desc' },
+      select: { paymentNo: true },
     });
-    const runNo = (count + 1).toString().padStart(4, '0');
+
+    let nextSeq = 1;
+    if (latestToday?.paymentNo) {
+      const parts = latestToday.paymentNo.split('-');
+      const last = parts[2];
+      const parsed = parseInt(last, 10);
+      if (!Number.isNaN(parsed)) {
+        nextSeq = parsed + 1;
+      }
+    }
+
+    const runNo = nextSeq.toString().padStart(4, '0');
     const paymentNo = `PAY-${dateStr}-${runNo}`;
 
     const pointsEarned = Math.floor(totalAmount / 100);
