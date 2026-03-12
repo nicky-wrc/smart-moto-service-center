@@ -31,25 +31,41 @@ function mapPaymentToJobData(p: Payment): JobDisplayData {
   }
   if (p.job?.partRequisitions) {
     for (const req of p.job.partRequisitions) {
-      if (req.status === 'APPROVED' && req.items) {
+      if ((req.status === 'APPROVED' || req.status === 'ISSUED') && req.items) {
         for (const ri of req.items) {
-          parts.push({ name: ri.part.name, price: Number(ri.unitPrice), qty: ri.quantity })
+          const unitPrice = Number((ri as any).unitPrice || ri.part?.unitPrice || 0)
+          parts.push({ name: ri.part?.name || 'อะไหล่', price: unitPrice, qty: ri.quantity })
         }
       }
     }
   }
-  // If no items found, use subtotal
+  // Fallback: use quotation items if no tracked items found
+  if (parts.length === 0) {
+    const quotation = (p.job as any)?.quotation
+    if (quotation?.items?.length) {
+      for (const qi of quotation.items) {
+        parts.push({
+          name: qi.itemName || qi.part?.name || 'รายการ',
+          price: Number(qi.unitPrice || qi.totalPrice / (qi.quantity || 1) || 0),
+          qty: qi.quantity || 1,
+        })
+      }
+    }
+  }
   if (parts.length === 0 && Number(p.subtotal) > 0) {
     parts.push({ name: 'ค่าบริการ', price: Number(p.subtotal), qty: 1 })
   }
+  const owner = (p as any).customer || (p.job?.motorcycle as any)?.owner
+  const customerName = owner ? `${owner.firstName || ''} ${owner.lastName || ''}`.trim() : '-'
+  const customerPhone = owner?.phoneNumber || owner?.phone || '-'
   return {
     jobNo: p.job?.jobNo ?? p.paymentNo,
     customer: {
-      name: p.customer ? `${p.customer.firstName} ${p.customer.lastName}` : '-',
+      name: customerName || '-',
       vehicle: p.job?.motorcycle
         ? `${formatMotorcycleName(p.job.motorcycle.brand, p.job.motorcycle.model)} ทะเบียน ${p.job.motorcycle.licensePlate}`
         : '-',
-      phone: p.customer?.phoneNumber ?? '-',
+      phone: customerPhone,
     },
     parts,
   }
@@ -80,16 +96,22 @@ function PendingpaymentDetail() {
       .finally(() => setLoading(false))
   }, [id])
 
-  const subtotal = jobData.parts.reduce((sum, item) => sum + item.price * item.qty, 0)
-  const vat = subtotal * 0.07
-  const total = subtotal + vat
+  const partsSubtotal = jobData.parts.reduce((sum, item) => sum + item.price * item.qty, 0)
+  const subtotal = paymentData ? Number(paymentData.subtotal) || partsSubtotal : partsSubtotal
+  const vat = paymentData ? Number(paymentData.vat) || subtotal * 0.07 : subtotal * 0.07
+  const total = paymentData ? Number(paymentData.totalAmount) || subtotal + vat : subtotal + vat
 
   const handleConfirmPayment = async () => {
     if (!paymentData) return
+    const amt = received ? Number(received) : total
+    if (amt < total) {
+      alert(`รับเงินไม่ครบ ขาดอีก ${(total - amt).toLocaleString(undefined, { maximumFractionDigits: 2 })} ฿`)
+      return
+    }
     try {
       await paymentsService.process(paymentData.id, {
         paymentMethod: paymentMethod === 'cash' ? 'CASH' : 'TRANSFER',
-        amountReceived: received ? Number(received) : undefined,
+        amountReceived: amt,
       })
       setOpenModal(true)
     } catch (err) {

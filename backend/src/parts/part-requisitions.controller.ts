@@ -31,7 +31,7 @@ export class PartRequisitionsController {
   ) {}
 
   @Post()
-  @Roles('TECHNICIAN', 'FOREMAN', 'STOCK_KEEPER', 'ADMIN', 'MANAGER')
+  @Roles('TECHNICIAN', 'FOREMAN', 'STOCK_KEEPER', 'ADMIN', 'MANAGER', 'SERVICE_ADVISOR')
   @ApiOperation({ summary: 'สร้างคำขอเบิกอะไหล่' })
   create(
     @Body() dto: CreateRequisitionDto,

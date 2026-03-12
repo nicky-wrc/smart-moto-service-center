@@ -174,7 +174,15 @@ export default function CreatePurchaseOrderPage() {
                 items: orderItems,
             }
 
-            const newOrder = await purchaseOrderService.create(orderData)
+            let newOrder = await purchaseOrderService.create(orderData)
+
+            if (action === 'submit') {
+                try {
+                    newOrder = await purchaseOrderService.submit(newOrder.id)
+                } catch {
+                    // submit may fail if PO is auto-approved; ignore
+                }
+            }
 
             // Clear draft localStorage
             localStorage.removeItem('draft_po_supplier')

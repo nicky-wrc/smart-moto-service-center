@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { paymentsService, type Payment } from "../../services/payments"
+import { api } from "../../lib/api"
 
 type PendingItem = {
   id: string
-  paymentId: number
+  paymentId: number | null
+  jobId: number
   customer: string
   plate: string
   total: number
@@ -12,12 +14,29 @@ type PendingItem = {
 }
 
 function mapPaymentToPending(p: Payment): PendingItem {
+  const owner = (p as any).customer || (p.job?.motorcycle as any)?.owner
+  const customerName = owner ? `${owner.firstName || ''} ${owner.lastName || ''}`.trim() : '-'
   return {
     id: p.job?.jobNo ?? p.paymentNo,
     paymentId: p.id,
-    customer: p.customer ? `${p.customer.firstName} ${p.customer.lastName}` : '-',
+    jobId: p.jobId,
+    customer: customerName || '-',
     plate: p.job?.motorcycle?.licensePlate ?? '-',
     total: Number(p.totalAmount),
+    status: 'รอชำระ',
+  }
+}
+
+function mapJobToPending(j: any): PendingItem {
+  const owner = j.motorcycle?.owner
+  const customerName = owner ? `${owner.firstName || ''} ${owner.lastName || ''}`.trim() : '-'
+  return {
+    id: j.jobNo,
+    paymentId: null,
+    jobId: j.id,
+    customer: customerName || '-',
+    plate: j.motorcycle?.licensePlate ?? '-',
+    total: Number(j.quotation?.totalAmount || 0),
     status: 'รอชำระ',
   }
 }
@@ -41,11 +60,22 @@ function Pendingpayment() {
   const [perPage, setPerPage] = useState(10)
   const [pendingData, setPendingData] = useState<PendingItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [creatingPayment, setCreatingPayment] = useState<number | null>(null)
 
   useEffect(() => {
     setLoading(true)
-    paymentsService.list({ status: 'PENDING' })
-      .then(payments => setPendingData(payments.map(mapPaymentToPending)))
+    Promise.all([
+      paymentsService.list({ status: 'PENDING' }),
+      api.get<any[]>('/jobs?status=READY_FOR_DELIVERY'),
+    ])
+      .then(([payments, jobs]) => {
+        const paymentJobIds = new Set(payments.map(p => p.jobId))
+        const fromPayments = payments.map(mapPaymentToPending)
+        const fromJobs = (jobs || [])
+          .filter(j => !paymentJobIds.has(j.id))
+          .map(mapJobToPending)
+        setPendingData([...fromPayments, ...fromJobs])
+      })
       .catch(err => console.error('Failed to load pending payments:', err))
       .finally(() => setLoading(false))
   }, [])
@@ -150,8 +180,28 @@ function Pendingpayment() {
                     </div>
                   </td>
                   <td className="px-6 py-5 text-center">
-                    <button onClick={() => navigate(`/accountant/pendingpayment/${item.paymentId}`)}
-                      className="flex items-center gap-2 bg-green-600 text-white text-xs px-4 py-2 rounded-md mx-auto cursor-pointer">
+                    <button
+                      disabled={creatingPayment === item.jobId}
+                      onClick={async () => {
+                        if (item.paymentId) {
+                          navigate(`/accountant/pendingpayment/${item.paymentId}`)
+                        } else {
+                          setCreatingPayment(item.jobId)
+                          try {
+                            const payment = await paymentsService.create({
+                              jobId: item.jobId,
+                              paymentMethod: 'CASH',
+                            })
+                            navigate(`/accountant/pendingpayment/${payment.id}`)
+                          } catch (err) {
+                            console.error('Failed to create payment:', err)
+                            alert('ไม่สามารถสร้างรายการชำระเงินได้')
+                          } finally {
+                            setCreatingPayment(null)
+                          }
+                        }
+                      }}
+                      className="flex items-center gap-2 bg-green-600 text-white text-xs px-4 py-2 rounded-md mx-auto cursor-pointer disabled:opacity-50">
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="size-4">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z" />
                       </svg>

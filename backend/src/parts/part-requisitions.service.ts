@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { PartRequisitionStatus, StockMovementType } from '@prisma/client';
+import { PartRequisitionStatus, StockMovementType, JobStatus } from '@prisma/client';
 import { ApproveRequisitionDto } from './dto/approve-requisition.dto';
 import { IssueRequisitionDto } from './dto/issue-requisition.dto';
 import { CreateRequisitionDto } from './dto/create-requisition.dto';
@@ -520,7 +520,7 @@ export class PartRequisitionsService {
     }
 
     // Update requisition status to ISSUED
-    return this.prisma.partRequisition.update({
+    const updated = await this.prisma.partRequisition.update({
       where: { id },
       data: {
         status: PartRequisitionStatus.ISSUED,
@@ -559,5 +559,29 @@ export class PartRequisitionsService {
         },
       },
     });
+
+    // Auto-transition job from WAITING_PARTS → READY when all requisitions are fulfilled
+    if (requisition.jobId) {
+      const pendingReqs = await this.prisma.partRequisition.count({
+        where: {
+          jobId: requisition.jobId,
+          status: { notIn: [PartRequisitionStatus.ISSUED, PartRequisitionStatus.REJECTED] },
+        },
+      });
+
+      if (pendingReqs === 0) {
+        const job = await this.prisma.job.findUnique({
+          where: { id: requisition.jobId },
+        });
+        if (job && job.status === JobStatus.WAITING_PARTS) {
+          await this.prisma.job.update({
+            where: { id: requisition.jobId },
+            data: { status: JobStatus.READY },
+          });
+        }
+      }
+    }
+
+    return updated;
   }
 }

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { api } from '../../lib/api'
 import Pagination from '../../components/Pagination'
 
-type Role = 'พนักงานรับรถ' | 'พนักงานคงคลัง' | 'พนักงานบัญชี' | 'หัวหน้าช่าง' | 'ช่าง'
+type Role = 'ผู้ดูแลระบบ' | 'ผู้จัดการ' | 'พนักงานรับรถ' | 'พนักงานคงคลัง' | 'พนักงานบัญชี' | 'หัวหน้าช่าง' | 'ช่าง'
 type SalaryType = 'fixed' | 'commission'
 
 type Employee = {
@@ -19,24 +19,26 @@ type Employee = {
 }
 
 const roleConfig: Record<Role, { color: string; salaryType: SalaryType }> = {
-  'พนักงานรับรถ':  { color: 'bg-stone-100 text-stone-600',        salaryType: 'fixed' },
+  'ผู้ดูแลระบบ':   { color: 'bg-red-100 text-red-600',            salaryType: 'fixed' },
+  'ผู้จัดการ':      { color: 'bg-purple-100 text-purple-600',      salaryType: 'fixed' },
+  'พนักงานรับรถ':  { color: 'bg-blue-100 text-blue-600',          salaryType: 'fixed' },
   'พนักงานคงคลัง': { color: 'bg-[#44403C]/10 text-[#44403C]',     salaryType: 'fixed' },
-  'พนักงานบัญชี':  { color: 'bg-stone-200 text-stone-700',        salaryType: 'fixed' },
+  'พนักงานบัญชี':  { color: 'bg-emerald-100 text-emerald-600',    salaryType: 'fixed' },
   'หัวหน้าช่าง':   { color: 'bg-[#F8981D]/15 text-[#F8981D]',    salaryType: 'commission' },
   'ช่าง':          { color: 'bg-[#F8981D]/8 text-[#F8981D]/80',  salaryType: 'commission' },
 }
 
 const ROLE_MAP: Record<string, Role> = {
-  RECEPTION: 'พนักงานรับรถ',
-  INVENTORY: 'พนักงานคงคลัง',
-  ACCOUNTANT: 'พนักงานบัญชี',
+  ADMIN: 'ผู้ดูแลระบบ',
+  MANAGER: 'ผู้จัดการ',
+  SERVICE_ADVISOR: 'พนักงานรับรถ',
+  STOCK_KEEPER: 'พนักงานคงคลัง',
+  CASHIER: 'พนักงานบัญชี',
   FOREMAN: 'หัวหน้าช่าง',
   TECHNICIAN: 'ช่าง',
-  ADMIN: 'หัวหน้าช่าง',
-  OWNER: 'หัวหน้าช่าง',
 }
 
-const roles: Role[] = ['พนักงานรับรถ', 'พนักงานคงคลัง', 'พนักงานบัญชี', 'หัวหน้าช่าง', 'ช่าง']
+const roles: Role[] = ['ผู้ดูแลระบบ', 'ผู้จัดการ', 'พนักงานรับรถ', 'พนักงานคงคลัง', 'พนักงานบัญชี', 'หัวหน้าช่าง', 'ช่าง']
 const emptyForm = { name: '', role: 'ช่าง' as Role, baseSalary: 18000, commissionPerJob: 300, phone: '', startDate: '' }
 
 export default function EmployeesPage() {
@@ -63,13 +65,15 @@ export default function EmployeesPage() {
           const jobsDone = jobs.filter((j: any) =>
             j.technicianId === u.id && ['COMPLETED', 'PAID'].includes(j.status)
           ).length
+          const baseSalary = u.baseSalary ? Number(u.baseSalary) : (cfg.salaryType === 'commission' ? 18000 : 15000)
+          const commissionRate = u.commissionRate ? Number(u.commissionRate) : 300
           return {
             id: u.id,
             name: u.name,
             role,
             salaryType: cfg.salaryType,
-            baseSalary: cfg.salaryType === 'commission' ? 18000 : 15000,
-            commissionPerJob: cfg.salaryType === 'commission' ? 300 : undefined,
+            baseSalary,
+            commissionPerJob: cfg.salaryType === 'commission' ? commissionRate : undefined,
             jobsDone: cfg.salaryType === 'commission' ? jobsDone : undefined,
             phone: u.phone ?? '-',
             startDate: u.createdAt ? new Date(u.createdAt).toLocaleDateString('th-TH') : '-',
@@ -154,10 +158,10 @@ export default function EmployeesPage() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
-        <div className="flex gap-2 shrink-0">
+        <div className="flex gap-2 shrink-0 overflow-x-auto">
           {(['ทั้งหมด', ...roles] as const).map(r => (
             <button key={r} onClick={() => setFilterRole(r)}
-              className={`px-4 py-2 rounded-full text-sm font-medium cursor-pointer border-none transition-colors ${filterRole === r ? 'bg-[#44403C] text-white' : 'bg-white text-stone-500 hover:bg-stone-100 border border-stone-200'}`}>
+              className={`px-3 py-2 rounded-full text-xs font-medium cursor-pointer border-none transition-colors whitespace-nowrap ${filterRole === r ? 'bg-[#44403C] text-white' : 'bg-white text-stone-500 hover:bg-stone-100 border border-stone-200'}`}>
               {r}
             </button>
           ))}

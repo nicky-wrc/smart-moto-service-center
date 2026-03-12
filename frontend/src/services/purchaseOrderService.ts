@@ -60,7 +60,8 @@ function mapBackendPO(po: any): PurchaseOrder {
     }))
 
     return {
-        id: po.poNo || String(po.id),
+        id: String(po.id),
+        poNo: po.poNo || undefined,
         supplierId: po.supplierId,
         supplierName: po.supplier?.name || '-',
         createdAt: po.createdAt ? new Date(po.createdAt).toISOString().split('T')[0] : '-',
@@ -96,7 +97,7 @@ export const purchaseOrderService = {
         if (params.search) {
             const q = params.search.toLowerCase()
             allPOs = allPOs.filter(po =>
-                po.id.toLowerCase().includes(q) ||
+                (po.poNo || po.id).toLowerCase().includes(q) ||
                 po.supplierName.toLowerCase().includes(q)
             )
         }
@@ -117,9 +118,7 @@ export const purchaseOrderService = {
 
     getById: async (id: string): Promise<PurchaseOrder | null> => {
         try {
-            const numId = parseInt(id, 10)
-            const endpoint = isNaN(numId) ? `/purchase-orders/${id}` : `/purchase-orders/${numId}`
-            const raw = await apiClient.get<any>(endpoint)
+            const raw = await apiClient.get<any>(`/purchase-orders/${id}`)
             return mapBackendPO(raw)
         } catch {
             return null
@@ -142,7 +141,6 @@ export const purchaseOrderService = {
     },
 
     update: async (id: string, dto: UpdatePODto): Promise<PurchaseOrder> => {
-        const numId = parseInt(id, 10)
         const payload: any = {}
         if (dto.remarks !== undefined) payload.notes = dto.remarks
         if (dto.deliveryDate) payload.expectedDate = dto.deliveryDate
@@ -153,34 +151,30 @@ export const purchaseOrderService = {
                 unitPrice: item.price,
             }))
         }
-        const raw = await apiClient.patch<any>(`/purchase-orders/${isNaN(numId) ? id : numId}`, payload)
+        const raw = await apiClient.patch<any>(`/purchase-orders/${id}`, payload)
         return mapBackendPO(raw)
     },
 
     submit: async (id: string): Promise<PurchaseOrder> => {
-        const numId = parseInt(id, 10)
-        const raw = await apiClient.patch<any>(`/purchase-orders/${isNaN(numId) ? id : numId}/submit`, {})
+        const raw = await apiClient.patch<any>(`/purchase-orders/${id}/submit`, {})
         return mapBackendPO(raw)
     },
 
     updateStatus: async (id: string, status: POStatus): Promise<PurchaseOrder> => {
-        const numId = parseInt(id, 10)
-        const endpoint = isNaN(numId) ? id : numId
         if (status === 'approved') {
-            const raw = await apiClient.patch<any>(`/purchase-orders/${endpoint}/approve`, {})
+            const raw = await apiClient.patch<any>(`/purchase-orders/${id}/approve`, {})
             return mapBackendPO(raw)
         }
         if (status === 'cancelled') {
-            const raw = await apiClient.patch<any>(`/purchase-orders/${endpoint}/cancel`, {})
+            const raw = await apiClient.patch<any>(`/purchase-orders/${id}/cancel`, {})
             return mapBackendPO(raw)
         }
-        const raw = await apiClient.patch<any>(`/purchase-orders/${endpoint}/submit`, {})
+        const raw = await apiClient.patch<any>(`/purchase-orders/${id}/submit`, {})
         return mapBackendPO(raw)
     },
 
     delete: async (id: string): Promise<void> => {
-        const numId = parseInt(id, 10)
-        return apiClient.delete<void>(`/purchase-orders/${isNaN(numId) ? id : numId}`)
+        return apiClient.delete<void>(`/purchase-orders/${id}`)
     },
 }
 

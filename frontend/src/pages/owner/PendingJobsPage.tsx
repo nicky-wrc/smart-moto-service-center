@@ -17,9 +17,14 @@ type PendingJob = {
 
 const STATUS_MAP: Record<string, string> = {
   PENDING: 'รอประเมิน',
+  WAITING_APPROVAL: 'รอลูกค้าอนุมัติ',
+  READY: 'พร้อมซ่อม',
   IN_PROGRESS: 'กำลังดำเนินงาน',
-  WAITING_PARTS: 'รอสั่งซื้อ',
-  COMPLETED: 'รอตรวจ',
+  WAITING_PARTS: 'รออะไหล่',
+  QC_PENDING: 'รอตรวจ QC',
+  CLEANING: 'ล้างรถ',
+  READY_FOR_DELIVERY: 'รอส่งมอบ',
+  COMPLETED: 'เสร็จสิ้น',
 }
 
 const statusColor: Record<string, string> = {
@@ -27,11 +32,14 @@ const statusColor: Record<string, string> = {
   'รอลูกค้าอนุมัติ': 'bg-stone-100 text-stone-500',
   'พร้อมซ่อม':       'bg-[#44403C]/10 text-[#44403C]',
   'กำลังดำเนินงาน': 'bg-[#F8981D]/15 text-[#F8981D]',
-  'รอตรวจ':          'bg-[#44403C]/10 text-[#44403C]',
-  'รอสั่งซื้อ':      'bg-stone-100 text-stone-500',
+  'รออะไหล่':        'bg-stone-100 text-stone-500',
+  'รอตรวจ QC':       'bg-[#44403C]/10 text-[#44403C]',
+  'ล้างรถ':          'bg-blue-50 text-blue-500',
+  'รอส่งมอบ':        'bg-emerald-50 text-emerald-600',
+  'เสร็จสิ้น':       'bg-emerald-50 text-emerald-600',
 }
 
-const allStatuses = ['ทั้งหมด', 'รอประเมิน', 'รอลูกค้าอนุมัติ', 'พร้อมซ่อม', 'กำลังดำเนินงาน', 'รอสั่งซื้อ', 'รอตรวจ']
+const allStatuses = ['ทั้งหมด', 'รอประเมิน', 'รอลูกค้าอนุมัติ', 'พร้อมซ่อม', 'กำลังดำเนินงาน', 'รออะไหล่', 'รอตรวจ QC', 'ล้างรถ', 'รอส่งมอบ']
 
 export default function PendingJobsPage() {
   const [pendingJobs, setPendingJobs] = useState<PendingJob[]>([])

@@ -1,42 +1,104 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { initialRequests, calcTotals, type ReqStatus, type PurchaseRequest } from '../../data/purchaseRequests'
+import { apiClient } from '../../services/api'
 
-const statusConfig: Record<ReqStatus, { color: string; bg: string; dot: string }> = {
-  'รออนุมัติ':   { color: 'text-[#F8981D]', bg: 'bg-[#F8981D]/10', dot: 'bg-[#F8981D]' },
-  'อนุมัติแล้ว': { color: 'text-emerald-600', bg: 'bg-emerald-50', dot: 'bg-emerald-500' },
-  'ปฏิเสธ':      { color: 'text-red-500',    bg: 'bg-red-50',      dot: 'bg-red-400' },
+interface BackendPO {
+  id: number
+  poNo: string
+  status: string
+  totalAmount: string | number
+  notes?: string
+  createdAt: string
+  expectedDate?: string
+  supplier?: { id: number; name: string }
+  createdBy?: { id: number; name: string }
+  approvedBy?: { id: number; name: string }
+  items: Array<{
+    id: number
+    quantity: number
+    unitPrice: string | number
+    totalPrice: string | number
+    part?: { id: number; partNo: string; name: string }
+  }>
 }
 
-const allStatuses: (ReqStatus | 'ทั้งหมด')[] = ['ทั้งหมด', 'รออนุมัติ', 'อนุมัติแล้ว', 'ปฏิเสธ']
+type FilterStatus = 'all' | 'pending' | 'approved' | 'cancelled'
 
-const TODAY = '09/03/2026'
-const APPROVER = 'เจ้าของ'
+const STATUS_LABEL: Record<string, string> = {
+  PENDING_APPROVAL: 'รออนุมัติ',
+  ORDERED: 'อนุมัติแล้ว',
+  APPROVED: 'อนุมัติแล้ว',
+  CANCELLED: 'ปฏิเสธ',
+  DRAFT: 'แบบร่าง',
+  COMPLETED: 'เสร็จสิ้น',
+}
+
+const STATUS_STYLE: Record<string, { color: string; bg: string; dot: string }> = {
+  PENDING_APPROVAL: { color: 'text-[#F8981D]', bg: 'bg-[#F8981D]/10', dot: 'bg-[#F8981D]' },
+  ORDERED: { color: 'text-emerald-600', bg: 'bg-emerald-50', dot: 'bg-emerald-500' },
+  APPROVED: { color: 'text-emerald-600', bg: 'bg-emerald-50', dot: 'bg-emerald-500' },
+  CANCELLED: { color: 'text-red-500', bg: 'bg-red-50', dot: 'bg-red-400' },
+  DRAFT: { color: 'text-stone-500', bg: 'bg-stone-100', dot: 'bg-stone-400' },
+  COMPLETED: { color: 'text-blue-500', bg: 'bg-blue-50', dot: 'bg-blue-400' },
+}
+
+const FILTER_TO_STATUSES: Record<FilterStatus, string[] | undefined> = {
+  all: undefined,
+  pending: ['PENDING_APPROVAL'],
+  approved: ['ORDERED', 'APPROVED', 'COMPLETED'],
+  cancelled: ['CANCELLED'],
+}
 
 export default function PurchaseRequestsPage() {
   const navigate = useNavigate()
-  const [requests, setRequests] = useState<PurchaseRequest[]>(initialRequests)
-  const [filterStatus, setFilterStatus] = useState<ReqStatus | 'ทั้งหมด'>('ทั้งหมด')
+  const [pos, setPos] = useState<BackendPO[]>([])
+  const [loading, setLoading] = useState(true)
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>('all')
   const [search, setSearch] = useState('')
   const [rejectingId, setRejectingId] = useState<number | null>(null)
   const [rejectNote, setRejectNote] = useState('')
 
-  const filtered = requests.filter(r => {
-    const matchStatus = filterStatus === 'ทั้งหมด' || r.status === filterStatus
-    const matchSearch = r.requestNo.includes(search) || r.requestedBy.includes(search) || r.supplier.includes(search)
-    return matchStatus && matchSearch
-  })
+  const fetchPOs = async () => {
+    setLoading(true)
+    try {
+      const data = await apiClient.get<BackendPO[]>('/purchase-orders')
+      setPos(Array.isArray(data) ? data : [])
+    } catch (e) {
+      console.error('Failed to fetch POs', e)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  const pendingCount  = requests.filter(r => r.status === 'รออนุมัติ').length
-  const approvedCount = requests.filter(r => r.status === 'อนุมัติแล้ว').length
-  const rejectedCount = requests.filter(r => r.status === 'ปฏิเสธ').length
+  useEffect(() => { fetchPOs() }, [])
 
-  const handleApprove = (id: number, e: React.MouseEvent) => {
+  const filtered = useMemo(() => {
+    const allowedStatuses = FILTER_TO_STATUSES[filterStatus]
+    return pos.filter(po => {
+      if (allowedStatuses && !allowedStatuses.includes(po.status)) return false
+      if (search) {
+        const q = search.toLowerCase()
+        const matchPo = po.poNo?.toLowerCase().includes(q)
+        const matchSupplier = po.supplier?.name?.toLowerCase().includes(q)
+        if (!matchPo && !matchSupplier) return false
+      }
+      return true
+    })
+  }, [pos, filterStatus, search])
+
+  const pendingCount = pos.filter(p => p.status === 'PENDING_APPROVAL').length
+  const approvedCount = pos.filter(p => p.status === 'ORDERED' || p.status === 'APPROVED').length
+  const cancelledCount = pos.filter(p => p.status === 'CANCELLED').length
+
+  const handleApprove = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation()
-    setRequests(prev => prev.map(r => r.id === id
-      ? { ...r, status: 'อนุมัติแล้ว', approvedBy: APPROVER, approvedAt: TODAY }
-      : r
-    ))
+    try {
+      await apiClient.patch(`/purchase-orders/${id}/approve`, {})
+      setPos(prev => prev.map(p => p.id === id ? { ...p, status: 'ORDERED' } : p))
+    } catch (err) {
+      console.error('Failed to approve PO', err)
+      alert('ไม่สามารถอนุมัติได้ กรุณาลองใหม่')
+    }
   }
 
   const handleRejectOpen = (id: number, e: React.MouseEvent) => {
@@ -45,23 +107,37 @@ export default function PurchaseRequestsPage() {
     setRejectNote('')
   }
 
-  const handleRejectConfirm = (id: number, e: React.MouseEvent) => {
+  const handleRejectConfirm = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation()
-    setRequests(prev => prev.map(r => r.id === id
-      ? { ...r, status: 'ปฏิเสธ', approvedBy: APPROVER, approvedAt: TODAY, rejectNote }
-      : r
-    ))
+    try {
+      await apiClient.patch(`/purchase-orders/${id}/cancel`, {})
+      setPos(prev => prev.map(p => p.id === id ? { ...p, status: 'CANCELLED' } : p))
+    } catch (err) {
+      console.error('Failed to cancel PO', err)
+      alert('ไม่สามารถปฏิเสธได้ กรุณาลองใหม่')
+    }
     setRejectingId(null)
     setRejectNote('')
   }
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-500"></div>
+      </div>
+    )
+  }
+
+  const filters: { key: FilterStatus; label: string }[] = [
+    { key: 'all', label: 'ทั้งหมด' },
+    { key: 'pending', label: 'รออนุมัติ' },
+    { key: 'approved', label: 'อนุมัติแล้ว' },
+    { key: 'cancelled', label: 'ปฏิเสธ' },
+  ]
+
   return (
     <div className="h-full flex flex-col overflow-hidden bg-[#F5F5F5]">
-
-      {/* Summary + filter */}
       <div className="shrink-0 p-6 pb-0 flex flex-col gap-5">
-
-        {/* Summary cards */}
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-[#44403C] rounded-2xl p-5">
             <div className="text-sm text-stone-300 mb-1">รออนุมัติ</div>
@@ -75,12 +151,11 @@ export default function PurchaseRequestsPage() {
           </div>
           <div className="bg-white border border-stone-200 rounded-2xl p-5">
             <div className="text-sm text-stone-400 mb-1">ปฏิเสธ</div>
-            <div className="text-3xl font-bold">{rejectedCount}</div>
+            <div className="text-3xl font-bold">{cancelledCount}</div>
             <div className="text-xs text-stone-400 mt-1">รายการ</div>
           </div>
         </div>
 
-        {/* Filter bar */}
         <div className="flex items-center gap-3">
           <div className="relative flex-1">
             <input type="text" value={search} onChange={e => setSearch(e.target.value)}
@@ -91,132 +166,95 @@ export default function PurchaseRequestsPage() {
             </svg>
           </div>
           <div className="flex gap-2 shrink-0">
-            {allStatuses.map(s => (
-              <button key={s} onClick={() => setFilterStatus(s)}
-                className={`px-4 py-2 rounded-full text-sm font-medium cursor-pointer border-none transition-colors ${filterStatus === s ? 'bg-[#44403C] text-white' : 'bg-white text-stone-500 hover:bg-stone-100'}`}>
-                {s}
+            {filters.map(f => (
+              <button key={f.key} onClick={() => setFilterStatus(f.key)}
+                className={`px-4 py-2 rounded-full text-sm font-medium cursor-pointer border-none transition-colors ${filterStatus === f.key ? 'bg-[#44403C] text-white' : 'bg-white text-stone-500 hover:bg-stone-100'}`}>
+                {f.label}
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* List */}
       <div className="flex-1 overflow-y-auto px-6 pt-5 pb-6 flex flex-col gap-4">
         {filtered.length === 0 && (
           <div className="bg-white rounded-2xl border border-stone-200 py-16 text-center text-stone-400">ไม่มีรายการ</div>
         )}
-        {filtered.map(req => {
-          const sc = statusConfig[req.status]
-          const { grand } = calcTotals(req)
-          const isRejecting = rejectingId === req.id
+        {filtered.map(po => {
+          const sc = STATUS_STYLE[po.status] || STATUS_STYLE['DRAFT']
+          const label = STATUS_LABEL[po.status] || po.status
+          const total = Number(po.totalAmount) || 0
+          const isRejecting = rejectingId === po.id
+          const createdDate = po.createdAt ? new Date(po.createdAt).toLocaleDateString('th-TH') : '-'
+          const expectedDate = po.expectedDate ? new Date(po.expectedDate).toLocaleDateString('th-TH') : '-'
           return (
-            <div key={req.id} className="bg-white rounded-2xl border border-stone-200 p-6 transition-all hover:shadow-sm">
+            <div key={po.id} className="bg-white rounded-2xl border border-stone-200 p-6 transition-all hover:shadow-sm">
               <div className="flex items-start justify-between gap-6">
-
-                {/* Left content */}
                 <div className="flex-1 min-w-0 flex flex-col gap-3">
-
-                  {/* Row 1: PO number + status */}
                   <div className="flex items-center gap-3">
-                    <span className="text-base font-bold text-[#1E1E1E]">{req.requestNo}</span>
+                    <span className="text-base font-bold text-[#1E1E1E]">{po.poNo}</span>
                     <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${sc.bg} ${sc.color}`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
-                      {req.status}
+                      {label}
                     </span>
                   </div>
-
-                  {/* Row 2: meta info */}
                   <div className="flex flex-wrap gap-4 text-sm text-stone-500">
                     <div className="flex items-center gap-1.5">
-                      <svg className="w-4 h-4 text-stone-300" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                      <span>ขอโดย <span className="font-medium text-stone-700">{req.requestedBy}</span></span>
+                      <span>ขอโดย <span className="font-medium text-stone-700">{po.createdBy?.name || '-'}</span></span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <svg className="w-4 h-4 text-stone-300" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                      </svg>
-                      <span className="font-medium text-stone-700">{req.supplier}</span>
+                      <span className="font-medium text-stone-700">{po.supplier?.name || '-'}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <svg className="w-4 h-4 text-stone-300" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <span>วันที่สั่ง <span className="font-medium text-stone-700">{req.orderDate}</span></span>
+                      <span>วันที่สร้าง <span className="font-medium text-stone-700">{createdDate}</span></span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <svg className="w-4 h-4 text-stone-300" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span>ต้องการรับ <span className="font-medium text-stone-700">{req.expectedDate}</span></span>
+                      <span>ต้องการรับ <span className="font-medium text-stone-700">{expectedDate}</span></span>
                     </div>
                   </div>
-
-                  {/* Row 3: reason */}
-                  <p className="text-sm text-stone-400 line-clamp-1">{req.reason}</p>
-
-                  {/* Reject note / approved by */}
-                  {req.rejectNote && (
-                    <div className="text-sm text-stone-500 bg-red-50 border border-red-100 rounded-xl px-4 py-2.5">
-                      <span className="text-red-400 font-medium">หมายเหตุการปฏิเสธ:</span> {req.rejectNote}
-                    </div>
-                  )}
-                  {req.approvedBy && (
+                  {po.notes && <p className="text-sm text-stone-400 line-clamp-1">{po.notes}</p>}
+                  {po.approvedBy && (
                     <div className="text-sm text-stone-400">
-                      {req.status === 'อนุมัติแล้ว' ? 'อนุมัติ' : 'ปฏิเสธ'}โดย <span className="font-medium text-stone-500">{req.approvedBy}</span> · {req.approvedAt}
+                      {po.status === 'ORDERED' ? 'อนุมัติ' : 'ดำเนินการ'}โดย <span className="font-medium text-stone-500">{po.approvedBy.name}</span>
                     </div>
                   )}
-
-                  {/* Reject inline input */}
                   {isRejecting && (
                     <div className="flex flex-col gap-2 mt-1" onClick={e => e.stopPropagation()}>
-                      <textarea
-                        autoFocus
-                        value={rejectNote}
-                        onChange={e => setRejectNote(e.target.value)}
-                        placeholder="ระบุเหตุผลการปฏิเสธ..."
-                        rows={2}
-                        className="w-full border border-red-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-red-400 resize-none bg-red-50/50"
-                      />
+                      <textarea autoFocus value={rejectNote} onChange={e => setRejectNote(e.target.value)}
+                        placeholder="ระบุเหตุผลการปฏิเสธ (ไม่บังคับ)..." rows={2}
+                        className="w-full border border-red-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-red-400 resize-none bg-red-50/50" />
                       <div className="flex gap-2">
                         <button onClick={e => { e.stopPropagation(); setRejectingId(null) }}
                           className="flex-1 py-2 rounded-xl border border-stone-200 text-sm text-stone-500 cursor-pointer bg-white hover:bg-stone-50 transition-colors">
                           ยกเลิก
                         </button>
-                        <button onClick={e => handleRejectConfirm(req.id, e)}
-                          disabled={!rejectNote.trim()}
-                          className="flex-1 py-2 rounded-xl bg-red-500 text-white text-sm font-medium cursor-pointer border-none disabled:opacity-40 hover:bg-red-600 transition-colors">
+                        <button onClick={e => handleRejectConfirm(po.id, e)}
+                          className="flex-1 py-2 rounded-xl bg-red-500 text-white text-sm font-medium cursor-pointer border-none hover:bg-red-600 transition-colors">
                           ยืนยันปฏิเสธ
                         </button>
                       </div>
                     </div>
                   )}
                 </div>
-
-                {/* Right: grand total */}
                 <div className="shrink-0 flex flex-col items-end gap-3">
                   <div className="text-right">
-                    <div className="text-xs text-stone-400 mb-0.5">ยอดสุทธิ (รวมภาษี)</div>
-                    <div className="text-2xl font-bold text-[#F8981D]">{grand.toLocaleString()} <span className="text-base font-normal">฿</span></div>
+                    <div className="text-xs text-stone-400 mb-0.5">ยอดรวม</div>
+                    <div className="text-2xl font-bold text-[#F8981D]">{total.toLocaleString()} <span className="text-base font-normal">฿</span></div>
                   </div>
-
-                  {/* Action buttons */}
                   <div className="flex items-center gap-2">
-                    {req.status === 'รออนุมัติ' && !isRejecting && (
+                    {po.status === 'PENDING_APPROVAL' && !isRejecting && (
                       <>
-                        <button onClick={e => handleRejectOpen(req.id, e)}
+                        <button onClick={e => handleRejectOpen(po.id, e)}
                           className="px-4 py-2 rounded-xl border border-red-200 text-sm font-medium text-red-500 bg-red-50 hover:bg-red-100 cursor-pointer transition-colors">
                           ปฏิเสธ
                         </button>
-                        <button onClick={e => handleApprove(req.id, e)}
+                        <button onClick={e => handleApprove(po.id, e)}
                           className="px-4 py-2 rounded-xl bg-emerald-500 text-white text-sm font-medium cursor-pointer border-none hover:bg-emerald-600 transition-colors">
                           อนุมัติ
                         </button>
                       </>
                     )}
-                    <button onClick={() => navigate(`/owner/purchase-requests/${req.id}`)}
+                    <button onClick={() => navigate(`/owner/purchase-requests/${po.id}`)}
                       className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-100 text-stone-500 hover:bg-stone-200 cursor-pointer border-none transition-colors">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />

@@ -361,7 +361,16 @@ export default function JobDetailPage() {
           motorcycleId: jobData.motorcycleId,
           customerId: jobData.motorcycle?.owner?.id ?? jobData.motorcycle?.ownerId,
           diagnosisNotes: jobData.diagnosisNotes ?? null,
-          mechanicReport: undefined,
+          mechanicReport: jobData.mechanicNotes
+            ? {
+                note: jobData.mechanicNotes,
+                reportedAt: jobData.updatedAt
+                  ? new Date(jobData.updatedAt).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                    + ' ' + new Date(jobData.updatedAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.'
+                  : '-',
+                photos: [] as string[],
+              }
+            : undefined,
         }
         setJob(mapped)
       } catch (err) {

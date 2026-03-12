@@ -76,7 +76,7 @@ export default function PurchaseOrderDetailPage() {
             <div className="flex flex-col gap-3 mb-6">
                 <div className="flex justify-between items-center">
                     <div className="flex items-center gap-3">
-                        <h1 className="text-xl font-medium text-gray-800">รายละเอียดใบสั่งซื้อที่ {request.id}</h1>
+                        <h1 className="text-xl font-medium text-gray-800">รายละเอียดใบสั่งซื้อที่ {request.poNo || request.id}</h1>
                         <StatusBadge status={request.status} />
                     </div>
                 </div>

@@ -10,10 +10,15 @@ export class UpdateJobDto extends PartialType(CreateJobDto) {
   @IsEnum(JobStatus)
   status?: JobStatus;
 
-  @ApiPropertyOptional({ example: 'ตรวจพบว่าลูกสูบสึก', description: 'บันทึกการวินิจฉัย' })
+  @ApiPropertyOptional({ example: 'ตรวจพบว่าลูกสูบสึก', description: 'บันทึกการวินิจฉัย (หัวหน้าช่าง)' })
   @IsOptional()
   @IsString()
   diagnosisNotes?: string;
+
+  @ApiPropertyOptional({ example: 'พบปัญหาเพิ่มเติม', description: 'บันทึกจากช่าง' })
+  @IsOptional()
+  @IsString()
+  mechanicNotes?: string;
 
   @ApiPropertyOptional({ example: 1, description: 'ID ของ Quotation ที่เชื่อมกับงาน' })
   @IsOptional()

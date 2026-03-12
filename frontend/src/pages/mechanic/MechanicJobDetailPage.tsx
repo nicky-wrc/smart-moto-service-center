@@ -69,7 +69,14 @@ export default function MechanicJobDetailPage() {
 
   useEffect(() => {
     api.get<any>(`/jobs/${id}`)
-      .then(data => { setJob(data); setLoading(false) })
+      .then(data => {
+        setJob(data)
+        if (data.mechanicNotes) {
+          setFindingNote(data.mechanicNotes)
+          setNotifiedForeman(true)
+        }
+        setLoading(false)
+      })
       .catch(() => setLoading(false))
   }, [id])
 
@@ -101,7 +108,7 @@ export default function MechanicJobDetailPage() {
   const handleCompleteJob = async () => {
     setActionLoading(true)
     try {
-      const updated = await api.patch<any>(`/jobs/${id}/complete`, { diagnosisNotes: findingNote || undefined })
+      const updated = await api.patch<any>(`/jobs/${id}/complete`, { mechanicNotes: findingNote || undefined })
       setJob(updated); setConfirmAction(null)
     } catch (e) { console.error(e) }
     setActionLoading(false)
@@ -149,7 +156,7 @@ export default function MechanicJobDetailPage() {
           onCancel={() => setConfirmAction(null)}
           onConfirm={async () => {
             try {
-              await api.patch(`/jobs/${id}`, { diagnosisNotes: findingNote })
+              await api.patch(`/jobs/${id}`, { mechanicNotes: findingNote })
               setNotifiedForeman(true)
               setConfirmAction(null)
             } catch (err) {
@@ -214,11 +221,19 @@ export default function MechanicJobDetailPage() {
                 )}
               </div>
 
-              {/* Diagnosis notes */}
+              {/* Foreman diagnosis notes */}
               {job.diagnosisNotes && (
                 <div className="bg-[#44403C]/5 border border-[#44403C]/15 rounded-xl px-4 py-3">
                   <p className="text-xs text-[#44403C]/70 uppercase tracking-wide mb-1.5">หมายเหตุจากหัวหน้าช่าง</p>
                   <p className="text-sm text-[#44403C] whitespace-pre-wrap">{job.diagnosisNotes}</p>
+                </div>
+              )}
+
+              {/* Mechanic notes (previously submitted) */}
+              {!isWorking && job.mechanicNotes && (
+                <div className="bg-[#F8981D]/5 border border-[#F8981D]/20 rounded-xl px-4 py-3">
+                  <p className="text-xs text-[#F8981D]/70 uppercase tracking-wide mb-1.5">รายงานจากช่าง</p>
+                  <p className="text-sm text-[#44403C] whitespace-pre-wrap">{job.mechanicNotes}</p>
                 </div>
               )}
 

@@ -87,6 +87,7 @@ model Job {
   appointmentId           Int?                  @unique
   completedAt             DateTime?
   diagnosisNotes          String?
+  mechanicNotes           String?
   quotationId             Int?                  @unique
   startedAt               DateTime?
   warrantyId              Int?                  @unique

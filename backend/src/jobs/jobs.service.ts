@@ -358,7 +358,7 @@ export class JobsService {
     });
   }
 
-  async completeJob(jobId: number, diagnosisNotes?: string) {
+  async completeJob(jobId: number, diagnosisNotes?: string, mechanicNotes?: string) {
     const job = await this.prisma.job.findUnique({
       where: { id: jobId },
     });
@@ -382,6 +382,7 @@ export class JobsService {
         status: JobStatus.QC_PENDING,
         completedAt: new Date(),
         ...(diagnosisNotes ? { diagnosisNotes } : {}),
+        ...(mechanicNotes ? { mechanicNotes } : {}),
       },
       include: {
         technician: {

@@ -1,5 +1,6 @@
 import { apiClient, USE_MOCK_DATA } from './api'
 import { mockRequests, type PartRequest, type RequestItem } from '../data/requestsMockData'
+import type { HistoryItem, HistoryStatus } from '../contexts/RequestHistoryContext'
 
 export type { PartRequest }
 
@@ -18,9 +19,10 @@ function mapBackendRequisition(r: any): PartRequest {
     const plate = motorcycle
         ? `${motorcycle.licensePlate || ''}`
         : '-'
-    const model = motorcycle
-        ? [motorcycle.brand, motorcycle.model].filter(Boolean).join(' ') || '-'
-        : '-'
+    const brandParts = motorcycle
+        ? [motorcycle.brand, motorcycle.model].filter((v: string) => v && v !== 'ไม่ระบุ')
+        : []
+    const model = brandParts.join(' ') || '-'
 
     const items: RequestItem[] = (r.items || []).map((item: any) => ({
         id: item.id,
@@ -41,6 +43,23 @@ function mapBackendRequisition(r: any): PartRequest {
             ? new Date(r.createdAt).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
             : '-',
         items,
+    }
+}
+
+function mapBackendHistoryItem(r: any): HistoryItem {
+    const base = mapBackendRequisition(r)
+    const backendStatus: string = r.status || ''
+    const status: HistoryStatus = backendStatus === 'REJECTED' ? 'ไม่อนุมัติการเบิก' : 'อนุมัติการเบิก'
+
+    const approvedDate = r.issuedAt || r.approvedAt || r.updatedAt
+    const approvedAt = approvedDate
+        ? new Date(approvedDate).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
+        : '-'
+
+    return {
+        ...base,
+        approvedAt,
+        status,
     }
 }
 
@@ -78,11 +97,14 @@ export const partRequisitionService = {
 
     approveRequest: async (id: number, items: { id: number; issuedQuantity: number }[]): Promise<void> => {
         if (!USE_MOCK_DATA) {
-            await apiClient.patch(`/part-requisitions/${id}/issue`, { issuedItems: items })
+            await apiClient.patch(`/part-requisitions/${id}/approve`, {})
+
+            await apiClient.patch(`/part-requisitions/${id}/issue`, {
+                items: items.map(i => ({ itemId: i.id, issuedQuantity: i.issuedQuantity })),
+            })
             return
         }
 
-        // MOCK
         return new Promise((resolve) => {
             setTimeout(() => {
                 console.info(`[Mock] Approved part-requisition #${id}`, items)
@@ -93,11 +115,10 @@ export const partRequisitionService = {
 
     rejectRequest: async (id: number, reason?: string): Promise<void> => {
         if (!USE_MOCK_DATA) {
-            await apiClient.patch(`/part-requisitions/${id}/reject`, { notes: reason })
+            await apiClient.patch(`/part-requisitions/${id}/reject`, { reason: reason || 'ปฏิเสธ' })
             return
         }
 
-        // MOCK
         return new Promise((resolve) => {
             setTimeout(() => {
                 console.info(`[Mock] Rejected part-requisition #${id}, reason:`, reason)
@@ -106,36 +127,34 @@ export const partRequisitionService = {
         })
     },
 
-    getHistory: async (): Promise<PartRequest[]> => {
+    getHistory: async (): Promise<HistoryItem[]> => {
         if (!USE_MOCK_DATA) {
             const statuses = ['APPROVED', 'REJECTED', 'ISSUED']
-            const results: PartRequest[] = []
+            const results: HistoryItem[] = []
             for (const s of statuses) {
                 try {
                     const raw = await apiClient.get<any[]>(`/part-requisitions?status=${s}`)
-                    if (Array.isArray(raw)) results.push(...raw.map(mapBackendRequisition))
+                    if (Array.isArray(raw)) results.push(...raw.map(mapBackendHistoryItem))
                 } catch { /* skip */ }
             }
             return results
         }
 
-        // MOCK
         return new Promise((resolve) => {
             setTimeout(() => resolve([]), 600)
         })
     },
 
-    getHistoryById: async (id: number): Promise<PartRequest | null> => {
+    getHistoryById: async (id: number): Promise<HistoryItem | null> => {
         if (!USE_MOCK_DATA) {
             try {
                 const raw = await apiClient.get<any>(`/part-requisitions/${id}`)
-                return mapBackendRequisition(raw)
+                return mapBackendHistoryItem(raw)
             } catch {
                 return null
             }
         }
 
-        // MOCK
         return new Promise((resolve) => {
             setTimeout(() => resolve(null), 500)
         })

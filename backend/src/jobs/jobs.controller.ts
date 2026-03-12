@@ -111,9 +111,9 @@ export class JobsController {
   @ApiOperation({ summary: 'ซ่อมเสร็จสิ้น (เปลี่ยน status เป็น QC_PENDING รอตรวจ)' })
   completeJob(
     @Param('id') id: string,
-    @Body() body?: { diagnosisNotes?: string },
+    @Body() body?: { diagnosisNotes?: string; mechanicNotes?: string },
   ) {
-    return this.jobsService.completeJob(+id, body?.diagnosisNotes);
+    return this.jobsService.completeJob(+id, body?.diagnosisNotes, body?.mechanicNotes);
   }
 
   @Patch(':id/cancel')

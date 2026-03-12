@@ -25,11 +25,11 @@ export class CreatePaymentDto {
   @IsNotEmpty()
   paymentMethod: PaymentMethod;
 
-  @ApiProperty({ example: 6420, description: 'ยอดรวมก่อนหักส่วนลด (บาท)' })
+  @ApiPropertyOptional({ example: 6420, description: 'ยอดรวมก่อนหักส่วนลด (ถ้าไม่ส่ง ระบบจะคำนวณให้)' })
+  @IsOptional()
   @IsNumber()
-  @IsNotEmpty()
   @Min(0)
-  subtotal: number;
+  subtotal?: number;
 
   @ApiPropertyOptional({ example: 0, description: 'ส่วนลด (บาท)' })
   @IsOptional()
@@ -49,11 +49,11 @@ export class CreatePaymentDto {
   @Min(0)
   vat?: number;
 
-  @ApiProperty({ example: 6420, description: 'ยอดรวมสุทธิ (บาท)' })
+  @ApiPropertyOptional({ example: 6420, description: 'ยอดรวมสุทธิ (ถ้าไม่ส่ง ระบบจะคำนวณให้)' })
+  @IsOptional()
   @IsNumber()
-  @IsNotEmpty()
   @Min(0)
-  totalAmount: number;
+  totalAmount?: number;
 
   @ApiPropertyOptional({ example: 'ชำระเงินสด', description: 'หมายเหตุ' })
   @IsOptional()

@@ -37,16 +37,26 @@ function fmtY(n: number) {
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: 'รอประเมิน',
+  WAITING_APPROVAL: 'รอลูกค้าอนุมัติ',
+  READY: 'พร้อมซ่อม',
   IN_PROGRESS: 'กำลังดำเนินการ',
-  WAITING_PARTS: 'รอสั่งซื้อ',
-  COMPLETED: 'รอตรวจ',
+  WAITING_PARTS: 'รออะไหล่',
+  QC_PENDING: 'รอตรวจ QC',
+  CLEANING: 'ล้างรถ',
+  READY_FOR_DELIVERY: 'รอส่งมอบ',
+  COMPLETED: 'เสร็จสิ้น',
 }
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: '#F8981D',
+  WAITING_APPROVAL: '#a8a29e',
+  READY: '#44403C',
   IN_PROGRESS: '#44403C',
   WAITING_PARTS: '#d6d3d1',
-  COMPLETED: '#78716c',
+  QC_PENDING: '#78716c',
+  CLEANING: '#3b82f6',
+  READY_FOR_DELIVERY: '#10b981',
+  COMPLETED: '#10b981',
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -83,7 +93,7 @@ export default function DashboardPage() {
         ])
 
         // ─── Pending breakdown ───
-        const activeStatuses = ['PENDING', 'IN_PROGRESS', 'WAITING_PARTS', 'COMPLETED']
+        const activeStatuses = ['PENDING', 'WAITING_APPROVAL', 'READY', 'IN_PROGRESS', 'WAITING_PARTS', 'QC_PENDING', 'CLEANING', 'READY_FOR_DELIVERY']
         const breakdown = activeStatuses
           .map(st => ({
             label: STATUS_LABEL[st] || st,

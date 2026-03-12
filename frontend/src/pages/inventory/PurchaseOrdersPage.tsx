@@ -89,7 +89,8 @@ export default function PurchaseOrdersPage() {
 
   const filteredOrders = useMemo(() => {
     const filtered = orders.filter(order => {
-      if (searchQuery && !order.id.toLowerCase().includes(searchQuery.toLowerCase())) return false
+      const displayId = (order.poNo || order.id).toLowerCase()
+      if (searchQuery && !displayId.includes(searchQuery.toLowerCase())) return false
       if (filterStatus && order.status !== filterStatus) return false
       if (filterDate && order.createdAt !== filterDate) return false
       if (filterSupplier && order.supplierId.toString() !== filterSupplier) return false
@@ -215,7 +216,7 @@ export default function PurchaseOrdersPage() {
                       className={`hover:bg-gray-50/80 transition-colors ${bgColor}`}
                       style={activeRowId === order.id ? { backgroundColor: '#F5F5F5' } : {}}
                     >
-                      <td className="py-4 px-6 text-left font-medium text-gray-900">{order.id}</td>
+                      <td className="py-4 px-6 text-left font-medium text-gray-900">{order.poNo || order.id}</td>
                       <td className="py-4 px-6 text-left">{order.supplierName}</td>
                       <td className="py-4 px-6">{order.createdAt}</td>
                       <td className="py-4 px-6">{order.deliveryDate}</td>

@@ -89,8 +89,8 @@ export interface ListPaymentsQuery {
 export const paymentsService = {
   list: (query?: ListPaymentsQuery) => {
     const params = new URLSearchParams()
-    if (query?.status) params.set('status', query.status)
-    if (query?.method) params.set('method', query.method)
+    if (query?.status) params.set('paymentStatus', query.status)
+    if (query?.method) params.set('paymentMethod', query.method)
     if (query?.customerId) params.set('customerId', String(query.customerId))
     if (query?.dateFrom) params.set('dateFrom', query.dateFrom)
     if (query?.dateTo) params.set('dateTo', query.dateTo)
@@ -109,8 +109,9 @@ export const paymentsService = {
 
   create: (dto: {
     jobId: number
-    customerId: number
     paymentMethod: PaymentMethod
+    subtotal?: number
+    totalAmount?: number
     discount?: number
     notes?: string
   }) => api.post<Payment>('/payments', dto),

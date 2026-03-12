@@ -140,6 +140,48 @@ export const updateCustomerDecision = async (
     id: string,
     decision: CustomerDecisionRequest
 ): Promise<CustomerDecisionResponse> => {
+    if (decision.decision === 'approved_waiting_parts') {
+        await apiClient.patch(`/jobs/${id}`, { status: 'WAITING_PARTS' })
+
+        const job = await apiClient.get<any>(`/jobs/${id}`)
+        const quotationItems = job.quotation?.items || []
+
+        let requisitionCreated = false
+        if (quotationItems.length > 0) {
+            const reqItems = quotationItems
+                .filter((qi: any) => qi.partId)
+                .map((qi: any) => ({
+                    partId: qi.partId,
+                    quantity: qi.quantity || 1,
+                    notes: qi.itemName || qi.part?.name,
+                }))
+
+            if (reqItems.length > 0) {
+                try {
+                    await apiClient.post('/part-requisitions', {
+                        jobId: Number(id),
+                        items: reqItems,
+                        notes: `สร้างอัตโนมัติจากใบเสนอราคา Job #${job.jobNo || id}`,
+                    })
+                    requisitionCreated = true
+                } catch (err) {
+                    console.error('Failed to create part requisition, reverting job status:', err)
+                    await apiClient.patch(`/jobs/${id}`, { status: 'WAITING_APPROVAL' })
+                    throw new Error('ไม่สามารถสร้างใบขอเบิกอะไหล่ได้ กรุณาลองใหม่อีกครั้ง')
+                }
+            }
+        }
+
+        const updated = await apiClient.get<any>(`/jobs/${id}`)
+        return {
+            success: true,
+            message: requisitionCreated
+                ? 'ลูกค้าอนุมัติ - สร้างใบขอเบิกอะไหล่แล้ว'
+                : 'ลูกค้าอนุมัติ - รอสั่งอะไหล่',
+            data: mapJobToForemanResponse(updated),
+        }
+    }
+
     const newStatus = decision.decision === 'approved' ? 'READY' : 'CANCELLED'
     await apiClient.patch(`/jobs/${id}`, { status: newStatus })
     const updated = await apiClient.get<any>(`/jobs/${id}`)
