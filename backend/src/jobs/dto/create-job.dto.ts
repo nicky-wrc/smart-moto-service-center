@@ -39,13 +39,19 @@ export class CreateJobDto {
   @IsString()
   valuables?: string;
 
-  @ApiPropertyOptional({ example: ['http://example.com/image1.jpg'], description: 'รูปภาพอาการเสีย (URL)' })
+  @ApiPropertyOptional({
+    example: ['http://example.com/image1.jpg'],
+    description: 'รูปภาพอาการเสีย (URL)',
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   images?: string[];
 
-  @ApiPropertyOptional({ example: ['เครื่องยนต์', 'สตาร์ทไม่ติด'], description: 'แท็กของงาน' })
+  @ApiPropertyOptional({
+    example: ['เครื่องยนต์', 'สตาร์ทไม่ติด'],
+    description: 'แท็กของงาน',
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })

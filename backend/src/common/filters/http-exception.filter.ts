@@ -14,24 +14,29 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
+    // Log the actual error for debugging
+    console.error(`[${request.method}] ${request.url} - Exception:`, exception);
+
     const status =
       exception instanceof HttpException
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    const message =
-      exception instanceof HttpException
-        ? exception.getResponse()
-        : 'Internal server error';
+    let message: any = 'Internal server error';
+
+    if (exception instanceof HttpException) {
+      message = exception.getResponse();
+    } else if (exception instanceof Error) {
+      // Capture actual error message (e.g., Prisma errors)
+      message = exception.message;
+    }
 
     response.status(status).json({
       statusCode: status,
       timestamp: new Date().toISOString(),
       path: request.url,
       message:
-        typeof message === 'string'
-          ? message
-          : (message as any).message || message,
+        typeof message === 'string' ? message : message.message || message,
     });
   }
 }

@@ -72,7 +72,7 @@ export default function ForemanResponseDetailPage() {
     
     // State for confirmation modal
     const [showConfirmModal, setShowConfirmModal] = useState(false)
-    const [pendingDecision, setPendingDecision] = useState<'approved' | 'rejected' | null>(null)
+    const [pendingDecision, setPendingDecision] = useState<'approved' | 'rejected' | 'approved_waiting_parts' | null>(null)
 
     // Loading state
     if (loading) {
@@ -133,7 +133,7 @@ export default function ForemanResponseDetailPage() {
     }
 
     // Handle customer decision
-    const handleDecisionClick = (decision: 'approved' | 'rejected') => {
+    const handleDecisionClick = (decision: 'approved' | 'rejected' | 'approved_waiting_parts') => {
         setPendingDecision(decision)
         setShowConfirmModal(true)
     }
@@ -151,11 +151,12 @@ export default function ForemanResponseDetailPage() {
             })
             
             // Show success message
-            alert(
-                pendingDecision === 'approved' 
-                    ? 'บันทึกการยืนยันเรียบร้อย หัวหน้าช่างได้รับแจ้งและสามารถเริ่มงานซ่อมได้แล้ว' 
-                    : 'บันทึกการยกเลิกเรียบร้อย หัวหน้าช่างได้รับแจ้งแล้ว'
-            )
+            const msgs: Record<string, string> = {
+                approved: 'บันทึกการยืนยันเรียบร้อย หัวหน้าช่างได้รับแจ้งและสามารถเริ่มงานซ่อมได้แล้ว',
+                approved_waiting_parts: 'บันทึกเรียบร้อย ระบบสร้างใบขอเบิกอะไหล่ให้พัสดุแล้ว',
+                rejected: 'บันทึกการยกเลิกเรียบร้อย หัวหน้าช่างได้รับแจ้งแล้ว',
+            }
+            alert(msgs[pendingDecision] || 'บันทึกเรียบร้อย')
             
             // Close modal and reset
             setShowConfirmModal(false)
@@ -442,26 +443,38 @@ export default function ForemanResponseDetailPage() {
                             </div>
                         </div>
                         
-                        <div className="flex gap-3">
+                        <div className="flex flex-col gap-3">
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => handleDecisionClick('approved')}
+                                    disabled={submitting}
+                                    className="flex-1 px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span>ลูกค้าตกลง - เริ่มซ่อม</span>
+                                </button>
+                                <button
+                                    onClick={() => handleDecisionClick('rejected')}
+                                    disabled={submitting}
+                                    className="flex-1 px-5 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span>ลูกค้าไม่ตกลง - ยกเลิก</span>
+                                </button>
+                            </div>
                             <button
-                                onClick={() => handleDecisionClick('approved')}
+                                onClick={() => handleDecisionClick('approved_waiting_parts')}
                                 disabled={submitting}
-                                className="flex-1 px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full px-5 py-3 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                                 </svg>
-                                <span>ลูกค้าตกลง - เริ่มซ่อม</span>
-                            </button>
-                            <button
-                                onClick={() => handleDecisionClick('rejected')}
-                                disabled={submitting}
-                                className="flex-1 px-5 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <span>ลูกค้าไม่ตกลง - ยกเลิก</span>
+                                <span>ลูกค้าอนุมัติ - ต้องสั่งอะไหล่ก่อน</span>
                             </button>
                         </div>
                     </div>
@@ -517,13 +530,19 @@ export default function ForemanResponseDetailPage() {
                     <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-fadeIn">
                         <div className="flex items-start gap-4 mb-4">
                             <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${
-                                pendingDecision === 'approved' 
-                                    ? 'bg-emerald-100' 
+                                pendingDecision === 'approved'
+                                    ? 'bg-emerald-100'
+                                    : pendingDecision === 'approved_waiting_parts'
+                                    ? 'bg-amber-100'
                                     : 'bg-red-100'
                             }`}>
                                 {pendingDecision === 'approved' ? (
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                ) : pendingDecision === 'approved_waiting_parts' ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                                     </svg>
                                 ) : (
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -533,13 +552,17 @@ export default function ForemanResponseDetailPage() {
                             </div>
                             <div className="flex-1">
                                 <h3 className="text-lg font-bold text-gray-800 mb-1">
-                                    {pendingDecision === 'approved' 
-                                        ? 'ยืนยันการเริ่มซ่อม?' 
+                                    {pendingDecision === 'approved'
+                                        ? 'ยืนยันการเริ่มซ่อม?'
+                                        : pendingDecision === 'approved_waiting_parts'
+                                        ? 'ยืนยันการสั่งอะไหล่?'
                                         : 'ยืนยันการยกเลิก?'}
                                 </h3>
                                 <p className="text-sm text-gray-600">
-                                    {pendingDecision === 'approved' 
-                                        ? 'คุณต้องการยืนยันว่าลูกค้าตกลงให้ดำเนินการซ่อมตามใบเสนอราคานี้ หัวหน้าช่างจะได้รับแจ้งและสามารถเริ่มงานซ่อมได้ทันที' 
+                                    {pendingDecision === 'approved'
+                                        ? 'คุณต้องการยืนยันว่าลูกค้าตกลงให้ดำเนินการซ่อมตามใบเสนอราคานี้ หัวหน้าช่างจะได้รับแจ้งและสามารถเริ่มงานซ่อมได้ทันที'
+                                        : pendingDecision === 'approved_waiting_parts'
+                                        ? 'ลูกค้าอนุมัติแล้ว แต่ต้องสั่งอะไหล่ก่อน ระบบจะสร้างใบขอเบิกอะไหล่ให้พัสดุอัตโนมัติ'
                                         : 'คุณต้องการยืนยันว่าลูกค้าไม่ตกลงการซ่อม งานซ่อมนี้จะถูกยกเลิก และหัวหน้าช่างจะได้รับแจ้ง'}
                                 </p>
                             </div>
@@ -575,10 +598,18 @@ export default function ForemanResponseDetailPage() {
                                 className={`flex-1 px-4 py-2.5 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                                     pendingDecision === 'approved'
                                         ? 'bg-emerald-500 hover:bg-emerald-600'
+                                        : pendingDecision === 'approved_waiting_parts'
+                                        ? 'bg-amber-500 hover:bg-amber-600'
                                         : 'bg-red-500 hover:bg-red-600'
                                 }`}
                             >
-                                {submitting ? 'กำลังบันทึก...' : (pendingDecision === 'approved' ? 'ยืนยันเริ่มซ่อม' : 'ยืนยันยกเลิก')}
+                                {submitting
+                                    ? 'กำลังบันทึก...'
+                                    : pendingDecision === 'approved'
+                                    ? 'ยืนยันเริ่มซ่อม'
+                                    : pendingDecision === 'approved_waiting_parts'
+                                    ? 'ยืนยัน - สร้างใบขออะไหล่'
+                                    : 'ยืนยันยกเลิก'}
                             </button>
                         </div>
                     </div>

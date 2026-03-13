@@ -1,5 +1,5 @@
-import { apiClient, USE_MOCK_DATA, buildQuery } from './api'
-import { mockPurchaseOrders, type PurchaseOrder, type POStatus } from '../data/purchaseOrdersMockData'
+import { apiClient, buildQuery } from './api'
+import type { PurchaseOrder, POStatus } from '../data/purchaseOrdersMockData'
 import type { PartItem } from '../data/partsMockData'
 
 export type { PurchaseOrder, POStatus }
@@ -36,148 +36,145 @@ export interface PaginatedPOResponse {
     currentPage: number
 }
 
-/**
- * Service for Purchase Order CRUD operations.
- *
- * To switch to real API:
- *   Set VITE_USE_MOCK_DATA=false in .env
- *   Backend endpoints expected:
- *     GET    /api/purchase-orders
- *     GET    /api/purchase-orders/:id
- *     POST   /api/purchase-orders
- *     PUT    /api/purchase-orders/:id
- *     PATCH  /api/purchase-orders/:id/status
- *     DELETE /api/purchase-orders/:id
- */
+const STATUS_MAP: Record<string, POStatus> = {
+    DRAFT: 'draft',
+    PENDING_APPROVAL: 'pending',
+    APPROVED: 'approved',
+    ORDERED: 'approved',
+    PARTIAL_RECEIVED: 'approved',
+    COMPLETED: 'approved',
+    CANCELLED: 'cancelled',
+}
+
+function mapBackendPO(po: any): PurchaseOrder {
+    const items: POItem[] = (po.items || []).map((item: any) => ({
+        id: item.part?.id ?? item.partId,
+        partCode: item.part?.partNo || '-',
+        name: item.part?.name || '-',
+        category: item.part?.category || '',
+        location: '',
+        quantity: item.part?.stockQuantity ?? 0,
+        price: Number(item.unitPrice) || 0,
+        imageUrl: '',
+        orderQuantity: item.quantity,
+    }))
+
+    return {
+        id: String(po.id),
+        poNo: po.poNo || undefined,
+        supplierId: po.supplierId,
+        supplierName: po.supplier?.name || '-',
+        createdAt: po.createdAt ? new Date(po.createdAt).toISOString().split('T')[0] : '-',
+        deliveryDate: po.expectedDate ? new Date(po.expectedDate).toISOString().split('T')[0] : '-',
+        totalAmount: Number(po.totalAmount) || 0,
+        status: STATUS_MAP[po.status] || 'draft',
+        items,
+        remarks: po.notes || undefined,
+    }
+}
+
 export const purchaseOrderService = {
 
-    /**
-     * Get all purchase orders with optional filters
-     */
     getAll: async (params: GetPOsParams = {}): Promise<PaginatedPOResponse> => {
-        if (!USE_MOCK_DATA) {
-            const qs = buildQuery({ ...params })
-            return apiClient.get<PaginatedPOResponse>(`/purchase-orders${qs}`)
+        const backendStatus = params.status
+            ? Object.entries(STATUS_MAP).find(([, v]) => v === params.status)?.[0]
+            : undefined
+        const qs = buildQuery({
+            status: backendStatus,
+            supplierId: params.supplierId,
+        })
+        const raw = await apiClient.get<any>(`/purchase-orders${qs}`)
+
+        let allPOs: PurchaseOrder[]
+        if (Array.isArray(raw)) {
+            allPOs = raw.map(mapBackendPO)
+        } else if (raw && Array.isArray(raw.data)) {
+            return raw as PaginatedPOResponse
+        } else {
+            allPOs = []
         }
 
-        // MOCK
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                let filtered = [...mockPurchaseOrders]
-                if (params.status) {
-                    filtered = filtered.filter(po => po.status === params.status)
-                }
-                if (params.search) {
-                    const q = params.search.toLowerCase()
-                    filtered = filtered.filter(po =>
-                        po.id.toLowerCase().includes(q) ||
-                        po.supplierName.toLowerCase().includes(q)
-                    )
-                }
-                const page = params.page ?? 1
-                const limit = params.limit ?? 20
-                const totalDocs = filtered.length
-                const totalPages = Math.ceil(totalDocs / limit)
-                const data = filtered.slice((page - 1) * limit, page * limit)
-                resolve({ data, totalDocs, totalPages, currentPage: page })
-            }, 400)
-        })
+        if (params.search) {
+            const q = params.search.toLowerCase()
+            allPOs = allPOs.filter(po =>
+                (po.poNo || po.id).toLowerCase().includes(q) ||
+                po.supplierName.toLowerCase().includes(q)
+            )
+        }
+
+        const page = params.page || 1
+        const limit = params.limit || 20
+        const totalDocs = allPOs.length
+        const totalPages = Math.max(1, Math.ceil(totalDocs / limit))
+        const start = (page - 1) * limit
+
+        return {
+            data: allPOs.slice(start, start + limit),
+            totalDocs,
+            totalPages,
+            currentPage: page,
+        }
     },
 
-    /**
-     * Get a single purchase order by ID
-     */
     getById: async (id: string): Promise<PurchaseOrder | null> => {
-        if (!USE_MOCK_DATA) {
-            return apiClient.get<PurchaseOrder>(`/purchase-orders/${id}`)
+        try {
+            const raw = await apiClient.get<any>(`/purchase-orders/${id}`)
+            return mapBackendPO(raw)
+        } catch {
+            return null
         }
-
-        // MOCK
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve(mockPurchaseOrders.find(po => po.id === id) ?? null)
-            }, 400)
-        })
     },
 
-    /**
-     * Create a new purchase order
-     */
     create: async (dto: CreatePODto): Promise<PurchaseOrder> => {
-        if (!USE_MOCK_DATA) {
-            return apiClient.post<PurchaseOrder>('/purchase-orders', dto)
+        const payload = {
+            supplierId: dto.supplierId,
+            notes: dto.remarks,
+            expectedDate: dto.deliveryDate,
+            items: dto.items.map(item => ({
+                partId: item.id,
+                quantity: item.orderQuantity,
+                unitPrice: item.price,
+            })),
         }
-
-        // MOCK
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '')
-                const rand = Math.floor(Math.random() * 1000).toString().padStart(3, '0')
-                const newPO: PurchaseOrder = {
-                    id: `PO-${dateStr}-${rand}`,
-                    createdAt: new Date().toISOString().split('T')[0],
-                    ...dto,
-                }
-                mockPurchaseOrders.unshift(newPO)
-                resolve(newPO)
-            }, 500)
-        })
+        const raw = await apiClient.post<any>('/purchase-orders', payload)
+        return mapBackendPO(raw)
     },
 
-    /**
-     * Update an existing purchase order
-     */
     update: async (id: string, dto: UpdatePODto): Promise<PurchaseOrder> => {
-        if (!USE_MOCK_DATA) {
-            return apiClient.put<PurchaseOrder>(`/purchase-orders/${id}`, dto)
+        const payload: any = {}
+        if (dto.remarks !== undefined) payload.notes = dto.remarks
+        if (dto.deliveryDate) payload.expectedDate = dto.deliveryDate
+        if (dto.items) {
+            payload.items = dto.items.map(item => ({
+                partId: item.id,
+                quantity: item.orderQuantity,
+                unitPrice: item.price,
+            }))
         }
-
-        // MOCK
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                const idx = mockPurchaseOrders.findIndex(po => po.id === id)
-                if (idx === -1) { reject(new Error(`PO ${id} not found`)); return }
-                const updated = { ...mockPurchaseOrders[idx], ...dto }
-                mockPurchaseOrders[idx] = updated
-                resolve(updated)
-            }, 500)
-        })
+        const raw = await apiClient.patch<any>(`/purchase-orders/${id}`, payload)
+        return mapBackendPO(raw)
     },
 
-    /**
-     * Update only the status of a purchase order
-     */
+    submit: async (id: string): Promise<PurchaseOrder> => {
+        const raw = await apiClient.patch<any>(`/purchase-orders/${id}/submit`, {})
+        return mapBackendPO(raw)
+    },
+
     updateStatus: async (id: string, status: POStatus): Promise<PurchaseOrder> => {
-        if (!USE_MOCK_DATA) {
-            return apiClient.patch<PurchaseOrder>(`/purchase-orders/${id}/status`, { status })
+        if (status === 'approved') {
+            const raw = await apiClient.patch<any>(`/purchase-orders/${id}/approve`, {})
+            return mapBackendPO(raw)
         }
-
-        // MOCK
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                const idx = mockPurchaseOrders.findIndex(po => po.id === id)
-                if (idx === -1) { reject(new Error(`PO ${id} not found`)); return }
-                mockPurchaseOrders[idx].status = status
-                resolve(mockPurchaseOrders[idx])
-            }, 400)
-        })
+        if (status === 'cancelled') {
+            const raw = await apiClient.patch<any>(`/purchase-orders/${id}/cancel`, {})
+            return mapBackendPO(raw)
+        }
+        const raw = await apiClient.patch<any>(`/purchase-orders/${id}/submit`, {})
+        return mapBackendPO(raw)
     },
 
-    /**
-     * Delete a purchase order
-     */
     delete: async (id: string): Promise<void> => {
-        if (!USE_MOCK_DATA) {
-            return apiClient.delete<void>(`/purchase-orders/${id}`)
-        }
-
-        // MOCK
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                const idx = mockPurchaseOrders.findIndex(po => po.id === id)
-                if (idx !== -1) mockPurchaseOrders.splice(idx, 1)
-                resolve()
-            }, 400)
-        })
+        return apiClient.delete<void>(`/purchase-orders/${id}`)
     },
 }
+

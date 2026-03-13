@@ -13,7 +13,12 @@ import { CustomersService } from './customers.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { CreateCustomerWithMotorcycleDto } from './dto/create-customer-motorcycle.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
-import { ApiBearerAuth, ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -23,7 +28,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 @ApiBearerAuth('JWT-auth')
 @Controller('customers')
 export class CustomersController {
-  constructor(private readonly customersService: CustomersService) { }
+  constructor(private readonly customersService: CustomersService) {}
 
   @Post()
   @Roles('SERVICE_ADVISOR', 'ADMIN', 'MANAGER')
@@ -34,14 +39,22 @@ export class CustomersController {
 
   @Post('with-motorcycle')
   @Roles('SERVICE_ADVISOR', 'ADMIN', 'MANAGER')
-  @ApiOperation({ summary: 'สร้าง Customer ใหม่พร้อมเพิ่มข้อมูลมอเตอร์ไซค์ในครั้งเดียว' })
-  createWithMotorcycle(@Body() createCustomerWithMotorcycleDto: CreateCustomerWithMotorcycleDto) {
-    return this.customersService.createWithMotorcycle(createCustomerWithMotorcycleDto);
+  @ApiOperation({
+    summary: 'สร้าง Customer ใหม่พร้อมเพิ่มข้อมูลมอเตอร์ไซค์ในครั้งเดียว',
+  })
+  createWithMotorcycle(
+    @Body() createCustomerWithMotorcycleDto: CreateCustomerWithMotorcycleDto,
+  ) {
+    return this.customersService.createWithMotorcycle(
+      createCustomerWithMotorcycleDto,
+    );
   }
 
   @Get('search')
   @Roles('SERVICE_ADVISOR', 'CASHIER', 'ADMIN', 'MANAGER')
-  @ApiOperation({ summary: 'ค้นหา Customer จากชื่อ, เบอร์โทร หรือป้ายทะเบียนรถ' })
+  @ApiOperation({
+    summary: 'ค้นหา Customer จากชื่อ, เบอร์โทร หรือป้ายทะเบียนรถ',
+  })
   @ApiQuery({ name: 'query', required: true, type: String })
   search(@Query('query') query: string) {
     return this.customersService.search(query);

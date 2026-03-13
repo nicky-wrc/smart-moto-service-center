@@ -1,5 +1,6 @@
 export interface RequestItem {
   id: number
+  partId?: number
   partCode: string
   partName: string
   quantity: number
@@ -15,6 +16,8 @@ export interface PartRequest {
   licensePlate: string
   requestedAt: string
   items: RequestItem[]
+  /** PENDING | APPROVED | REJECTED | ISSUED */
+  status?: string
 }
 
 export const mockRequests: PartRequest[] = [

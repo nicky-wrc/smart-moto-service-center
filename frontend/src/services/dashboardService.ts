@@ -55,8 +55,82 @@ function poColor(s: string) {
 export const dashboardService = {
     fetchDashboardMetrics: async (): Promise<DashboardMetrics> => {
         if (!USE_MOCK_DATA) {
-            // Real API — backend handles all aggregation server-side
-            return apiClient.get<DashboardMetrics>('/inventory/dashboard')
+            try {
+                const [parts, pos, reqs] = await Promise.all([
+                    apiClient.get<any[]>('/parts').catch(() => []),
+                    apiClient.get<any[]>('/purchase-orders').catch(() => []),
+                    apiClient.get<any[]>('/part-requisitions').catch(() => []),
+                ])
+
+                const allParts = Array.isArray(parts) ? parts : []
+                const allPOs = Array.isArray(pos) ? pos : []
+                const allReqs = Array.isArray(reqs) ? reqs : []
+
+                const lowStockParts: PartItem[] = allParts
+                    .filter(p => p.stockQuantity <= LOW_STOCK_THRESHOLD)
+                    .sort((a, b) => a.stockQuantity - b.stockQuantity)
+                    .map(p => ({
+                        id: p.id,
+                        partCode: p.partNo,
+                        name: p.name,
+                        category: p.category || '',
+                        location: '',
+                        quantity: p.stockQuantity ?? 0,
+                        price: Number(p.unitPrice) || 0,
+                        imageUrl: '',
+                    }))
+
+                const totalStockValue = allParts.reduce((s, p) => s + (p.stockQuantity ?? 0) * (Number(p.unitPrice) || 0), 0)
+
+                const categoryMap: Record<string, number> = {}
+                allParts.forEach(p => {
+                    const cat = p.category || 'อื่นๆ'
+                    categoryMap[cat] = (categoryMap[cat] ?? 0) + (p.stockQuantity ?? 0)
+                })
+                const categories = Object.entries(categoryMap).sort((a, b) => b[1] - a[1])
+                const totalCategoryQty = categories.reduce((s, [, q]) => s + q, 0)
+
+                const poStatusCount: Record<string, number> = {}
+                allPOs.forEach(po => {
+                    const mapped = ({ DRAFT: 'draft', PENDING_APPROVAL: 'pending', ORDERED: 'approved', CANCELLED: 'cancelled', COMPLETED: 'approved' } as Record<string, string>)[po.status] || 'draft'
+                    poStatusCount[mapped] = (poStatusCount[mapped] ?? 0) + 1
+                })
+
+                const partReqCount: Record<string, { name: string; count: number; code: string }> = {}
+                allReqs.forEach(req => {
+                    (req.items || []).forEach((item: any) => {
+                        const code = item.part?.partNo || '-'
+                        const name = item.part?.name || '-'
+                        if (!partReqCount[code]) partReqCount[code] = { name, count: 0, code }
+                        partReqCount[code].count += item.requestedQuantity || item.quantity || 0
+                    })
+                })
+                const topRequestedParts = Object.values(partReqCount).sort((a, b) => b.count - a.count).slice(0, 5)
+
+                const fallbackActivities: Activity[] = allPOs.slice(0, 10).map(po => ({
+                    id: po.poNo || String(po.id),
+                    type: 'po' as const,
+                    label: po.poNo || String(po.id),
+                    sub: po.supplier?.name || '-',
+                    date: po.createdAt ? new Date(po.createdAt).toISOString().split('T')[0] : '-',
+                    badge: poLabel(({ DRAFT: 'draft', PENDING_APPROVAL: 'pending', ORDERED: 'approved', CANCELLED: 'cancelled' } as Record<string, string>)[po.status] || 'draft'),
+                    badgeColor: poColor(({ DRAFT: 'draft', PENDING_APPROVAL: 'pending', ORDERED: 'approved', CANCELLED: 'cancelled' } as Record<string, string>)[po.status] || 'draft'),
+                }))
+
+                return {
+                    totalItems: allParts.length,
+                    lowStockParts,
+                    totalStockValue,
+                    purchaseOrderCount: allPOs.length,
+                    topRequestedParts,
+                    categories,
+                    totalCategoryQty,
+                    poStatusCount,
+                    fallbackActivities,
+                }
+            } catch {
+                // Fall through to mock data
+            }
         }
 
         // ─── MOCK IMPLEMENTATION ────────────────────────────────────────────

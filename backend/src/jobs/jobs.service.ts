@@ -6,27 +6,35 @@ import {
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
 import { PrismaService } from '../prisma/prisma.service';
-import { JobStatus, JobType } from '@prisma/client';
+import { JobStatus, JobType, StockMovementType } from '@prisma/client';
+import { ReturnPartsDto } from './dto/return-parts.dto';
 
 @Injectable()
 export class JobsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async create(createJobDto: CreateJobDto, userId: number) {
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const count = await this.prisma.job.count({
+    const prefix = `JOB-${dateStr}-`;
+
+    // Find the highest existing jobNo for today to avoid unique constraint violations
+    const lastJob = await this.prisma.job.findFirst({
       where: {
-        createdAt: {
-          gte: new Date(
-            new Date().getFullYear(),
-            new Date().getMonth(),
-            new Date().getDate(),
-          ),
-        },
+        jobNo: { startsWith: prefix },
       },
+      orderBy: { jobNo: 'desc' },
+      select: { jobNo: true },
     });
-    const runNo = (count + 1).toString().padStart(4, '0');
-    const jobNo = `JOB-${dateStr}-${runNo}`;
+
+    let nextNum = 1;
+    if (lastJob?.jobNo) {
+      const lastNum = parseInt(lastJob.jobNo.replace(prefix, ''), 10);
+      if (!isNaN(lastNum)) {
+        nextNum = lastNum + 1;
+      }
+    }
+    const runNo = nextNum.toString().padStart(4, '0');
+    const jobNo = `${prefix}${runNo}`;
 
     return this.prisma.job.create({
       data: {
@@ -104,6 +112,13 @@ export class JobsService {
             scheduledDate: true,
           },
         },
+        quotation: {
+          include: {
+            _count: {
+              select: { items: true },
+            },
+          },
+        },
       },
       orderBy: [{ jobType: 'asc' }, { createdAt: 'desc' }],
     });
@@ -144,6 +159,32 @@ export class JobsService {
         checklistItems: true,
         outsources: true,
         payment: true,
+        quotation: {
+          include: {
+            items: {
+              include: {
+                part: { select: { id: true, name: true } },
+              },
+            },
+          },
+        },
+        partRequisitions: {
+          include: {
+            items: {
+              include: {
+                part: {
+                  select: {
+                    id: true,
+                    name: true,
+                    partNo: true,
+                    unitPrice: true,
+                    unit: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
   }
@@ -209,7 +250,7 @@ export class JobsService {
       data: {
         technicianId,
         ...(job.status === JobStatus.PENDING
-          ? { status: JobStatus.IN_PROGRESS, startedAt: new Date() }
+          ? { status: JobStatus.PENDING }
           : {}),
       },
       include: {
@@ -298,10 +339,11 @@ export class JobsService {
 
     if (
       job.status !== JobStatus.PENDING &&
-      job.status !== JobStatus.WAITING_PARTS
+      job.status !== JobStatus.WAITING_PARTS &&
+      job.status !== JobStatus.READY
     ) {
       throw new BadRequestException(
-        `Cannot start job with status ${job.status}. Job must be PENDING or WAITING_PARTS to start.`,
+        `Cannot start job with status ${job.status}. Job must be PENDING, READY or WAITING_PARTS to start.`,
       );
     }
 
@@ -334,7 +376,12 @@ export class JobsService {
     });
   }
 
-  async completeJob(jobId: number, diagnosisNotes?: string) {
+  async completeJob(
+    jobId: number,
+    diagnosisNotes?: string,
+    mechanicNotes?: string,
+    photos?: string[],
+  ) {
     const job = await this.prisma.job.findUnique({
       where: { id: jobId },
     });
@@ -358,6 +405,8 @@ export class JobsService {
         status: JobStatus.QC_PENDING,
         completedAt: new Date(),
         ...(diagnosisNotes ? { diagnosisNotes } : {}),
+        ...(mechanicNotes ? { mechanicNotes } : {}),
+        ...(photos && photos.length > 0 ? { images: { push: photos } } : {}),
       },
       include: {
         technician: {
@@ -457,62 +506,236 @@ export class JobsService {
     });
   }
 
-  async qcCheck(jobId: number, dto: { passed: boolean; notes?: string }, userId: number) {
+  async qcCheck(
+    jobId: number,
+    dto: { passed: boolean; notes?: string },
+    _userId: number,
+  ) {
     const job = await this.prisma.job.findUnique({ where: { id: jobId } });
     if (!job) throw new NotFoundException(`Job ID ${jobId} not found`);
 
     if (job.status !== JobStatus.QC_PENDING) {
-      throw new BadRequestException(`Job is not pending QC. Current status: ${job.status}`);
+      throw new BadRequestException(
+        `Job is not pending QC. Current status: ${job.status}`,
+      );
     }
 
     const nextStatus = dto.passed ? JobStatus.CLEANING : JobStatus.IN_PROGRESS;
-    const notesAddition = dto.notes ? `\n[QC ${dto.passed ? 'PASSED' : 'FAILED'}]: ${dto.notes}` : `\n[QC ${dto.passed ? 'PASSED' : 'FAILED'}]`;
+    const notesAddition = dto.notes
+      ? `\n[QC ${dto.passed ? 'PASSED' : 'FAILED'}]: ${dto.notes}`
+      : `\n[QC ${dto.passed ? 'PASSED' : 'FAILED'}]`;
 
     return this.prisma.job.update({
       where: { id: jobId },
       data: {
         status: nextStatus,
-        diagnosisNotes: job.diagnosisNotes ? job.diagnosisNotes + notesAddition : notesAddition.trim(),
+        diagnosisNotes: job.diagnosisNotes
+          ? job.diagnosisNotes + notesAddition
+          : notesAddition.trim(),
         ...(dto.passed ? {} : { completedAt: null }), // Reset completedAt if failed
       },
       include: {
         technician: { select: { id: true, name: true, role: true } },
         motorcycle: { include: { owner: true } },
-      }
+      },
     });
   }
 
-  async readyForDelivery(jobId: number, dto: { photos?: string[]; notes?: string }, userId: number) {
+  async readyForDelivery(
+    jobId: number,
+    dto: { photos?: string[]; notes?: string },
+    _userId: number,
+  ) {
     const job = await this.prisma.job.findUnique({ where: { id: jobId } });
     if (!job) throw new NotFoundException(`Job ID ${jobId} not found`);
 
     if (job.status !== JobStatus.CLEANING) {
-      throw new BadRequestException(`Job is not in cleaning. Current status: ${job.status}`);
+      throw new BadRequestException(
+        `Job is not in cleaning. Current status: ${job.status}`,
+      );
     }
 
-    const notesAddition = dto.notes ? `\n[Ready for Delivery]: ${dto.notes}` : '';
+    const notesAddition = dto.notes
+      ? `\n[Ready for Delivery]: ${dto.notes}`
+      : '';
 
     return this.prisma.job.update({
       where: { id: jobId },
       data: {
         status: JobStatus.READY_FOR_DELIVERY,
-        diagnosisNotes: job.diagnosisNotes ? job.diagnosisNotes + notesAddition : notesAddition.trim(),
-        ...(dto.photos && dto.photos.length > 0 ? { images: { push: dto.photos } } : {}),
+        diagnosisNotes: job.diagnosisNotes
+          ? job.diagnosisNotes + notesAddition
+          : notesAddition.trim(),
+        ...(dto.photos && dto.photos.length > 0
+          ? { images: { push: dto.photos } }
+          : {}),
       },
       include: {
         technician: { select: { id: true, name: true, role: true } },
         motorcycle: { include: { owner: true } },
+      },
+    });
+  }
+
+  async returnParts(jobId: number, dto: ReturnPartsDto, userId: number) {
+    const job = await this.prisma.job.findUnique({
+      where: { id: jobId },
+      include: {
+        quotation: {
+          include: {
+            items: { include: { part: true } },
+          },
+        },
+        partRequisitions: {
+          where: { status: 'ISSUED' },
+          include: {
+            items: {
+              include: {
+                part: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!job) throw new NotFoundException(`Job ID ${jobId} not found`);
+
+    const hasQuotation = !!job.quotation;
+    const quotationItems = job.quotation?.items ?? [];
+    const requisitionItems = (job.partRequisitions ?? []).flatMap((r) =>
+      r.items.map((i) => ({ ...i, requisitionNo: r.reqNo })),
+    );
+
+    return this.prisma.$transaction(async (tx) => {
+      let totalAmountBeforeReturn = hasQuotation
+        ? Number(job.quotation!.totalAmount)
+        : 0;
+
+      for (const returnItem of dto.partsActual) {
+        if (returnItem.quotationItemId != null) {
+          // Quotation item
+          const quotationItem = quotationItems.find(
+            (i) => i.id === returnItem.quotationItemId,
+          );
+          if (!quotationItem) {
+            throw new BadRequestException(
+              `Quotation item ID ${returnItem.quotationItemId} not found in this job`,
+            );
+          }
+          const returnQuantity =
+            quotationItem.quantity - returnItem.actualQuantity;
+          if (returnQuantity > 0 && quotationItem.partId) {
+            await tx.part.update({
+              where: { id: quotationItem.partId },
+              data: { stockQuantity: { increment: returnQuantity } },
+            });
+            await tx.stockMovement.create({
+              data: {
+                partId: quotationItem.partId,
+                movementType: StockMovementType.RETURN,
+                quantity: returnQuantity,
+                unitPrice: quotationItem.unitPrice,
+                reference: job.jobNo,
+                notes: `ช่างทำเรื่องคืนอะไหล่จำนวน ${returnQuantity} ชิ้น จากใบงาน ${job.jobNo}`,
+                createdById: userId,
+              },
+            });
+          }
+          const originalItemTotal = Number(quotationItem.totalPrice);
+          const newItemTotal =
+            returnItem.actualQuantity * Number(quotationItem.unitPrice);
+          await tx.quotationItem.update({
+            where: { id: quotationItem.id },
+            data: {
+              quantity: returnItem.actualQuantity,
+              totalPrice: newItemTotal,
+            },
+          });
+          totalAmountBeforeReturn =
+            totalAmountBeforeReturn - originalItemTotal + newItemTotal;
+          if (returnQuantity < 0) {
+            throw new BadRequestException(
+              `Cannot return negative quantity. Quotation item ID: ${returnItem.quotationItemId}`,
+            );
+          }
+        } else if (returnItem.requisitionItemId != null) {
+          // Part requisition item (อะไหล่เพิ่มเติม)
+          const reqItem = requisitionItems.find(
+            (i) => i.id === returnItem.requisitionItemId,
+          );
+          if (!reqItem) {
+            throw new BadRequestException(
+              `Requisition item ID ${returnItem.requisitionItemId} not found in this job`,
+            );
+          }
+          const issuedQty = reqItem.issuedQuantity ?? reqItem.quantity;
+          const returnQuantity = issuedQty - returnItem.actualQuantity;
+          if (returnQuantity > 0 && reqItem.partId && reqItem.part) {
+            await tx.part.update({
+              where: { id: reqItem.partId },
+              data: { stockQuantity: { increment: returnQuantity } },
+            });
+            await tx.stockMovement.create({
+              data: {
+                partId: reqItem.partId,
+                movementType: StockMovementType.RETURN,
+                quantity: returnQuantity,
+                unitPrice: reqItem.part.unitPrice,
+                reference: job.jobNo,
+                notes: `ช่างทำเรื่องคืนอะไหล่จำนวน ${returnQuantity} ชิ้น จากใบงาน ${job.jobNo}`,
+                createdById: userId,
+              },
+            });
+          } else if (returnQuantity < 0) {
+            throw new BadRequestException(
+              `Cannot return negative quantity. Requisition item ID: ${returnItem.requisitionItemId}`,
+            );
+          }
+        } else {
+          throw new BadRequestException(
+            'Each item must have quotationItemId or requisitionItemId',
+          );
+        }
       }
+
+      if (hasQuotation) {
+        await tx.quotation.update({
+          where: { id: job.quotation!.id },
+          data: { totalAmount: totalAmountBeforeReturn },
+        });
+      }
+
+      return tx.job.findUnique({
+        where: { id: jobId },
+        include: {
+          quotation: { include: { items: true } },
+          partRequisitions: {
+            where: { status: 'ISSUED' },
+            include: { items: { include: { part: true } } },
+          },
+          technician: { select: { id: true, name: true, role: true } },
+          motorcycle: { include: { owner: true } },
+        },
+      });
     });
   }
 
   // === Deep Inspection ===
-  async requestInspection(jobId: number, dto: { inspectionFee: number; notes?: string }) {
+  async requestInspection(
+    jobId: number,
+    dto: { inspectionFee: number; notes?: string },
+  ) {
     const job = await this.prisma.job.findUnique({ where: { id: jobId } });
     if (!job) throw new NotFoundException(`Job ID ${jobId} not found`);
 
-    if (job.status !== JobStatus.PENDING && job.status !== JobStatus.IN_PROGRESS) {
-      throw new BadRequestException(`Cannot request inspection for job with status ${job.status}`);
+    if (
+      job.status !== JobStatus.PENDING &&
+      job.status !== JobStatus.IN_PROGRESS
+    ) {
+      throw new BadRequestException(
+        `Cannot request inspection for job with status ${job.status}`,
+      );
     }
 
     const notesAddition = dto.notes
@@ -523,8 +746,11 @@ export class JobsService {
       where: { id: jobId },
       data: {
         jobType: JobType.DEEP_INSPECTION,
+        status: JobStatus.WAITING_APPROVAL,
         inspectionFee: dto.inspectionFee,
-        diagnosisNotes: job.diagnosisNotes ? job.diagnosisNotes + notesAddition : notesAddition.trim(),
+        diagnosisNotes: job.diagnosisNotes
+          ? job.diagnosisNotes + notesAddition
+          : notesAddition.trim(),
       },
       include: {
         technician: { select: { id: true, name: true } },
@@ -534,14 +760,17 @@ export class JobsService {
   }
 
   // === Old Parts Tracking ===
-  async createOldPart(jobId: number, data: {
-    partName: string;
-    description?: string;
-    quantity?: number;
-    action: string;
-    photos?: string[];
-    notes?: string;
-  }) {
+  async createOldPart(
+    jobId: number,
+    data: {
+      partName: string;
+      description?: string;
+      quantity?: number;
+      action: string;
+      photos?: string[];
+      notes?: string;
+    },
+  ) {
     const job = await this.prisma.job.findUnique({ where: { id: jobId } });
     if (!job) throw new NotFoundException(`Job ID ${jobId} not found`);
 

@@ -35,19 +35,17 @@ class PurchaseOrderWebSocketService {
     }
 
     try {
-      // TODO: Replace with actual WebSocket URL when backend is ready
-      // const wsUrl = process.env.REACT_APP_WS_URL || 'ws://localhost:3000/ws'
-      // const token = localStorage.getItem('token')
-      // this.socket = new WebSocket(`${wsUrl}?token=${token}`)
-
-      // MOCK: Simulate WebSocket connection
-      console.log('[PO WebSocket] MOCK: Connection not implemented yet')
+      // Connect realistically
+      const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:3000/ws'
+      const token = localStorage.getItem('access_token')
       
-      // Uncomment when backend is ready:
-      // this.socket.onopen = this.handleOpen.bind(this)
-      // this.socket.onmessage = this.handleMessage.bind(this)
-      // this.socket.onerror = this.handleError.bind(this)
-      // this.socket.onclose = this.handleClose.bind(this)
+      this.socket = new WebSocket(`${wsUrl}?token=${token}`)
+      
+      this.socket.onopen = this.handleOpen.bind(this)
+      this.socket.onmessage = this.handleMessage.bind(this)
+      this.socket.onerror = this.handleError.bind(this)
+      this.socket.onclose = this.handleClose.bind(this)
+      
     } catch (error) {
       console.error('[PO WebSocket] Connection error:', error)
       this.attemptReconnect()

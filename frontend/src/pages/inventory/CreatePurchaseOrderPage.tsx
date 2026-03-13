@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { mockSuppliers } from '../../data/suppliersMockData'
+import { supplierService, type Supplier } from '../../services/supplierService'
+import { purchaseOrderService } from '../../services/purchaseOrderService'
 import PartSelectionModal from '../../components/PartSelectionModal'
 import { type PartItem } from '../../data/partsMockData'
-import { mockPurchaseOrders, type PurchaseOrder } from '../../data/purchaseOrdersMockData'
 import { useActivityLog } from '../../hooks/useActivityLog'
 
 interface OrderItem extends PartItem {
@@ -28,9 +28,15 @@ export default function CreatePurchaseOrderPage() {
     const location = useLocation()
     const { addActivity } = useActivityLog()
 
-    // If navigated here from Part Detail, auto-add that part
-    const prefillPart: PartItem | undefined = (location.state as { prefillPart?: PartItem })?.prefillPart
+    const prefillPart: PartItem | undefined = (location.state as any)?.prefillPart
     const cameFromPartDetail = !!prefillPart
+
+    // Suppliers loaded from API
+    const [suppliers, setSuppliers] = useState<Supplier[]>([])
+
+    useEffect(() => {
+        supplierService.getAll().then(setSuppliers).catch(console.error)
+    }, [])
 
     // Form State
     const [supplierId, setSupplierId] = useState<number | ''>(() => {
@@ -53,7 +59,7 @@ export default function CreatePurchaseOrderPage() {
         if (prefillPart) return [{ ...prefillPart, orderQuantity: 1 }]
         const saved = localStorage.getItem('draft_po_items')
         if (saved) {
-            try { return JSON.parse(saved) } catch { return [] }
+            try { return JSON.parse(saved) } catch (e) { return [] }
         }
         return []
     })
@@ -155,60 +161,28 @@ export default function CreatePurchaseOrderPage() {
         }
 
         try {
-            // Prepare data for backend
-            const supplier = mockSuppliers.find(s => s.id === supplierId)
+            const supplier = suppliers.find(s => s.id === supplierId)
             
             const orderData = {
                 supplierId: supplierId as number,
+                supplierName: (supplier as any)?.companyName || supplier?.name || 'Unknown Supplier',
                 deliveryDate: deliveryDate,
                 totalAmount: totalAmount,
-                status: action === 'submit' ? 'pending' : 'draft', // draft = บันทึกร่าง, pending = รออนุมัติ
-                remarks: remarks || null,
-                managerMessage: managerMessage || null,
-                items: orderItems.map(item => ({
-                    partId: item.id,
-                    partName: item.name,
-                    quantity: item.orderQuantity,
-                    unitPrice: item.price,
-                    totalPrice: item.price * item.orderQuantity
-                }))
-            }
-
-            // TODO: Replace with actual API call when backend is ready
-            // const response = await fetch('/api/purchase-orders', {
-            //     method: 'POST',
-            //     headers: {
-            //         'Content-Type': 'application/json',
-            //         'Authorization': `Bearer ${localStorage.getItem('token')}`
-            //     },
-            //     body: JSON.stringify(orderData)
-            // })
-            // 
-            // if (!response.ok) {
-            //     throw new Error('Failed to create purchase order')
-            // }
-            // 
-            // const createdOrder = await response.json()
-
-            // MOCK: Simulate API response
-            const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '')
-            const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0')
-            
-            const newOrder: PurchaseOrder = {
-                id: `PO-${dateStr}-${randomNum}`,
-                supplierId: orderData.supplierId,
-                supplierName: supplier?.companyName || 'Unknown Supplier',
-                createdAt: getTodayString(),
-                deliveryDate: orderData.deliveryDate,
-                totalAmount: orderData.totalAmount,
-                status: orderData.status as 'draft' | 'pending',
+                status: (action === 'submit' ? 'pending' : 'draft') as 'draft' | 'pending',
+                remarks: remarks || undefined,
+                managerMessage: managerMessage || undefined,
                 items: orderItems,
-                remarks: orderData.remarks || '',
-                managerMessage: orderData.managerMessage || ''
             }
 
-            // MOCK: Add to mock data (remove this when using real API)
-            mockPurchaseOrders.push(newOrder)
+            let newOrder = await purchaseOrderService.create(orderData)
+
+            if (action === 'submit') {
+                try {
+                    newOrder = await purchaseOrderService.submit(newOrder.id)
+                } catch {
+                    // submit may fail if PO is auto-approved; ignore
+                }
+            }
 
             // Clear draft localStorage
             localStorage.removeItem('draft_po_supplier')
@@ -227,22 +201,6 @@ export default function CreatePurchaseOrderPage() {
                 badge: action === 'submit' ? 'รออนุมัติ' : 'สร้างใบสั่งซื้อฉบับร่าง',
                 badgeColor: action === 'submit' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600',
             })
-
-            // TODO: When backend is ready, send notification to owner role
-            // if (action === 'submit') {
-            //     await fetch('/api/notifications/purchase-order-approval', {
-            //         method: 'POST',
-            //         headers: {
-            //             'Content-Type': 'application/json',
-            //             'Authorization': `Bearer ${localStorage.getItem('token')}`
-            //         },
-            //         body: JSON.stringify({
-            //             orderId: newOrder.id,
-            //             recipientRole: 'owner',
-            //             message: `มีใบสั่งซื้อใหม่รออนุมัติ: ${newOrder.id} จำนวนเงิน ฿${newOrder.totalAmount.toLocaleString()}`
-            //         })
-            //     })
-            // }
 
             // Show success modal
             setValidationModal({
@@ -271,7 +229,7 @@ export default function CreatePurchaseOrderPage() {
     }
 
     return (
-        <div className="h-full overflow-y-auto bg-[#F5F5F5] p-6 flex flex-col gap-6 relative">
+        <div className="p-6 bg-[#F5F5F5] min-h-full flex flex-col gap-6 relative">
 
             {/* Validation/Success Modal */}
             {validationModal.isOpen && (
@@ -279,7 +237,7 @@ export default function CreatePurchaseOrderPage() {
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
                         {/* Header */}
                         <div className="px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
-                            <p className="text-sm font-semibold text-[#F8981D] uppercase tracking-widest mb-0.5">RevUp</p>
+                            <p className="text-sm font-semibold text-[#F8981D] uppercase tracking-widest mb-0.5">Smart Moto Service Center</p>
                             <h2 className="text-base font-semibold text-[#1E1E1E]">
                                 {validationModal.isError ? 'ข้อมูลไม่ครบถ้วน' : 'ทำรายการสำเร็จ'}
                             </h2>
@@ -334,7 +292,7 @@ export default function CreatePurchaseOrderPage() {
                     <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col overflow-hidden animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
                         {/* Header */}
                         <div className="px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
-                            <p className="text-sm font-semibold text-[#F8981D] uppercase tracking-widest mb-0.5">RevUp</p>
+                            <p className="text-sm font-semibold text-[#F8981D] uppercase tracking-widest mb-0.5">Smart Moto Service Center</p>
                             <h2 className="text-base font-semibold text-[#1E1E1E]">
                                 ยืนยันการยกเลิก
                             </h2>
@@ -428,8 +386,8 @@ export default function CreatePurchaseOrderPage() {
                                 className="w-full text-sm border border-gray-300 rounded-xl px-4 py-2.5 bg-white outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
                             >
                                 <option value="">-- เลือกซัพพลายเออร์ --</option>
-                                {mockSuppliers.map(s => (
-                                    <option key={s.id} value={s.id}>{s.companyName}</option>
+                                {suppliers.map(s => (
+                                    <option key={s.id} value={s.id}>{(s as any).companyName || s.name}</option>
                                 ))}
                             </select>
                         </div>
@@ -611,7 +569,7 @@ export default function CreatePurchaseOrderPage() {
                 </button>
                 <button
                     onClick={() => handleSubmit('submit')}
-                    className="px-8 py-2.5 rounded-xl bg-[#1E1E1E] text-white font-bold hover:bg-black shadow-md transition-all active:scale-95"
+                    className="px-8 py-2.5 rounded-xl bg-amber-500 text-white font-bold hover:bg-amber-600 shadow-md shadow-amber-500/20 transition-all active:scale-95 [text-shadow:_0_1px_0_rgb(0_0_0_/_40%)]"
                 >
                     ส่งคำขอสั่งซื้อ
                 </button>

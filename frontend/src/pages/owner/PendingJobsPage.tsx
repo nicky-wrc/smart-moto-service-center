@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { api } from '../../lib/api'
 import Pagination from '../../components/Pagination'
 
 type PendingJob = {
@@ -14,31 +15,64 @@ type PendingJob = {
   daysOpen: number
 }
 
-const pendingJobs: PendingJob[] = [
-  { id: 1,  customer: 'สมชาย ใจดี',      phone: '081-234-5678', brand: 'Honda PCX 160',       licensePlate: 'กก 999',  symptom: 'เครื่องสตาร์ทไม่ติด มีเสียงดังผิดปกติ', status: 'รอประเมิน',        mechanic: '-',     receivedAt: '07/03/2026', daysOpen: 1 },
-  { id: 2,  customer: 'วิภา รักสะอาด',   phone: '089-876-5432', brand: 'Yamaha NMAX 155',      licensePlate: 'คง 5678', symptom: 'เบรกหน้าไม่ค่อยกิน น้ำมันเบรกรั่ว',    status: 'รอลูกค้าอนุมัติ', mechanic: '-',     receivedAt: '07/03/2026', daysOpen: 1 },
-  { id: 3,  customer: 'ประเสริฐ มั่นคง', phone: '062-111-2233', brand: 'Honda Wave 125i',      licensePlate: 'จฉ 9012', symptom: 'ไฟหน้าไม่ติด ระบบไฟผิดปกติ',           status: 'พร้อมซ่อม',       mechanic: 'วิชัย', receivedAt: '07/03/2026', daysOpen: 1 },
-  { id: 4,  customer: 'นภา สุขสันต์',    phone: '095-444-5566', brand: 'Suzuki Burgman 200',   licensePlate: 'ชซ 3456', symptom: 'รถวิ่งแล้วสะดุด ไม่ทราบอาการ',           status: 'กำลังดำเนินงาน', mechanic: 'สมชาย', receivedAt: '07/03/2026', daysOpen: 1 },
-  { id: 5,  customer: 'ธนพล วิริยะ',     phone: '091-555-6677', brand: 'Honda Click 125i',    licensePlate: 'ญฐ 7890', symptom: 'เกียร์ไม่เข้า สายพานขาด',               status: 'รอสั่งซื้อ',      mechanic: '-',     receivedAt: '06/03/2026', daysOpen: 2 },
-  { id: 6,  customer: 'มาลี สวัสดี',     phone: '092-666-7788', brand: 'Yamaha Aerox 155',     licensePlate: 'ดต 1234', symptom: 'น้ำมันรั่ว เครื่องร้อน',                status: 'รอตรวจ',          mechanic: 'ณัฐพล', receivedAt: '05/03/2026', daysOpen: 3 },
-]
+const STATUS_MAP: Record<string, string> = {
+  PENDING: 'รอประเมิน',
+  WAITING_APPROVAL: 'รอลูกค้าอนุมัติ',
+  READY: 'พร้อมซ่อม',
+  IN_PROGRESS: 'กำลังดำเนินงาน',
+  WAITING_PARTS: 'รออะไหล่',
+  QC_PENDING: 'รอตรวจ QC',
+  CLEANING: 'ล้างรถ',
+  READY_FOR_DELIVERY: 'รอส่งมอบ',
+  COMPLETED: 'เสร็จสิ้น',
+}
 
 const statusColor: Record<string, string> = {
   'รอประเมิน':       'bg-[#F8981D]/15 text-[#F8981D]',
   'รอลูกค้าอนุมัติ': 'bg-stone-100 text-stone-500',
   'พร้อมซ่อม':       'bg-[#44403C]/10 text-[#44403C]',
   'กำลังดำเนินงาน': 'bg-[#F8981D]/15 text-[#F8981D]',
-  'รอตรวจ':          'bg-[#44403C]/10 text-[#44403C]',
-  'รอสั่งซื้อ':      'bg-stone-100 text-stone-500',
+  'รออะไหล่':        'bg-stone-100 text-stone-500',
+  'รอตรวจ QC':       'bg-[#44403C]/10 text-[#44403C]',
+  'ล้างรถ':          'bg-blue-50 text-blue-500',
+  'รอส่งมอบ':        'bg-emerald-50 text-emerald-600',
+  'เสร็จสิ้น':       'bg-emerald-50 text-emerald-600',
 }
 
-const allStatuses = ['ทั้งหมด', 'รอประเมิน', 'รอลูกค้าอนุมัติ', 'พร้อมซ่อม', 'กำลังดำเนินงาน', 'รอสั่งซื้อ', 'รอตรวจ']
+const allStatuses = ['ทั้งหมด', 'รอประเมิน', 'รอลูกค้าอนุมัติ', 'พร้อมซ่อม', 'กำลังดำเนินงาน', 'รออะไหล่', 'รอตรวจ QC', 'ล้างรถ', 'รอส่งมอบ']
 
 export default function PendingJobsPage() {
+  const [pendingJobs, setPendingJobs] = useState<PendingJob[]>([])
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('ทั้งหมด')
   const [page, setPage]       = useState(1)
   const [perPage, setPerPage] = useState(10)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    api.get<any[]>('/jobs').then(data => {
+      const active = data.filter(j => !['PAID', 'CANCELLED'].includes(j.status))
+      const now = Date.now()
+      const mapped: PendingJob[] = active.map(j => {
+        const created = new Date(j.createdAt).getTime()
+        const daysOpen = Math.max(1, Math.ceil((now - created) / 86400000))
+        return {
+          id: j.id,
+          customer: `${j.motorcycle?.owner?.firstName ?? ''} ${j.motorcycle?.owner?.lastName ?? ''}`.trim() || '-',
+          phone: j.motorcycle?.owner?.phoneNumber ?? '-',
+          brand: `${j.motorcycle?.brand ?? ''} ${j.motorcycle?.model ?? ''}`.trim(),
+          licensePlate: j.motorcycle?.licensePlate ?? '-',
+          symptom: j.symptom ?? '-',
+          status: STATUS_MAP[j.status] || j.status,
+          mechanic: j.technician?.name ?? '-',
+          receivedAt: new Date(j.createdAt).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+          daysOpen,
+        }
+      })
+      setPendingJobs(mapped)
+    }).catch(err => console.error(err))
+      .finally(() => setLoading(false))
+  }, [])
 
   const filtered = pendingJobs.filter(j => {
     const matchSearch = j.customer.includes(search) || j.licensePlate.includes(search) || j.brand.includes(search)

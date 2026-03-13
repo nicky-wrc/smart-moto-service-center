@@ -20,32 +20,76 @@ export interface PaginatedPartsResponse {
     currentPage: number
 }
 
-/**
- * Service for handling Parts API calls.
- *
- * To switch to real API:
- *   Set VITE_USE_MOCK_DATA=false in .env
- *   Backend endpoints expected:
- *     GET  /api/parts              (with query params)
- *     GET  /api/parts/:id
- */
+interface BackendPart {
+    id: number
+    partNo: string
+    name: string
+    description?: string
+    brand?: string
+    category?: string
+    unit?: string
+    unitPrice: number | string
+    stockQuantity: number
+    reorderPoint: number
+    reorderQuantity: number
+    isActive: boolean
+}
+
+function mapBackendPart(p: BackendPart): PartItem {
+    return {
+        id: p.id,
+        partCode: p.partNo,
+        name: p.name,
+        category: p.category || '',
+        location: '',
+        quantity: p.stockQuantity ?? 0,
+        price: Number(p.unitPrice) || 0,
+        imageUrl: '',
+        motorcycleModel: p.brand || undefined,
+    }
+}
+
+function applyStockLevelFilter(parts: PartItem[], stockLevel: string): PartItem[] {
+    switch (stockLevel) {
+        case 'มีของ':    return parts.filter(p => p.quantity >= 10)
+        case 'เหลือน้อย': return parts.filter(p => p.quantity >= 5 && p.quantity < 10)
+        case 'ใกล้หมด':  return parts.filter(p => p.quantity >= 1 && p.quantity < 5)
+        case 'หมด':      return parts.filter(p => p.quantity === 0)
+        default:          return parts
+    }
+}
+
 export const partService = {
 
-    /**
-     * Fetch all parts with pagination and filtering
-     */
     getParts: async (params: GetPartsParams = {}): Promise<PaginatedPartsResponse> => {
         if (!USE_MOCK_DATA) {
             const qs = buildQuery({
-                page: params.page,
-                limit: params.limit,
                 search: params.search,
                 category: params.category,
-                location: params.location,
-                stockLevel: params.stockLevel,
-                motorcycleModel: params.motorcycleModel,
             })
-            return apiClient.get<PaginatedPartsResponse>(`/parts${qs}`)
+            const raw = await apiClient.get<BackendPart[] | PaginatedPartsResponse>(`/parts${qs}`)
+
+            let allParts: PartItem[]
+            if (Array.isArray(raw)) {
+                allParts = raw.map(mapBackendPart)
+            } else if (raw && typeof raw === 'object' && Array.isArray((raw as PaginatedPartsResponse).data)) {
+                return raw as PaginatedPartsResponse
+            } else {
+                allParts = []
+            }
+
+            if (params.stockLevel) {
+                allParts = applyStockLevelFilter(allParts, params.stockLevel)
+            }
+
+            const page = params.page || 1
+            const limit = params.limit || 20
+            const totalDocs = allParts.length
+            const totalPages = Math.max(1, Math.ceil(totalDocs / limit))
+            const start = (page - 1) * limit
+            const data = allParts.slice(start, start + limit)
+
+            return { data, totalDocs, totalPages, currentPage: page }
         }
 
         // ─── MOCK IMPLEMENTATION ────────────────────────────────────────────────
@@ -73,14 +117,8 @@ export const partService = {
                 if (location) {
                     filtered = filtered.filter(p => p.location === location)
                 }
-                if (stockLevel === 'มีของ') {
-                    filtered = filtered.filter(p => p.quantity >= 10)
-                } else if (stockLevel === 'เหลือน้อย') {
-                    filtered = filtered.filter(p => p.quantity >= 5 && p.quantity < 10)
-                } else if (stockLevel === 'ใกล้หมด') {
-                    filtered = filtered.filter(p => p.quantity >= 1 && p.quantity < 5)
-                } else if (stockLevel === 'หมด') {
-                    filtered = filtered.filter(p => p.quantity === 0)
+                if (stockLevel) {
+                    filtered = applyStockLevelFilter(filtered, stockLevel)
                 }
                 if (motorcycleModel) {
                     filtered = filtered.filter(p => p.motorcycleModel === motorcycleModel || p.motorcycleModel === 'ทุกรุ่น')
@@ -101,12 +139,14 @@ export const partService = {
         })
     },
 
-    /**
-     * Fetch a single part by ID
-     */
     getById: async (id: number): Promise<PartItem | null> => {
         if (!USE_MOCK_DATA) {
-            return apiClient.get<PartItem>(`/parts/${id}`)
+            try {
+                const raw = await apiClient.get<BackendPart>(`/parts/${id}`)
+                return mapBackendPart(raw)
+            } catch {
+                return null
+            }
         }
 
         // MOCK

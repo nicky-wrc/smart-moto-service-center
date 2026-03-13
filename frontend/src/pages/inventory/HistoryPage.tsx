@@ -17,9 +17,7 @@ export default function HistoryPage() {
             setIsLoading(true)
             try {
                 const data = await partRequisitionService.getHistory()
-                // Use API data if available (real backend), otherwise fallback to local session history
-                // Note: when connected to real backend, history endpoint should return HistoryItem[]
-                if (isMounted) setHistoryData(data.length > 0 ? (data as unknown as HistoryItem[]) : history)
+                if (isMounted) setHistoryData(data.length > 0 ? data : history)
             } catch (error) {
                 console.error("Failed to load history:", error)
                 if (isMounted) setHistoryData(history)

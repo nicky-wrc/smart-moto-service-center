@@ -22,32 +22,34 @@ export class QueryForemanResponseDto {
   @Min(1)
   limit?: number = 10;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Filter by status',
-    enum: ForemanResponseStatus 
+    enum: ForemanResponseStatus,
   })
   @IsOptional()
   @IsEnum(ForemanResponseStatus)
   status?: ForemanResponseStatus;
 
-  @ApiPropertyOptional({ description: 'Search by customer name or queue number' })
+  @ApiPropertyOptional({
+    description: 'Search by customer name or queue number',
+  })
   @IsOptional()
   @IsString()
   search?: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Sort by field',
     enum: ['respondedAt', 'queueNumber', 'assessmentNumber'],
-    default: 'respondedAt'
+    default: 'respondedAt',
   })
   @IsOptional()
   @IsString()
   sortBy?: string = 'respondedAt';
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Sort order',
     enum: ['asc', 'desc'],
-    default: 'desc'
+    default: 'desc',
   })
   @IsOptional()
   @IsEnum(['asc', 'desc'])

@@ -4,11 +4,20 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { PaymentStatus, JobStatus, PaymentMethod } from '@prisma/client';
+import {
+  PaymentStatus,
+  JobStatus,
+  PaymentMethod,
+  JobType,
+} from '@prisma/client';
+import { PointsService } from '../customers/points.service';
 
 @Injectable()
 export class PaymentsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private pointsService: PointsService,
+  ) {}
 
   async calculateBilling(jobId: number) {
     const job = await this.prisma.job.findUnique({
@@ -21,6 +30,32 @@ export class PaymentsService {
         },
         laborTimes: true,
         outsources: true,
+        quotation: {
+          include: {
+            items: true,
+          },
+        },
+        partRequisitions: {
+          where: {
+            status: 'ISSUED',
+          },
+          include: {
+            items: {
+              include: {
+                part: true,
+                package: {
+                  include: {
+                    items: {
+                      include: {
+                        part: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
 
@@ -46,7 +81,63 @@ export class PaymentsService {
     }
 
     // Calculate parts cost (from requisitions)
-    const partsCost = 0; // TODO: Calculate from part requisitions
+    const requisitions = await this.prisma.partRequisition.findMany({
+      where: {
+        jobId,
+        status: 'ISSUED', // Only count issued parts
+      },
+      include: {
+        items: {
+          include: {
+            part: {
+              select: {
+                id: true,
+                unitPrice: true,
+              },
+            },
+            package: {
+              include: {
+                items: {
+                  include: {
+                    part: {
+                      select: {
+                        id: true,
+                        unitPrice: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    let partsCost = 0;
+    for (const req of requisitions) {
+      for (const item of req.items) {
+        if (item.partId && item.issuedQuantity > 0) {
+          // Single part
+          const part = item.part;
+          if (part) {
+            partsCost += Number(part.unitPrice) * item.issuedQuantity;
+          }
+        } else if (item.packageId && item.issuedQuantity > 0) {
+          // Package
+          const package_ = item.package;
+          if (package_) {
+            for (const packageItem of package_.items) {
+              const part = packageItem.part;
+              if (part) {
+                const totalQty = packageItem.quantity * item.issuedQuantity;
+                partsCost += Number(part.unitPrice) * totalQty;
+              }
+            }
+          }
+        }
+      }
+    }
 
     // Calculate outsource cost
     const outsourceCost = job.outsources.reduce(
@@ -54,8 +145,19 @@ export class PaymentsService {
       0,
     );
 
-    // Calculate subtotal
-    const subtotal = laborCost + partsCost + outsourceCost;
+    // Inspection fee (for deep inspection jobs)
+    const inspectionFee =
+      job.jobType === JobType.DEEP_INSPECTION && job.inspectionFee
+        ? Number(job.inspectionFee)
+        : 0;
+
+    // Calculate subtotal from actual tracked costs + inspection fee
+    let subtotal = laborCost + partsCost + outsourceCost + inspectionFee;
+
+    // Fallback to quotation total if no actual costs are tracked
+    if (subtotal === 0 && job.quotation) {
+      subtotal = Number(job.quotation.totalAmount) || 0;
+    }
 
     // Calculate VAT (7%)
     const vat = subtotal * 0.07;
@@ -93,11 +195,11 @@ export class PaymentsService {
   async create(data: {
     jobId: number;
     paymentMethod: string;
-    subtotal: number;
+    subtotal?: number;
     discount?: number;
     pointsUsed?: number;
     vat?: number;
-    totalAmount: number;
+    totalAmount?: number;
     notes?: string;
   }) {
     const job = await this.prisma.job.findUnique({
@@ -115,9 +217,12 @@ export class PaymentsService {
       throw new NotFoundException(`Job with ID ${data.jobId} not found`);
     }
 
-    if (job.status !== JobStatus.COMPLETED) {
+    if (
+      job.status !== JobStatus.COMPLETED &&
+      job.status !== JobStatus.READY_FOR_DELIVERY
+    ) {
       throw new BadRequestException(
-        `Cannot create payment for job with status ${job.status}`,
+        `Cannot create payment for job with status ${job.status}. Job must be COMPLETED or READY_FOR_DELIVERY.`,
       );
     }
 
@@ -129,22 +234,44 @@ export class PaymentsService {
       throw new BadRequestException('Payment already exists for this job');
     }
 
+    let subtotal = data.subtotal;
+    let vat = data.vat;
+    let totalAmount = data.totalAmount;
+
+    if (subtotal == null || totalAmount == null) {
+      const billing = await this.calculateBilling(data.jobId);
+      subtotal = subtotal ?? billing.breakdown.subtotal;
+      vat = vat ?? billing.breakdown.vat;
+      totalAmount = totalAmount ?? billing.breakdown.totalAmount;
+    }
+
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const count = await this.prisma.payment.count({
+
+    // หาเลขรันล่าสุดของวันนั้นจาก paymentNo ที่มีอยู่ แล้ว +1 เพื่อเลี่ยงชน
+    const latestToday = await this.prisma.payment.findFirst({
       where: {
-        createdAt: {
-          gte: new Date(
-            new Date().getFullYear(),
-            new Date().getMonth(),
-            new Date().getDate(),
-          ),
+        paymentNo: {
+          startsWith: `PAY-${dateStr}-`,
         },
       },
+      orderBy: { paymentNo: 'desc' },
+      select: { paymentNo: true },
     });
-    const runNo = (count + 1).toString().padStart(4, '0');
+
+    let nextSeq = 1;
+    if (latestToday?.paymentNo) {
+      const parts = latestToday.paymentNo.split('-');
+      const last = parts[2];
+      const parsed = parseInt(last, 10);
+      if (!Number.isNaN(parsed)) {
+        nextSeq = parsed + 1;
+      }
+    }
+
+    const runNo = nextSeq.toString().padStart(4, '0');
     const paymentNo = `PAY-${dateStr}-${runNo}`;
 
-    const pointsEarned = Math.floor(data.totalAmount / 100);
+    const pointsEarned = Math.floor(totalAmount / 100);
 
     return this.prisma.payment.create({
       data: {
@@ -152,16 +279,17 @@ export class PaymentsService {
         jobId: data.jobId,
         customerId: job.motorcycle.ownerId,
         paymentMethod: data.paymentMethod as PaymentMethod,
-        subtotal: data.subtotal,
+        subtotal,
         discount: data.discount || 0,
         pointsUsed: data.pointsUsed || 0,
         pointsEarned,
-        vat: data.vat || 0,
-        totalAmount: data.totalAmount,
+        vat: vat || 0,
+        totalAmount,
         paymentStatus: PaymentStatus.PENDING,
         notes: data.notes,
       },
       include: {
+        customer: true,
         job: {
           include: {
             motorcycle: {
@@ -175,7 +303,10 @@ export class PaymentsService {
     });
   }
 
-  async processPayment(id: number, dto: { amountReceived: number }) {
+  async processPayment(
+    id: number,
+    dto: { amountReceived: number; paymentMethod?: string },
+  ) {
     const payment = await this.prisma.payment.findUnique({
       where: { id },
     });
@@ -188,9 +319,14 @@ export class PaymentsService {
       throw new BadRequestException('Payment already processed');
     }
 
-    const totalAmount = typeof payment.totalAmount === 'number' ? payment.totalAmount : Number(payment.totalAmount);
+    const totalAmount =
+      typeof payment.totalAmount === 'number'
+        ? payment.totalAmount
+        : Number(payment.totalAmount);
     if (dto.amountReceived < totalAmount) {
-      throw new BadRequestException(`Amount received (${dto.amountReceived}) is less than total amount (${totalAmount})`);
+      throw new BadRequestException(
+        `Amount received (${dto.amountReceived}) is less than total amount (${totalAmount})`,
+      );
     }
 
     const change = dto.amountReceived - totalAmount;
@@ -206,7 +342,6 @@ export class PaymentsService {
       },
     });
 
-    // Update payment status
     await this.prisma.payment.update({
       where: { id },
       data: {
@@ -214,6 +349,9 @@ export class PaymentsService {
         amountReceived: dto.amountReceived,
         change,
         paidAt: new Date(),
+        ...(dto.paymentMethod
+          ? { paymentMethod: dto.paymentMethod as PaymentMethod }
+          : {}),
       },
     });
 
@@ -225,20 +363,24 @@ export class PaymentsService {
       },
     });
 
-    // Update customer points
+    // Update customer points with transaction log
     if (!job) {
       throw new NotFoundException(`Job with ID ${payment.jobId} not found`);
     }
 
-    const pointsEarned = Math.floor(totalAmount / 100);
-    await this.prisma.customer.update({
-      where: { id: job.motorcycle.ownerId },
-      data: {
-        points: {
-          increment: pointsEarned - (payment.pointsUsed || 0),
-        },
-      },
-    });
+    // Earn points if applicable (after deducting used points)
+    if (
+      payment.pointsEarned > 0 &&
+      payment.pointsEarned > (payment.pointsUsed || 0)
+    ) {
+      await this.pointsService.earn({
+        customerId: job.motorcycle.ownerId,
+        points: payment.pointsEarned - (payment.pointsUsed || 0),
+        amount: totalAmount,
+        reference: payment.paymentNo,
+        description: `สะสมแต้มจากงาน ${job.jobNo}`,
+      });
+    }
 
     return this.prisma.payment.findUnique({
       where: { id },
@@ -266,7 +408,7 @@ export class PaymentsService {
     const where: any = {};
 
     if (filters?.paymentStatus) {
-      where.status = filters.paymentStatus;
+      where.paymentStatus = filters.paymentStatus;
     }
 
     if (filters?.paymentMethod) {
@@ -280,11 +422,11 @@ export class PaymentsService {
         },
         ...(filters?.dateFrom || filters?.dateTo
           ? {
-            createdAt: {
-              ...(filters?.dateFrom ? { gte: filters.dateFrom } : {}),
-              ...(filters?.dateTo ? { lte: filters.dateTo } : {}),
-            },
-          }
+              createdAt: {
+                ...(filters?.dateFrom ? { gte: filters.dateFrom } : {}),
+                ...(filters?.dateTo ? { lte: filters.dateTo } : {}),
+              },
+            }
           : {}),
       };
     }
@@ -292,6 +434,7 @@ export class PaymentsService {
     return this.prisma.payment.findMany({
       where,
       include: {
+        customer: true,
         job: {
           include: {
             motorcycle: {
@@ -312,11 +455,31 @@ export class PaymentsService {
     const payment = await this.prisma.payment.findUnique({
       where: { id },
       include: {
+        customer: true,
         job: {
           include: {
             motorcycle: {
               include: {
                 owner: true,
+              },
+            },
+            laborTimes: true,
+            outsources: true,
+            quotation: {
+              include: {
+                items: {
+                  include: { part: true },
+                },
+              },
+            },
+            partRequisitions: {
+              where: { status: 'ISSUED' },
+              include: {
+                items: {
+                  include: {
+                    part: true,
+                  },
+                },
               },
             },
           },
@@ -335,11 +498,24 @@ export class PaymentsService {
     const payment = await this.prisma.payment.findUnique({
       where: { jobId },
       include: {
+        customer: true,
         job: {
           include: {
             motorcycle: {
               include: {
                 owner: true,
+              },
+            },
+            laborTimes: true,
+            outsources: true,
+            partRequisitions: {
+              where: { status: 'ISSUED' },
+              include: {
+                items: {
+                  include: {
+                    part: true,
+                  },
+                },
               },
             },
           },

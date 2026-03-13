@@ -6,6 +6,18 @@
  * - Managing customer and motorcycle data
  * - Handling reception history
  */
+import { apiClient } from './api'
+
+const KNOWN_BRANDS = ['Honda', 'Yamaha', 'Vespa', 'Suzuki', 'Kawasaki', 'BMW', 'Ducati', 'KTM', 'Harley-Davidson', 'Royal Enfield']
+
+function extractBrand(modelName: string): { brand: string; model: string } {
+  for (const b of KNOWN_BRANDS) {
+    if (modelName.startsWith(b + ' ')) {
+      return { brand: b, model: modelName.slice(b.length + 1) }
+    }
+  }
+  return { brand: modelName.split(' ')[0] || 'อื่นๆ', model: modelName }
+}
 
 export interface RepairRequestDTO {
   // Customer Information
@@ -33,6 +45,9 @@ export interface RepairRequestDTO {
   symptoms: string
   tags: string[] // e.g., ['เครื่องยนต์', 'ระบบเบรก']
   images?: string[] // Base64 encoded images or URLs
+  jobType?: string // 'NORMAL' | 'DEEP_INSPECTION'
+  fuelLevel?: number // 0-100
+  valuables?: string // ของมีค่าในรถ
   
   // Context Information
   activityType: 'แจ้งซ่อมครั้งแรก' | 'แจ้งซ่อมรถที่มีในระบบ' | 'แจ้งซ่อมรถคันใหม่'
@@ -76,41 +91,147 @@ export interface MotorcycleDTO {
 }
 
 class ReceptionApiService {
-  private baseUrl = '/api/reception' // TODO: Update with actual API URL
+  /**
+   * Helper function to map the actual backend Job format to the UI expected format
+   */
+  private mapJobToUI(job: any, customerId: number): RepairRequestResponse {
+    let mappedStatus: any = 'pending_foreman_review';
+    switch (job.status) {
+      case 'IN_PROGRESS':
+        mappedStatus = 'in_progress';
+        break;
+      case 'COMPLETED':
+      case 'READY_FOR_DELIVERY':
+      case 'PAID':
+        mappedStatus = 'completed';
+        break;
+      case 'PENDING':
+      default:
+        mappedStatus = 'pending_foreman_review';
+        break;
+    }
+
+    return {
+      id: job.jobNo || job.id.toString(),
+      customerId,
+      motorcycleId: job.motorcycleId,
+      symptoms: job.symptom || '',
+      tags: job.tags || [],
+      images: job.images || [],
+      status: mappedStatus,
+      queueNumber: job.id,
+      createdAt: job.createdAt,
+      updatedAt: job.updatedAt,
+      assignedTechnicianId: job.technicianId
+    };
+  }
 
   /**
    * Create a new repair request and send to foreman
    * This is called when clicking "ส่งใบแจ้งซ่อม" button
-   * 
-   * @param data Repair request data
-   * @returns Created repair request with ID and queue number
    */
   async createRepairRequest(data: RepairRequestDTO): Promise<RepairRequestResponse> {
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // const response = await fetch(`${this.baseUrl}/repair-requests`, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     'Authorization': `Bearer ${localStorage.getItem('token')}`
-      //   },
-      //   body: JSON.stringify(data)
-      // })
-      // 
-      // if (!response.ok) {
-      //   throw new Error(`Failed to create repair request: ${response.statusText}`)
-      // }
-      // 
-      // const result = await response.json()
-      // 
-      // // Send notification to foreman role
-      // await this.sendForemanNotification(result.id)
-      // 
-      // return result
+      const licensePlate = `${data.motorcycleData.licensePlate.line1} ${data.motorcycleData.licensePlate.province} ${data.motorcycleData.licensePlate.line2}`.trim();
+      let customerId = data.customerId;
+      let motorcycleId = data.motorcycleId;
 
-      // MOCK: Simulate API response
-      console.log('[MOCK] Creating repair request:', data)
-      throw new Error('API not implemented yet. Use mock data.')
+      if (!data.isExistingCustomer) {
+        const { brand, model } = extractBrand(data.motorcycleData.model);
+        try {
+          // กรณีลูกค้าใหม่: พยายามสร้างลูกค้า + รถใหม่
+          const createRes = await apiClient.post<any>('/customers/with-motorcycle', {
+            phoneNumber: data.customerData.phone,
+            firstName: data.customerData.firstName,
+            lastName: data.customerData.lastName,
+            address: data.customerData.address || '',
+            motorcycle: {
+              licensePlate,
+              brand,
+              model,
+              color: data.motorcycleData.color,
+              vin: `VIN-${Date.now()}`
+            }
+          });
+          customerId = createRes.id;
+          motorcycleId = createRes.motorcycles[0].id;
+        } catch (err: any) {
+          // ถ้าเบอร์หรือข้อมูลรถซ้ำ ให้ไปใช้ข้อมูลที่มีอยู่แล้วแทน
+          const apiErr = err as { name?: string; statusCode?: number };
+          if (apiErr?.name === 'ApiError' && apiErr?.statusCode === 409) {
+            // 1) หาลูกค้าจากเบอร์โทร
+            const customers = await apiClient.get<any[]>(`/customers/search?query=${encodeURIComponent(data.customerData.phone)}`);
+            if (!customers || customers.length === 0) {
+              throw err;
+            }
+            const customer = customers[0];
+            customerId = customer.id;
+
+            // 2) เช็ครถในระบบว่ามีป้ายทะเบียนนี้อยู่แล้วไหม
+            const existingMotorcycle = (customer.motorcycles || []).find(
+              (m: any) => m.licensePlate === licensePlate
+            );
+
+            if (existingMotorcycle) {
+              motorcycleId = existingMotorcycle.id;
+            } else {
+              // 3) ถ้าไม่มี ให้สร้างรถใหม่ผูกกับลูกค้าเดิม
+              const { brand: motoBrand, model: motoModel } = extractBrand(data.motorcycleData.model);
+              const createMotoRes = await apiClient.post<any>('/motorcycles', {
+                vin: `VIN-${Date.now()}`,
+                licensePlate,
+                brand: motoBrand,
+                model: motoModel,
+                color: data.motorcycleData.color,
+                ownerId: customerId
+              });
+              motorcycleId = createMotoRes.id;
+            }
+          } else {
+            throw err;
+          }
+        }
+      } else {
+        // Make sure we have customer ID
+        if (!customerId) {
+          const searchRes = await apiClient.get<any[]>(`/customers/search?query=${encodeURIComponent(data.customerData.phone)}`);
+          if (searchRes && searchRes.length > 0) {
+            customerId = searchRes[0].id;
+          } else {
+            throw new Error('Customer not found');
+          }
+        }
+        
+        // Handle potentially new motorcycle for existing customer
+        if (data.isNewMotorcycle || !motorcycleId) {
+          const { brand: motoBrand, model: motoModel } = extractBrand(data.motorcycleData.model)
+          const createMotoRes = await apiClient.post<any>('/motorcycles', {
+            vin: `VIN-${Date.now()}`,
+            licensePlate,
+            brand: motoBrand,
+            model: motoModel,
+            color: data.motorcycleData.color,
+            ownerId: customerId
+          });
+          motorcycleId = createMotoRes.id;
+        }
+      }
+
+      // Create Repair Request (Job)
+      const jobPayload = {
+        motorcycleId: Number(motorcycleId),
+        symptom: data.symptoms,
+        jobType: data.jobType || 'NORMAL',
+        fuelLevel: data.fuelLevel ?? undefined,
+        valuables: data.valuables || undefined,
+        images: (data.images || []).filter(img => !img.startsWith('blob:')),
+        tags: data.tags || []
+      };
+      console.log('Creating job with payload:', JSON.stringify(jobPayload, null, 2));
+      const jobRes = await apiClient.post<any>('/jobs', jobPayload);
+
+      return this.mapJobToUI(jobRes, customerId!);
+      
     } catch (error) {
       console.error('Error creating repair request:', error)
       throw error
@@ -119,27 +240,11 @@ class ReceptionApiService {
 
   /**
    * Get all repair requests (for history page)
-   * 
-   * @returns List of repair requests
    */
   async getRepairRequests(): Promise<RepairRequestResponse[]> {
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // const response = await fetch(`${this.baseUrl}/repair-requests`, {
-      //   method: 'GET',
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('token')}`
-      //   }
-      // })
-      // 
-      // if (!response.ok) {
-      //   throw new Error(`Failed to fetch repair requests: ${response.statusText}`)
-      // }
-      // 
-      // return await response.json()
-
-      // MOCK: Simulate API response
-      throw new Error('API not implemented yet. Use mock data.')
+      const jobs = await apiClient.get<any[]>('/jobs');
+      return jobs.map(j => this.mapJobToUI(j, j.motorcycle?.owner?.id || 0));
     } catch (error) {
       console.error('Error fetching repair requests:', error)
       throw error
@@ -148,28 +253,12 @@ class ReceptionApiService {
 
   /**
    * Get a single repair request by ID
-   * 
-   * @param id Repair request ID
-   * @returns Repair request details
    */
   async getRepairRequestById(id: string): Promise<RepairRequestResponse> {
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // const response = await fetch(`${this.baseUrl}/repair-requests/${id}`, {
-      //   method: 'GET',
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('token')}`
-      //   }
-      // })
-      // 
-      // if (!response.ok) {
-      //   throw new Error(`Failed to fetch repair request: ${response.statusText}`)
-      // }
-      // 
-      // return await response.json()
-
-      // MOCK: Simulate API response
-      throw new Error('API not implemented yet. Use mock data.')
+      const numericId = parseInt(id, 10) || Number(id.replace(/[^0-9]/g, ''));
+      const job = await apiClient.get<any>(`/jobs/${numericId}`);
+      return this.mapJobToUI(job, job.motorcycle?.ownerId || 0);
     } catch (error) {
       console.error('Error fetching repair request:', error)
       throw error
@@ -178,30 +267,21 @@ class ReceptionApiService {
 
   /**
    * Create or get existing customer
-   * 
-   * @param data Customer data
-   * @returns Customer ID
    */
   async createOrGetCustomer(data: CustomerDTO): Promise<{ id: number; isNew: boolean }> {
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // const response = await fetch(`${this.baseUrl}/customers`, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     'Authorization': `Bearer ${localStorage.getItem('token')}`
-      //   },
-      //   body: JSON.stringify(data)
-      // })
-      // 
-      // if (!response.ok) {
-      //   throw new Error(`Failed to create/get customer: ${response.statusText}`)
-      // }
-      // 
-      // return await response.json()
-
-      // MOCK: Simulate API response
-      throw new Error('API not implemented yet. Use mock data.')
+      const searchRes = await apiClient.get<any[]>(`/customers/search?query=${encodeURIComponent(data.phone)}`);
+      if (searchRes && searchRes.length > 0) {
+        return { id: searchRes[0].id, isNew: false };
+      }
+      
+      const createRes = await apiClient.post<any>('/customers', {
+        phoneNumber: data.phone,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        address: data.address
+      });
+      return { id: createRes.id, isNew: true };
     } catch (error) {
       console.error('Error creating/getting customer:', error)
       throw error
@@ -210,30 +290,20 @@ class ReceptionApiService {
 
   /**
    * Create or get existing motorcycle
-   * 
-   * @param data Motorcycle data
-   * @returns Motorcycle ID
    */
   async createOrGetMotorcycle(data: MotorcycleDTO): Promise<{ id: number; isNew: boolean }> {
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // const response = await fetch(`${this.baseUrl}/motorcycles`, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     'Authorization': `Bearer ${localStorage.getItem('token')}`
-      //   },
-      //   body: JSON.stringify(data)
-      // })
-      // 
-      // if (!response.ok) {
-      //   throw new Error(`Failed to create/get motorcycle: ${response.statusText}`)
-      // }
-      // 
-      // return await response.json()
-
-      // MOCK: Simulate API response
-      throw new Error('API not implemented yet. Use mock data.')
+      const licensePlate = `${data.plateLine1} ${data.province} ${data.plateLine2}`.trim();
+      const { brand, model } = extractBrand(data.model)
+      const createRes = await apiClient.post<any>('/motorcycles', {
+        vin: `VIN-${Date.now()}`,
+        licensePlate,
+        brand,
+        model,
+        color: data.color,
+        ownerId: data.customerId
+      });
+      return { id: createRes.id, isNew: true };
     } catch (error) {
       console.error('Error creating/getting motorcycle:', error)
       throw error
@@ -242,73 +312,33 @@ class ReceptionApiService {
 
   /**
    * Upload images for repair request
-   * 
-   * @param files Image files
-   * @returns Array of uploaded image URLs
+   * Currently converting to base64 to simulate upload logic while persisting to local storage.
    */
   async uploadImages(files: File[]): Promise<string[]> {
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // const formData = new FormData()
-      // files.forEach(file => {
-      //   formData.append('images', file)
-      // })
-      // 
-      // const response = await fetch(`${this.baseUrl}/upload-images`, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('token')}`
-      //   },
-      //   body: formData
-      // })
-      // 
-      // if (!response.ok) {
-      //   throw new Error(`Failed to upload images: ${response.statusText}`)
-      // }
-      // 
-      // const result = await response.json()
-      // return result.urls // Array of uploaded image URLs
-
-      // MOCK: Simulate API response
-      console.log('[MOCK] Uploading images:', files.map(f => f.name))
-      throw new Error('API not implemented yet. Use mock data.')
+      const base64Images = await Promise.all(files.map(file => {
+        return new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = error => reject(error);
+        });
+      }));
+      return base64Images;
     } catch (error) {
-      console.error('Error uploading images:', error)
-      throw error
+      console.error('Error converting images to Base64:', error);
+      throw error;
     }
   }
 
   /**
    * Send notification to foreman role
-   * 
-   * @param repairRequestId Repair request ID
-   * @returns Success status
    */
   async sendForemanNotification(repairRequestId: string): Promise<{ success: boolean }> {
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // const response = await fetch('/api/notifications/foreman-repair-request', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     'Authorization': `Bearer ${localStorage.getItem('token')}`
-      //   },
-      //   body: JSON.stringify({
-      //     repairRequestId,
-      //     recipientRole: 'foreman',
-      //     type: 'new_repair_request'
-      //   })
-      // })
-      // 
-      // if (!response.ok) {
-      //   throw new Error(`Failed to send notification: ${response.statusText}`)
-      // }
-      // 
-      // return await response.json()
-
-      // MOCK: Simulate success
-      console.log(`[MOCK] Notification sent for repair request: ${repairRequestId}`)
-      return { success: true }
+      // Backend automatically notifies conceptually via websocket, etc.
+      // We will pretend it's a success for now.
+      return { success: true };
     } catch (error) {
       console.error('Error sending notification:', error)
       throw error
@@ -317,9 +347,6 @@ class ReceptionApiService {
 
   /**
    * Search customers by phone or name
-   * 
-   * @param query Search query
-   * @returns Matching customers with their motorcycles
    */
   async searchCustomers(query: string): Promise<Array<{
     id: number
@@ -337,22 +364,25 @@ class ReceptionApiService {
     }>
   }>> {
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // const response = await fetch(`${this.baseUrl}/customers/search?q=${encodeURIComponent(query)}`, {
-      //   method: 'GET',
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('token')}`
-      //   }
-      // })
-      // 
-      // if (!response.ok) {
-      //   throw new Error(`Failed to search customers: ${response.statusText}`)
-      // }
-      // 
-      // return await response.json()
-
-      // MOCK: Simulate API response
-      throw new Error('API not implemented yet. Use mock data.')
+      const customers = await apiClient.get<any[]>(`/customers/search?query=${encodeURIComponent(query)}`);
+      return customers.map(c => ({
+        id: c.id,
+        firstName: c.firstName,
+        lastName: c.lastName,
+        phone: c.phoneNumber,
+        address: c.address || '',
+        motorcycles: (c.motorcycles || []).map((m: any) => {
+          const plates = m.licensePlate ? m.licensePlate.split(' ') : [];
+          return {
+            id: m.id,
+            model: m.model,
+            color: m.color,
+            plateLine1: plates[0] || m.licensePlate,
+            province: plates[1] || '',
+            plateLine2: plates[2] || ''
+          };
+        })
+      }));
     } catch (error) {
       console.error('Error searching customers:', error)
       throw error

@@ -7,9 +7,9 @@ export enum CustomerDecision {
 }
 
 export class UpdateCustomerDecisionDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Customer decision',
-    enum: CustomerDecision 
+    enum: CustomerDecision,
   })
   @IsEnum(CustomerDecision)
   decision: CustomerDecision;

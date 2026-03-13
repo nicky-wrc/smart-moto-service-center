@@ -1,5 +1,5 @@
 /**
- * Centralized API Client for RevUp
+ * Centralized API Client for Smart Moto Service Center
  *
  * Switch between mock and real API using:
  *   VITE_USE_MOCK_DATA=true   → uses mock data (default for local dev)
@@ -8,13 +8,13 @@
  * Auth token is automatically injected from localStorage when present.
  */
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
-export const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA !== 'false'
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
+export const USE_MOCK_DATA = false // Always use real API
 
 // ─── Auth helper ─────────────────────────────────────────────────────────────
 
 function getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem('auth_token')
+    const token = localStorage.getItem('access_token')
     return {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),

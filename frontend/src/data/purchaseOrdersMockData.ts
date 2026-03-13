@@ -4,6 +4,7 @@ export type POStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'cancelle
 
 export interface PurchaseOrder {
     id: string
+    poNo?: string
     supplierId: number
     supplierName: string
     createdAt: string

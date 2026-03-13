@@ -1,5 +1,6 @@
 import type { JobOrder } from '../pages/foreman/jobs'
 import type { SelectedPart } from '../pages/foreman/types'
+import { formatMotorcycleName } from '../utils/motorcycle'
 
 type Props = {
   variant: 'general' | 'deep' | 'additional'
@@ -56,7 +57,7 @@ export function QuotationA4Document({ variant, job, onClose, foremanNote, estima
             </div>
             <div>
               <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">ข้อมูลรถ</p>
-              <p className="text-sm font-bold text-[#1E1E1E]">{job.brand} {job.model}</p>
+              <p className="text-sm font-bold text-[#1E1E1E]">{formatMotorcycleName(job.brand, job.model)}</p>
               <p className="text-sm text-gray-500 mt-0.5">ทะเบียน {job.licensePlate} · {job.province}</p>
             </div>
           </div>
@@ -138,7 +139,7 @@ export function QuotationA4Document({ variant, job, onClose, foremanNote, estima
               <p className="text-sm text-gray-400 mt-0.5">วันที่ ......../......../........</p>
             </div>
           </div>
-          <p className="text-center text-sm text-gray-300 mt-8">เอกสารนี้สร้างโดยระบบ RevUp</p>
+          <p className="text-center text-sm text-gray-300 mt-8">เอกสารนี้สร้างโดยระบบ Smart Moto Service Center</p>
         </div>
       </div>
     )
@@ -178,7 +179,7 @@ export function QuotationA4Document({ variant, job, onClose, foremanNote, estima
             </div>
             <div>
               <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">ข้อมูลรถ</p>
-              <p className="text-sm font-bold text-[#1E1E1E]">{job.brand} {job.model}</p>
+              <p className="text-sm font-bold text-[#1E1E1E]">{formatMotorcycleName(job.brand, job.model)}</p>
               <p className="text-sm text-gray-500 mt-0.5">ทะเบียน {job.licensePlate} · {job.province}</p>
             </div>
           </div>
@@ -243,7 +244,7 @@ export function QuotationA4Document({ variant, job, onClose, foremanNote, estima
               <p className="text-sm text-gray-400 mt-0.5">วันที่ ......../......../........</p>
             </div>
           </div>
-          <p className="text-center text-sm text-gray-300 mt-8">เอกสารนี้สร้างโดยระบบ RevUp</p>
+          <p className="text-center text-sm text-gray-300 mt-8">เอกสารนี้สร้างโดยระบบ Smart Moto Service Center</p>
         </div>
       </div>
     )
@@ -285,7 +286,7 @@ export function QuotationA4Document({ variant, job, onClose, foremanNote, estima
           </div>
           <div>
             <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">ข้อมูลรถ</p>
-            <p className="text-sm font-bold text-[#1E1E1E]">{job.brand} {job.model}</p>
+            <p className="text-sm font-bold text-[#1E1E1E]">{formatMotorcycleName(job.brand, job.model)}</p>
             <p className="text-sm text-gray-500 mt-0.5">ทะเบียน {job.licensePlate} · {job.province}</p>
           </div>
         </div>
@@ -349,7 +350,7 @@ export function QuotationA4Document({ variant, job, onClose, foremanNote, estima
             <p className="text-sm text-gray-400 mt-0.5">วันที่ ......../......../........</p>
           </div>
         </div>
-        <p className="text-center text-sm text-gray-300 mt-8">เอกสารนี้สร้างโดยระบบ RevUp</p>
+        <p className="text-center text-sm text-gray-300 mt-8">เอกสารนี้สร้างโดยระบบ Smart Moto Service Center</p>
       </div>
     </div>
   )

@@ -59,6 +59,10 @@ export const useForemanResponseList = (params?: ForemanResponseListParams) => {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<Error | null>(null)
 
+    // Serialize params to avoid infinite re-render loop
+    // (inline object literal creates new reference every render)
+    const paramsKey = JSON.stringify(params)
+
     const fetchData = useCallback(async () => {
         try {
             setLoading(true)
@@ -72,7 +76,8 @@ export const useForemanResponseList = (params?: ForemanResponseListParams) => {
         } finally {
             setLoading(false)
         }
-    }, [params])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [paramsKey])
 
     useEffect(() => {
         fetchData()

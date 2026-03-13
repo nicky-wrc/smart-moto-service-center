@@ -1,41 +1,50 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { mockJobs } from './jobs'
+import { api } from '../../lib/api'
 import { QuotationA4Document } from '../../components/QuotationA4Document'
 import { QuotationPreviewModal } from '../../components/QuotationPreviewModal'
 import { ConfirmModal } from '../../components/ConfirmModal'
+import { useAlert } from '../../contexts/AlertContext'
 import type { Part, SelectedPart } from './types'
+import { formatMotorcycleName } from '../../utils/motorcycle'
 
-// ─── Parts Catalog ────────────────────────────────────────────────────────────
+// ─── Parts Catalog (fetched from API) ─────────────────────────────────────────
 
-const mockPartsCatalog: Part[] = [
-  { id: 1,  name: 'ผ้าเบรกหน้า',          partNumber: 'BR-F-001',  stock: 8,  unit: 'ชุด',  unitPrice: 850  },
-  { id: 2,  name: 'ผ้าเบรกหลัง',          partNumber: 'BR-R-001',  stock: 5,  unit: 'ชุด',  unitPrice: 750  },
-  { id: 3,  name: 'น้ำมันเบรก DOT4',      partNumber: 'OL-B-004',  stock: 12, unit: 'ขวด', unitPrice: 180  },
-  { id: 4,  name: 'หัวเทียน NGK CR7HSA',  partNumber: 'SP-NGK-01', stock: 0,  unit: 'หัว',  unitPrice: 120  },
-  { id: 5,  name: 'สายพานขับเคลื่อน',     partNumber: 'BL-DR-001', stock: 3,  unit: 'เส้น', unitPrice: 1200 },
-  { id: 6,  name: 'น้ำมันเครื่อง 10W-40', partNumber: 'OL-E-010',  stock: 20, unit: 'ลิตร', unitPrice: 220  },
-  { id: 7,  name: 'ไส้กรองอากาศ',         partNumber: 'FL-AR-001', stock: 0,  unit: 'ชิ้น', unitPrice: 350  },
-  { id: 8,  name: 'ไส้กรองน้ำมัน',        partNumber: 'FL-OL-001', stock: 7,  unit: 'ชิ้น', unitPrice: 90   },
-  { id: 9,  name: 'โซ่ขับ',               partNumber: 'CH-DR-001', stock: 2,  unit: 'เส้น', unitPrice: 980  },
-  { id: 10, name: 'แบตเตอรี่ 12V 5Ah',   partNumber: 'BT-12V-05', stock: 4,  unit: 'ก้อน', unitPrice: 1800 },
+let partsCatalog: Part[] = []
+
+// visual style rotation for parts
+const partColors = [
+  { bg: 'bg-blue-50',   stroke: '#93c5fd' },
+  { bg: 'bg-amber-50',  stroke: '#fbbf24' },
+  { bg: 'bg-orange-50', stroke: '#fb923c' },
+  { bg: 'bg-zinc-100',  stroke: '#a1a1aa' },
+  { bg: 'bg-green-50',  stroke: '#86efac' },
+  { bg: 'bg-purple-50', stroke: '#c084fc' },
 ]
-
-// visual style per part
-const partVisual: Record<number, { bg: string; stroke: string }> = {
-  1:  { bg: 'bg-blue-50',   stroke: '#93c5fd' },
-  2:  { bg: 'bg-blue-50',   stroke: '#93c5fd' },
-  3:  { bg: 'bg-amber-50',  stroke: '#fbbf24' },
-  4:  { bg: 'bg-orange-50', stroke: '#fb923c' },
-  5:  { bg: 'bg-zinc-100',  stroke: '#a1a1aa' },
-  6:  { bg: 'bg-amber-50',  stroke: '#fbbf24' },
-  7:  { bg: 'bg-green-50',  stroke: '#86efac' },
-  8:  { bg: 'bg-green-50',  stroke: '#86efac' },
-  9:  { bg: 'bg-zinc-100',  stroke: '#a1a1aa' },
-  10: { bg: 'bg-purple-50', stroke: '#c084fc' },
+const partVisual: Record<number, { bg: string; stroke: string }> = {}
+function getPartVisual(id: number) {
+  if (!partVisual[id]) partVisual[id] = partColors[id % partColors.length]
+  return partVisual[id]
 }
 
-import { mockMechanics } from './mechanics'
+// ─── Status mapping ───────────────────────────────────────────────────────────
+const STATUS_MAP: Record<string, string> = {
+  PENDING: 'รอประเมิน',
+  WAITING_APPROVAL: 'รอลูกค้าอนุมัติ',
+  READY: 'พร้อมซ่อม',
+  IN_PROGRESS: 'กำลังดำเนินงาน',
+  WAITING_PARTS: 'รอสั่งซื้อ',
+  DEEP_INSPECTION: 'ตรวจเชิงลึก',
+  QC_PENDING: 'รอตรวจ',
+  CLEANING: 'ล้างรถ',
+  READY_FOR_DELIVERY: 'พร้อมส่งมอบ',
+  COMPLETED: 'เสร็จสิ้น',
+  PAID: 'ชำระแล้ว',
+  CANCELLED: 'ยกเลิก',
+}
+
+type Mechanic = { id: number; name: string; avatar: string; jobs: number; skills: string[] }
+let mechanicsList: Mechanic[] = []
 
 // ─── Predefined Tags ──────────────────────────────────────────────────────────
 
@@ -58,11 +67,13 @@ function PartsModal({
   onAdd,
   onRemove,
   onClose,
+  onError,
 }: {
   selectedParts: SelectedPart[]
   onAdd: (part: Part, qty: number) => void
   onRemove: (id: number) => void
   onClose: () => void
+  onError?: (msg: string) => void
 }) {
   const [search, setSearch] = useState('')
   const [modalQty, setModalQty] = useState<Record<number, number>>({})
@@ -73,7 +84,7 @@ function PartsModal({
     setModalQty((prev) => ({ ...prev, [id]: q }))
   }
 
-  const filtered = mockPartsCatalog.filter(
+  const filtered = partsCatalog.filter(
     (p) =>
       p.name.includes(search) || p.partNumber.toLowerCase().includes(search.toLowerCase())
   )
@@ -168,20 +179,28 @@ function PartsModal({
                         <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden shrink-0">
                           <button
                             onClick={() => setQty(part.id, q - 1)}
-                            className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-50 bg-transparent border-none cursor-pointer text-sm font-bold"
+                            disabled={q <= 1}
+                            className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-50 bg-transparent border-none cursor-pointer text-sm font-bold disabled:opacity-30 disabled:cursor-not-allowed"
                           >
                             −
                           </button>
                           <span className="text-sm font-medium w-6 text-center">{q}</span>
                           <button
-                            onClick={() => setQty(part.id, q + 1)}
-                            className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-50 bg-transparent border-none cursor-pointer text-sm font-bold"
+                            onClick={() => setQty(part.id, Math.min(q + 1, part.stock))}
+                            disabled={q >= part.stock}
+                            className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-50 bg-transparent border-none cursor-pointer text-sm font-bold disabled:opacity-30 disabled:cursor-not-allowed"
                           >
                             +
                           </button>
                         </div>
                         <button
-                          onClick={() => isAdded ? onRemove(part.id) : onAdd(part, q)}
+                          onClick={() => {
+                            if (q > part.stock) {
+                              if (onError) onError(`จำนวนอะไหล่ไม่เพียงพอ! (มีแค่ ${part.stock} ชิ้นในสต็อก)`);
+                              return;
+                            }
+                            isAdded ? onRemove(part.id) : onAdd(part, Math.min(q, part.stock))
+                          }}
                           className={`flex-1 text-sm font-medium py-1.5 rounded-lg border-none cursor-pointer transition-colors ${
                             isAdded
                               ? 'bg-red-50 text-red-500 hover:bg-red-100'
@@ -283,7 +302,99 @@ function JobTypeDropdown({ value, onChange }: { value: JobType; onChange: (v: Jo
 export default function JobDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const job = mockJobs.find((j) => j.id === Number(id))
+
+  // ─── API data ───────────────────────────────────────────────────────────────
+  const [job, setJob] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [jobData, usersData, partsData] = await Promise.all([
+          api.get<any>(`/jobs/${id}`),
+          api.get<any[]>('/users'),
+          api.get<any[]>('/parts'),
+        ])
+
+        // Map API users to Mechanic shape
+        const techs = usersData.filter((u: any) =>
+          ['TECHNICIAN', 'FOREMAN'].includes(u.role)
+        )
+        const allJobs = await api.get<any[]>('/jobs')
+        mechanicsList = techs.map((u: any) => {
+          const activeJobs = allJobs.filter((j: any) =>
+            j.technicianId === u.id &&
+            !['COMPLETED', 'PAID', 'CANCELLED'].includes(j.status)
+          ).length
+          return {
+            id: u.id,
+            name: u.name,
+            avatar: u.name?.[0] ?? '?',
+            jobs: activeJobs,
+            skills: [],
+          }
+        })
+
+        // Map API parts to Part shape
+        partsCatalog = partsData.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          partNumber: p.partNo || `P-${p.id}`,
+          stock: p.stockQuantity ?? 0,
+          unit: p.unit || 'ชิ้น',
+          unitPrice: Number(p.unitPrice) || 0,
+        }))
+
+        // Map API job to internal shape matching old mock data properties
+        const statusKey = jobData.status as string
+        const mapped: any = {
+          id: jobData.id,
+          jobNo: jobData.jobNo,
+          receptionist: jobData.reception?.name ?? '-',
+          brand: jobData.motorcycle?.brand ?? '',
+          model: jobData.motorcycle?.model ?? '',
+          licensePlate: jobData.motorcycle?.licensePlate ?? '',
+          province: '',
+          symptom: jobData.symptom ?? '',
+          receivedAt: jobData.createdAt
+            ? new Date(jobData.createdAt).toLocaleDateString('th-TH', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+              }) + '  ' + new Date(jobData.createdAt).toLocaleTimeString('th-TH', {
+                hour: '2-digit', minute: '2-digit',
+              }) + ' น.'
+            : '-',
+          status: STATUS_MAP[statusKey] || statusKey,
+          customerName:
+            `${jobData.motorcycle?.owner?.firstName ?? ''} ${jobData.motorcycle?.owner?.lastName ?? ''}`.trim() || '-',
+          customerPhone: jobData.motorcycle?.owner?.phoneNumber ?? '-',
+          tags: jobData.tags ?? [],
+          photos: jobData.images ?? [],
+          mechanicId: jobData.technicianId ?? undefined,
+          motorcycleId: jobData.motorcycleId,
+          customerId: jobData.motorcycle?.owner?.id ?? jobData.motorcycle?.ownerId,
+          diagnosisNotes: jobData.diagnosisNotes ?? null,
+          mechanicReport: jobData.mechanicNotes
+            ? {
+                note: jobData.mechanicNotes,
+                reportedAt: jobData.updatedAt
+                  ? new Date(jobData.updatedAt).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                    + ' ' + new Date(jobData.updatedAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.'
+                  : '-',
+                photos: [] as string[],
+              }
+            : undefined,
+          quotation: jobData.quotation,
+          partRequisitions: jobData.partRequisitions ?? [],
+        }
+        setJob(mapped)
+      } catch (err) {
+        console.error('Failed to load job details:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [id])
 
   // Mechanic assignment (for พร้อมซ่อม status)
   const [selectedMechanics, setSelectedMechanics] = useState<number[]>([])
@@ -292,10 +403,51 @@ export default function JobDetailPage() {
   const [mechanicSkillFilter, setMechanicSkillFilter] = useState('')
 
   // Tags (editable)
-  const [tags, setTags] = useState(job?.tags ?? [])
+  const [tags, setTags] = useState<string[]>([])
+  useEffect(() => { if (job?.tags) setTags(job.tags) }, [job])
 
-  // Foreman note
+  // Foreman note — pre-fill from saved diagnosisNotes
   const [foremanNote, setForemanNote] = useState('')
+  useEffect(() => { if (job?.diagnosisNotes) setForemanNote(job.diagnosisNotes) }, [job])
+
+  // Hydrate initial quotation (ประเมินงาน) and additional requisitions (ขอเพิ่มอะไหล่) from API
+  useEffect(() => {
+    if (!job) return
+    const quot = job.quotation
+    if (quot?.items?.length) {
+      setQuotItems(quot.items.map((i: any) => ({
+        id: i.id,
+        name: i.itemName ?? i.part?.name ?? '-',
+        qty: i.quantity ?? 1,
+        unitPrice: Number(i.unitPrice) ?? 0,
+      })))
+      setQuotSent(true)
+      setQuotationSent(true)
+    }
+    // ใบเสนอราคาเพิ่มเติม — hydrate เฉพาะ requisitions ที่มาจาก "ใบเสนอราคาเพิ่มเติม" (ไม่เอาของประเมินงานที่ Auto-generated)
+    const reqs = (job.partRequisitions ?? []).filter((r: any) =>
+      (r.notes ?? '').includes('ใบเสนอราคาเพิ่มเติม')
+    )
+    if (reqs.length > 0) {
+      const items = reqs.flatMap((r: any) => (r.items ?? []).filter((i: any) => i.partId || i.part).map((i: any) => {
+        const p = i.part ?? {}
+        return {
+          _reqKey: `r-${r.id}-${i.id}`,
+          part: {
+            id: p.id,
+            name: p.name ?? '-',
+            partNumber: p.partNo ?? `P-${p.id}`,
+            stock: 0,
+            unit: p.unit ?? 'ชิ้น',
+            unitPrice: Number(p.unitPrice ?? i.unitPrice ?? 0),
+          },
+          qty: i.issuedQuantity ?? i.quantity ?? 1,
+        }
+      }))
+      setAddlSelectedParts(items)
+      setAddlQuotationSent(true)
+    }
+  }, [job?.id, job?.quotation?.id, job?.partRequisitions?.length])
 
   // Foreman photos
   const [foremanPhotos, setForemanPhotos] = useState<string[]>([])
@@ -348,14 +500,25 @@ export default function JobDetailPage() {
   const [addlQuotPreview, setAddlQuotPreview] = useState(false)
   const [addlQuotFullView, setAddlQuotFullView] = useState(false)
   const [addlQuotationSent, setAddlQuotationSent] = useState(false)
+  const [addlSending, setAddlSending] = useState(false)
 
   // Confirm modal
   const [confirmAction, setConfirmAction] = useState<null | 'qcPass' | 'qcFail'>(null)
+  
+  const { showAlert } = useAlert()
 
   // Mechanic report photo lightbox
   const [mrLightboxOpen, setMrLightboxOpen] = useState(false)
   const [mrLightboxIdx, setMrLightboxIdx] = useState(0)
 
+  if (loading) return (
+    <div className="flex items-center justify-center h-full">
+      <div className="text-center">
+        <div className="w-8 h-8 border-2 border-[#F8981D] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-sm text-gray-400">กำลังโหลดข้อมูล...</p>
+      </div>
+    </div>
+  )
   if (!job) return <div className="p-6 text-sm text-gray-400">ไม่พบใบงาน</div>
 
   // Tag helpers
@@ -411,6 +574,7 @@ export default function JobDetailPage() {
           onAdd={handleAddPart}
           onRemove={removePart}
           onClose={() => setPartsModalOpen(false)}
+          onError={(msg) => showAlert('จำนวนอะไหล่ไม่เพียงพอ!', msg)}
         />
       )}
 
@@ -477,7 +641,7 @@ export default function JobDetailPage() {
           />
           {job.mechanicReport.photos.length > 1 && (
             <div className="flex gap-3 mt-5" onClick={(e) => e.stopPropagation()}>
-              {job.mechanicReport.photos.map((p, i) => (
+              {job.mechanicReport.photos.map((p: string, i: number) => (
                 <button
                   key={i}
                   onClick={() => setMrLightboxIdx(i)}
@@ -521,7 +685,34 @@ export default function JobDetailPage() {
         <QuotationPreviewModal
           title="ใบประเมินราคา (ร่าง)"
           onClose={() => { setStockQuotPreview(false); setStockChecked(false) }}
-          onConfirm={() => { setQuotationSent(true); setStockQuotPreview(false) }}
+          onConfirm={async () => {
+              // 1. Create quotation with items
+              const quotationPayload = {
+                customerId: job.customerId,
+                motorcycleId: job.motorcycleId,
+                items: selectedParts.map((sp: any) => ({
+                  itemType: 'PART',
+                  itemName: sp.part.name,
+                  quantity: sp.qty,
+                  unitPrice: sp.part.unitPrice,
+                  partId: sp.part.id,
+                })),
+                jobId: Number(id),
+                notes: foremanNote || undefined,
+              }
+            try {
+              const quotation = await api.post('/quotations', quotationPayload)
+              // 2. Link quotation to job and update status
+              await api.patch(`/jobs/${id}`, { status: 'WAITING_APPROVAL', diagnosisNotes: foremanNote || undefined, tags, quotationId: (quotation as any).id })
+              setQuotationSent(true)
+              setStockQuotPreview(false)
+              setJob((prev: any) => prev ? { ...prev, status: 'รอลูกค้าอนุมัติ' } : prev)
+            } catch (err: any) { 
+              console.error('Failed to send quotation payload:', quotationPayload);
+              console.error('Error details:', err.response?.data || err.message); 
+              showAlert('ส่งใบประเมินราคาไม่สำเร็จ', err.response?.data?.message || err.message);
+            }
+          }}
           confirmLabel="ส่งใบประเมินราคา"
         >
           <div className="grid grid-cols-2 gap-3">
@@ -532,7 +723,7 @@ export default function JobDetailPage() {
             </div>
             <div className="bg-gray-50 rounded-xl p-3">
               <p className="text-sm text-gray-400 mb-1">รถ</p>
-              <p className="text-sm font-semibold text-[#1E1E1E]">{job.brand} {job.model}</p>
+              <p className="text-sm font-semibold text-[#1E1E1E]">{formatMotorcycleName(job.brand, job.model)}</p>
               <p className="text-sm text-gray-500 mt-0.5">{job.licensePlate} · {job.province}</p>
             </div>
           </div>
@@ -612,7 +803,15 @@ export default function JobDetailPage() {
         <QuotationPreviewModal
           title="ใบประเมินราคา — ตรวจเชิงลึก"
           onClose={() => setDeepQuotPreview(false)}
-          onConfirm={() => { setDeepSent(true); setDeepQuotPreview(false) }}
+          onConfirm={async () => {
+            try {
+              await api.patch(`/jobs/${id}/request-inspection`, { inspectionFee: 1000, notes: foremanNote || 'ตรวจเชิงลึก (รื้อ/ผ่าเครื่อง)' })
+              if (tags.length > 0) await api.patch(`/jobs/${id}`, { tags })
+              setDeepSent(true)
+              setDeepQuotPreview(false)
+              setJob((prev: any) => prev ? { ...prev, status: 'รอลูกค้าอนุมัติ' } : prev)
+            } catch (err) { console.error('Failed to request inspection:', err); showAlert('ส่งคำขอตรวจเชิงลึกไม่สำเร็จ') }
+          }}
           confirmLabel="ส่งใบประเมินราคา"
         >
           <div className="grid grid-cols-2 gap-3">
@@ -623,7 +822,7 @@ export default function JobDetailPage() {
             </div>
             <div className="bg-gray-50 rounded-xl p-3">
               <p className="text-sm text-gray-400 mb-1">รถ</p>
-              <p className="text-sm font-semibold text-[#1E1E1E]">{job.brand} {job.model}</p>
+              <p className="text-sm font-semibold text-[#1E1E1E]">{formatMotorcycleName(job.brand, job.model)}</p>
               <p className="text-sm text-gray-500 mt-0.5">{job.licensePlate} · {job.province}</p>
             </div>
           </div>
@@ -690,8 +889,30 @@ export default function JobDetailPage() {
           title="ใบเสนอราคาเพิ่มเติม"
           subtitle={`อ้างอิงใบงาน #${job.id}`}
           onClose={() => setAddlQuotPreview(false)}
-          onConfirm={() => { setAddlQuotationSent(true); setAddlQuotPreview(false) }}
-          confirmLabel="ส่งใบเสนอราคาเพิ่มเติม"
+          onConfirm={async () => {
+            if (addlSelectedParts.length === 0) return
+            setAddlSending(true)
+            try {
+              await api.post('/part-requisitions', {
+                jobId: Number(id),
+                items: addlSelectedParts.map((sp) => ({
+                  partId: sp.part.id,
+                  quantity: sp.qty,
+                })),
+                notes: 'ใบเสนอราคาเพิ่มเติม จากรายงานช่าง',
+              })
+              setAddlQuotationSent(true)
+              setAddlQuotPreview(false)
+              showAlert('ส่งใบเสนอราคาเพิ่มเติมสำเร็จ', 'คำร้องขอเบิกอะไหล่ถูกสร้างแล้ว รอคลังสินค้าอนุมัติ')
+            } catch (err: any) {
+              console.error('Failed to create part requisition:', err)
+              showAlert('ส่งใบเสนอราคาเพิ่มเติมไม่สำเร็จ', err?.response?.data?.message || err?.message || 'เกิดข้อผิดพลาด')
+            } finally {
+              setAddlSending(false)
+            }
+          }}
+          confirmLabel={addlSending ? 'กำลังส่ง...' : 'ส่งใบเสนอราคาเพิ่มเติม'}
+          confirmDisabled={addlSending || addlSelectedParts.length === 0}
         >
           {/* Customer + Vehicle */}
           <div className="grid grid-cols-2 gap-3">
@@ -702,7 +923,7 @@ export default function JobDetailPage() {
             </div>
             <div className="bg-gray-50 rounded-xl p-3">
               <p className="text-sm text-gray-400 mb-1">รถ</p>
-              <p className="text-sm font-semibold text-[#1E1E1E]">{job.brand} {job.model}</p>
+              <p className="text-sm font-semibold text-[#1E1E1E]">{formatMotorcycleName(job.brand, job.model)}</p>
               <p className="text-sm text-gray-500 mt-0.5">{job.licensePlate} · {job.province}</p>
             </div>
           </div>
@@ -720,8 +941,8 @@ export default function JobDetailPage() {
           <div>
             <p className="text-sm text-gray-400 mb-2">อะไหล่เพิ่มเติม ({addlSelectedParts.length} รายการ)</p>
             <div className="flex flex-col gap-1.5">
-              {addlSelectedParts.map((sp) => (
-                <div key={sp.part.id} className="flex items-center justify-between gap-2">
+              {addlSelectedParts.map((sp, idx) => (
+                <div key={(sp as any)._reqKey ?? `sp-${sp.part.id}-${idx}`} className="flex items-center justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-[#1E1E1E] truncate">{sp.part.name} <span className="text-gray-400 text-sm">× {sp.qty} {sp.part.unit}</span></p>
                     <p className="text-sm text-gray-400">{(sp.qty * sp.part.unitPrice).toLocaleString()} ฿</p>
@@ -761,14 +982,14 @@ export default function JobDetailPage() {
             <div className="px-6 pt-6 pb-4 border-b border-gray-100">
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div>
-                  <p className="text-sm font-semibold text-[#F8981D] uppercase tracking-widest mb-1">RevUp</p>
+                  <p className="text-sm font-semibold text-[#F8981D] uppercase tracking-widest mb-1">Smart Moto Service Center</p>
                   <h2 className="text-lg font-bold text-[#1E1E1E]">ใบเสนอราคา</h2>
                 </div>
                 <button onClick={() => setQuotPreview(false)} className="text-gray-300 hover:text-gray-500 bg-transparent border-none cursor-pointer text-xl leading-none mt-0.5">✕</button>
               </div>
               <div className="flex flex-col gap-0.5 text-sm text-gray-500">
                 <span><span className="font-medium text-[#1E1E1E]">ลูกค้า:</span> {job.customerName}</span>
-                <span><span className="font-medium text-[#1E1E1E]">รถ:</span> {job.brand} {job.model} · {job.licensePlate}</span>
+                <span><span className="font-medium text-[#1E1E1E]">รถ:</span> {formatMotorcycleName(job.brand, job.model)} · {job.licensePlate}</span>
                 <span><span className="font-medium text-[#1E1E1E]">วันที่:</span> {new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
               </div>
             </div>
@@ -837,7 +1058,14 @@ export default function JobDetailPage() {
           description="งานจะถูกส่งต่อขั้นตอนทำความสะอาด และระบบจะออกใบเสนอราคาเรียกเก็บเงิน"
           confirmLabel="ยืนยันผ่าน"
           onCancel={() => setConfirmAction(null)}
-          onConfirm={() => { setQcSubmitted(true); setConfirmAction(null) }}
+          onConfirm={async () => {
+            try {
+              await api.patch(`/jobs/${id}/qc`, { passed: true, notes: qcNote || 'ผ่านการตรวจ QC' })
+              setQcSubmitted(true)
+              setConfirmAction(null)
+              setJob((prev: any) => prev ? { ...prev, status: 'เสร็จสิ้น' } : prev)
+            } catch (err) { console.error('QC pass failed:', err); showAlert('บันทึก QC ไม่สำเร็จ'); setConfirmAction(null) }
+          }}
         />
       )}
       {confirmAction === 'qcFail' && (
@@ -846,7 +1074,14 @@ export default function JobDetailPage() {
           description="งานจะถูกส่งกลับให้ช่างแก้ไขตามหมายเหตุที่ระบุ"
           confirmLabel="ส่งกลับ"
           onCancel={() => setConfirmAction(null)}
-          onConfirm={() => { setQcSubmitted(true); setConfirmAction(null) }}
+          onConfirm={async () => {
+            try {
+              await api.patch(`/jobs/${id}/qc`, { passed: false, notes: qcNote || 'ไม่ผ่าน QC — ส่งกลับช่างแก้ไข' })
+              setQcSubmitted(true)
+              setConfirmAction(null)
+              setJob((prev: any) => prev ? { ...prev, status: 'กำลังดำเนินงาน' } : prev)
+            } catch (err) { console.error('QC fail failed:', err); showAlert('บันทึก QC ไม่สำเร็จ'); setConfirmAction(null) }
+          }}
         />
       )}
 
@@ -877,11 +1112,11 @@ export default function JobDetailPage() {
         </div>
 
         {/* ─── Content ─── */}
-        <div className="flex-1 p-5 overflow-hidden">
-          <div className="h-full grid gap-5" style={{ gridTemplateColumns: '1fr 360px' }}>
+        <div className="flex-1 p-5 overflow-y-auto">
+          <div className="grid gap-5" style={{ gridTemplateColumns: '1fr 360px' }}>
 
             {/* ─── LEFT: info + symptom + photos ─── */}
-            <div className="flex flex-col gap-2.5 overflow-hidden">
+            <div className="flex flex-col gap-2.5">
 
               {/* Customer + Vehicle */}
               <div className="grid grid-cols-2 gap-3 shrink-0">
@@ -892,7 +1127,7 @@ export default function JobDetailPage() {
                 </div>
                 <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 shadow-sm">
                   <p className="text-sm text-gray-400 uppercase tracking-wide mb-1.5">ข้อมูลรถ</p>
-                  <p className="font-semibold text-sm text-[#1E1E1E]">{job.brand} {job.model}</p>
+                  <p className="font-semibold text-sm text-[#1E1E1E]">{formatMotorcycleName(job.brand, job.model)}</p>
                   <p className="text-sm text-gray-500 mt-0.5">ทะเบียน {job.licensePlate} · {job.province}</p>
                 </div>
               </div>
@@ -924,7 +1159,7 @@ export default function JobDetailPage() {
                   รูปภาพ <span className="text-gray-300 ml-1">({job.photos.length + foremanPhotos.length})</span>
                 </p>
                 <div className="flex gap-2 flex-wrap">
-                  {job.photos.map((photo, i) => (
+                  {(job.photos || []).map((photo: string, i: number) => (
                     <button
                       key={`orig-${i}`}
                       onClick={() => { setLightboxIdx(i); setLightboxOpen(true) }}
@@ -960,7 +1195,7 @@ export default function JobDetailPage() {
             </div>
 
             {/* ─── RIGHT: tags + workflow ─── */}
-            <div className="flex flex-col gap-4 overflow-y-auto">
+            <div className="flex flex-col gap-4">
 
               {/* Tags (toggle predefined) */}
               <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
@@ -988,10 +1223,10 @@ export default function JobDetailPage() {
                 </div>
               </div>
 
-              {/* Mechanic assignment — shown when customer already approved */}
+              {/* Mechanic assignment — shown only when customer approved and ready to repair */}
               {job.status === 'พร้อมซ่อม' && (() => {
-                const allSkills = [...new Set(mockMechanics.flatMap((m) => m.skills))]
-                const filtered = mockMechanics.filter((m) => {
+                const allSkills = [...new Set(mechanicsList.flatMap((m: Mechanic) => m.skills))]
+                const filtered = mechanicsList.filter((m: Mechanic) => {
                   const matchSearch = !mechanicSearch || m.name.toLowerCase().includes(mechanicSearch.toLowerCase())
                   const matchSkill  = !mechanicSkillFilter || m.skills.includes(mechanicSkillFilter)
                   return matchSearch && matchSkill
@@ -1031,15 +1266,15 @@ export default function JobDetailPage() {
                           >
                             ทั้งหมด
                           </button>
-                          {allSkills.map((skill) => (
+                          {allSkills.map((skill: string) => (
                             <button
-                              key={skill}
-                              onClick={() => setMechanicSkillFilter(mechanicSkillFilter === skill ? '' : skill)}
-                              className={`text-sm px-2.5 py-1 rounded-full border transition-colors cursor-pointer ${
+                              key={skill as string}
+                              onClick={() => setMechanicSkillFilter(mechanicSkillFilter === skill ? '' : skill as string)}
+                              className={`text-xs px-2.5 py-1 rounded-full border transition-colors cursor-pointer ${
                                 mechanicSkillFilter === skill ? 'bg-[#F8981D] text-white border-[#F8981D]' : 'bg-white text-gray-400 border-gray-200 hover:border-[#F8981D] hover:text-[#F8981D]'
                               }`}
                             >
-                              {skill}
+                              {skill as string}
                             </button>
                           ))}
                         </div>
@@ -1049,7 +1284,7 @@ export default function JobDetailPage() {
                           {filtered.length === 0 && (
                             <p className="text-center text-sm text-gray-400 py-3">ไม่พบช่างที่ตรงกัน</p>
                           )}
-                          {filtered.map((m) => {
+                          {filtered.map((m: Mechanic) => {
                             const isSelected = selectedMechanics.includes(m.id)
                             return (
                               <button
@@ -1090,7 +1325,15 @@ export default function JobDetailPage() {
                         </div>
 
                         <button
-                          onClick={() => { if (selectedMechanics.length > 0) setAssignConfirmed(true) }}
+                          onClick={async () => {
+                          if (selectedMechanics.length === 0) return
+                          try {
+                            await api.patch(`/jobs/${id}/assign`, { technicianId: selectedMechanics[0] })
+                            if (tags.length > 0) await api.patch(`/jobs/${id}`, { tags })
+                            setAssignConfirmed(true)
+                            setJob((prev: any) => prev ? { ...prev, mechanicId: selectedMechanics[0] } : prev)
+                          } catch (err) { console.error('Assign failed:', err); showAlert('มอบหมายช่างไม่สำเร็จ') }
+                        }}
                           disabled={selectedMechanics.length === 0}
                           className="w-full bg-[#F8981D] hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium py-2.5 rounded-xl transition-colors border-none cursor-pointer"
                         >
@@ -1102,7 +1345,7 @@ export default function JobDetailPage() {
                         <p className="text-sm font-medium text-[#44403C]">มอบหมายงานแล้ว</p>
                         <div className="flex flex-col gap-1.5">
                           {selectedMechanics.map((id) => {
-                            const m = mockMechanics.find((x) => x.id === id)!
+                            const m = mechanicsList.find((x: Mechanic) => x.id === id)!
                             return (
                               <div key={id} className="flex items-center gap-2">
                                 <div className="w-6 h-6 rounded-full bg-[#44403C] text-white text-sm flex items-center justify-center font-semibold shrink-0">
@@ -1118,6 +1361,51 @@ export default function JobDetailPage() {
                   </div>
                 )
               })()}
+
+              {/* Customer approval — shown when waiting for customer */}
+              {job.status === 'รอลูกค้าอนุมัติ' && (
+                <div className="bg-white rounded-xl border border-amber-200 p-4 shadow-sm flex flex-col gap-3">
+                  <p className="text-sm text-amber-600 uppercase tracking-wide font-semibold">รอลูกค้าอนุมัติ</p>
+                  <p className="text-sm text-gray-500">ใบประเมินราคาถูกส่งแล้ว รอลูกค้าตอบกลับ</p>
+                  <button
+                    onClick={async () => {
+                      try {
+                        await api.patch(`/jobs/${id}`, { status: 'READY' })
+                        setJob((prev: any) => prev ? { ...prev, status: 'พร้อมซ่อม' } : prev)
+                        showAlert('อนุมัติเรียบร้อย', 'งานถูกเปลี่ยนเป็นสถานะ พร้อมซ่อม แล้ว')
+                      } catch (err) { console.error(err); showAlert('อัพเดทสถานะไม่สำเร็จ') }
+                    }}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2.5 rounded-xl transition-colors border-none cursor-pointer"
+                  >
+                    ลูกค้าอนุมัติ — พร้อมซ่อม
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        await api.patch(`/jobs/${id}`, { status: 'WAITING_PARTS' })
+                        setJob((prev: any) => prev ? { ...prev, status: 'รอสั่งซื้อ' } : prev)
+                        showAlert('อนุมัติเรียบร้อย', 'งานถูกเปลี่ยนเป็นสถานะ รอสั่งซื้ออะไหล่ แล้ว')
+                      } catch (err) { console.error(err); showAlert('อัพเดทสถานะไม่สำเร็จ') }
+                    }}
+                    className="w-full bg-stone-600 hover:bg-stone-700 text-white text-sm font-medium py-2.5 rounded-xl transition-colors border-none cursor-pointer"
+                  >
+                    ลูกค้าอนุมัติ — ต้องสั่งอะไหล่ก่อน
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!confirm('ยืนยันยกเลิกงานนี้?')) return
+                      try {
+                        await api.patch(`/jobs/${id}/cancel`, { reason: 'ลูกค้าไม่อนุมัติ' })
+                        setJob((prev: any) => prev ? { ...prev, status: 'ยกเลิก' } : prev)
+                        showAlert('ยกเลิกงานเรียบร้อย')
+                      } catch (err) { console.error(err); showAlert('ยกเลิกงานไม่สำเร็จ') }
+                    }}
+                    className="w-full bg-white hover:bg-red-50 text-red-500 text-sm font-medium py-2.5 rounded-xl transition-colors border border-red-200 cursor-pointer"
+                  >
+                    ลูกค้าไม่อนุมัติ — ยกเลิกงาน
+                  </button>
+                </div>
+              )}
 
               {/* Workflow — shown only while still in assessment phase */}
               {['รอประเมิน', 'ตรวจเชิงลึก', 'รอลูกค้าอนุมัติ', 'รอสั่งซื้อ'].includes(job.status) && (
@@ -1150,10 +1438,18 @@ export default function JobDetailPage() {
                               </div>
                               <div className="flex items-center gap-1 shrink-0">
                                 <button onClick={() => updateQty(sp.part.id, sp.qty - 1)}
-                                  className="w-5 h-5 rounded border border-gray-200 hover:border-gray-300 text-gray-500 text-sm font-bold cursor-pointer bg-white flex items-center justify-center transition-colors">−</button>
+                                  disabled={sp.qty <= 1}
+                                  className="w-5 h-5 rounded border border-gray-200 hover:border-gray-300 text-gray-500 text-sm font-bold cursor-pointer bg-white flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed">−</button>
                                 <span className="text-sm font-medium w-5 text-center">{sp.qty}</span>
-                                <button onClick={() => updateQty(sp.part.id, sp.qty + 1)}
-                                  className="w-5 h-5 rounded border border-gray-200 hover:border-gray-300 text-gray-500 text-sm font-bold cursor-pointer bg-white flex items-center justify-center transition-colors">+</button>
+                                <button onClick={() => {
+                                    if (sp.qty >= sp.part.stock) {
+                                      showAlert('จำนวนอะไหล่ไม่เพียงพอ!', `มีแค่ ${sp.part.stock} ชิ้นในสต็อก`);
+                                      return;
+                                    }
+                                    updateQty(sp.part.id, sp.qty + 1)
+                                  }}
+                                  disabled={sp.qty >= sp.part.stock}
+                                  className="w-5 h-5 rounded border border-gray-200 hover:border-gray-300 text-gray-500 text-sm font-bold cursor-pointer bg-white flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed">+</button>
                                 <span className="text-sm text-gray-400 ml-0.5">{sp.part.unit}</span>
                               </div>
                               {stockChecked && (
@@ -1250,9 +1546,38 @@ export default function JobDetailPage() {
               </div>
               )}
 
-              {/* ── กำลังดำเนินงาน: mechanic report + additional quotation ── */}
+              {/* ── กำลังดำเนินงาน: ประเมินงาน (อะไหล่ครั้งแรก) + mechanic report + additional quotation ── */}
               {job.status === 'กำลังดำเนินงาน' && (
                 <div className="flex flex-col gap-3">
+
+                  {/* ประเมินงาน ขออะไหล่อะไรบ้าง (initial quotation) */}
+                  {job.quotation?.items?.length > 0 && (
+                    <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex flex-col gap-3">
+                      <p className="text-sm text-gray-400 uppercase tracking-wide">ประเมินงาน — อะไหล่ที่ขอครั้งแรก</p>
+                      <div className="flex flex-col gap-1.5">
+                        {job.quotation.items.map((i: any) => (
+                          <div key={i.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-[#1E1E1E] truncate">{i.itemName ?? i.part?.name ?? '-'}</p>
+                              <p className="text-sm text-gray-400">{i.part?.name ? `รหัส: ${i.part.id}` : ''}</p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="text-sm text-gray-500">x {i.quantity}</span>
+                              <span className="text-sm font-semibold text-[#1E1E1E]">
+                                {(Number(i.quantity) * Number(i.unitPrice ?? 0)).toLocaleString()} ฿
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                        <div className="flex justify-between px-3 py-2 border-t border-gray-100">
+                          <span className="text-sm text-gray-400">รวม (ประเมินครั้งแรก)</span>
+                          <span className="text-sm font-bold text-[#1E1E1E]">
+                            {job.quotation.items.reduce((s: number, i: any) => s + Number(i.quantity) * Number(i.unitPrice ?? 0), 0).toLocaleString()} ฿
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Mechanic report card */}
                   {job.mechanicReport ? (
@@ -1267,7 +1592,7 @@ export default function JobDetailPage() {
                       <p className="text-sm text-amber-800 leading-relaxed">{job.mechanicReport.note}</p>
                       {job.mechanicReport.photos.length > 0 && (
                         <div className="flex gap-2 flex-wrap">
-                          {job.mechanicReport.photos.map((p, i) => (
+                          {job.mechanicReport.photos.map((p: string, i: number) => (
                             <button
                               key={i}
                               onClick={() => { setMrLightboxIdx(i); setMrLightboxOpen(true) }}
@@ -1302,8 +1627,8 @@ export default function JobDetailPage() {
                         {/* Selected parts */}
                         {addlSelectedParts.length > 0 && (
                           <div className="flex flex-col gap-1.5">
-                            {addlSelectedParts.map((sp) => (
-                              <div key={sp.part.id} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+                            {addlSelectedParts.map((sp, idx) => (
+                              <div key={(sp as any)._reqKey ?? `sp-${sp.part.id}-${idx}`} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-medium text-[#1E1E1E] truncate">{sp.part.name}</p>
                                   <p className="text-sm text-gray-400">{sp.part.partNumber}</p>
@@ -1338,46 +1663,34 @@ export default function JobDetailPage() {
                           </div>
                         )}
 
-                        {!addlQuotationSent && (
-                          <div className="flex flex-col gap-2">
-                            <button
-                              onClick={() => setAddlPartsModalOpen(true)}
-                              className="w-full flex items-center justify-between border-2 border-dashed border-gray-200 hover:border-[#F8981D] rounded-xl px-4 py-3 bg-transparent cursor-pointer transition-colors group"
-                            >
-                              <span className="text-sm text-gray-400 group-hover:text-[#F8981D] transition-colors">
-                                {addlSelectedParts.length > 0
-                                  ? `เลือกแล้ว ${addlSelectedParts.length} รายการ — แก้ไข`
-                                  : 'เพิ่มอะไหล่ที่ต้องใช้เพิ่มเติม...'}
-                              </span>
-                              <svg className="w-4 h-4 text-gray-300 group-hover:text-[#F8981D] transition-colors shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() => setAddlQuotPreview(true)}
-                              disabled={addlSelectedParts.length === 0}
-                              className="w-full bg-[#F8981D] hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium py-2.5 rounded-xl transition-colors border-none cursor-pointer"
-                            >
-                              ดูและส่งใบเสนอราคาเพิ่มเติม
-                            </button>
-                          </div>
-                        )}
-
                         {addlQuotationSent && (
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2 px-1">
-                              <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
-                              <p className="text-green-700 text-sm font-medium">ส่งใบเสนอราคาเพิ่มเติมแล้ว</p>
-                            </div>
-                            <button
-                              onClick={() => setAddlQuotPreview(true)}
-                              className="w-full flex items-center justify-center gap-2 border border-gray-200 hover:border-[#F8981D] hover:text-[#F8981D] rounded-xl py-2.5 text-sm text-gray-500 bg-transparent cursor-pointer transition-colors"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                              ดูใบเสนอราคาเพิ่มเติม
-                            </button>
+                          <div className="flex items-center gap-2 px-1">
+                            <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
+                            <p className="text-green-700 text-sm font-medium">ส่งใบเสนอราคาเพิ่มเติมแล้ว</p>
                           </div>
                         )}
+                        <div className="flex flex-col gap-2">
+                          <button
+                            onClick={() => setAddlPartsModalOpen(true)}
+                            className="w-full flex items-center justify-between border-2 border-dashed border-gray-200 hover:border-[#F8981D] rounded-xl px-4 py-3 bg-transparent cursor-pointer transition-colors group"
+                          >
+                            <span className="text-sm text-gray-400 group-hover:text-[#F8981D] transition-colors">
+                              {addlSelectedParts.length > 0
+                                ? `เลือกแล้ว ${addlSelectedParts.length} รายการ — แก้ไข`
+                                : 'เพิ่มอะไหล่ที่ต้องใช้เพิ่มเติม...'}
+                            </span>
+                            <svg className="w-4 h-4 text-gray-300 group-hover:text-[#F8981D] transition-colors shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => setAddlQuotPreview(true)}
+                            disabled={addlSelectedParts.length === 0}
+                            className="w-full bg-[#F8981D] hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium py-2.5 rounded-xl transition-colors border-none cursor-pointer"
+                          >
+                            ดูและส่งใบเสนอราคาเพิ่มเติม
+                          </button>
+                        </div>
                       </div>
                     </>
                   )}
@@ -1487,7 +1800,7 @@ export default function JobDetailPage() {
                             <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50">
                               <div>
                                 <p className="text-sm font-semibold text-[#1E1E1E]">ใบเสนอราคา</p>
-                                <p className="text-sm text-gray-400 mt-0.5">{job.brand} {job.model} · {job.customerName}</p>
+                                <p className="text-sm text-gray-400 mt-0.5">{formatMotorcycleName(job.brand, job.model)} · {job.customerName}</p>
                               </div>
                               <button onClick={() => setShowQuot(false)} className="text-gray-400 hover:text-gray-600 bg-transparent border-none cursor-pointer text-lg leading-none">✕</button>
                             </div>

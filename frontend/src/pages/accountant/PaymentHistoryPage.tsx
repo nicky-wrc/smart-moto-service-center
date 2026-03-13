@@ -75,9 +75,9 @@ function mapPaymentToReceipt(p: Payment): Receipt {
   }
   if (p.job?.partRequisitions) {
     for (const req of p.job.partRequisitions) {
-      if (req.status === 'APPROVED' && req.items) {
+      if ((req.status === 'APPROVED' || req.status === 'ISSUED') && req.items) {
         for (const ri of req.items) {
-          items.push({ name: ri.part.name, price: Number(ri.unitPrice) * ri.quantity })
+          items.push({ name: ri.part?.name || 'อะไหล่', price: Number(ri.unitPrice || ri.part?.unitPrice || 0) * ri.quantity })
         }
       }
     }
@@ -85,7 +85,10 @@ function mapPaymentToReceipt(p: Payment): Receipt {
   return {
     id: p.paymentNo,
     date: formatDateTH(p.paidAt ?? p.createdAt),
-    customer: p.customer ? `${p.customer.firstName} ${p.customer.lastName}` : '-',
+    customer: (() => {
+      const owner = (p as any).customer || (p.job?.motorcycle as any)?.owner
+      return owner ? `${owner.firstName || ''} ${owner.lastName || ''}`.trim() || '-' : '-'
+    })(),
     plate: p.job?.motorcycle?.licensePlate ?? '-',
     payment: METHOD_LABEL[p.paymentMethod] ?? p.paymentMethod,
     staff: '-',
@@ -142,7 +145,7 @@ function PaymentHistoryPage() {
         <div style="background:#F8981D;color:white;font-size:10px;font-weight:700;padding:5px 14px;border-radius:5px;display:inline-block;margin-bottom:14px;letter-spacing:0.5px">${label}</div>
         <div style="display:flex;align-items:flex-start;justify-content:space-between;padding-bottom:20px;margin-bottom:20px;border-bottom:2px solid #F8981D">
           <div>
-            <p style="font-size:20px;font-weight:900;color:#F8981D;letter-spacing:-0.5px;margin:0">RevUp</p>
+            <p style="font-size:20px;font-weight:900;color:#F8981D;letter-spacing:-0.5px;margin:0">Smart Moto</p>
             <p style="font-size:11px;font-weight:600;color:#aaa;letter-spacing:3px;text-transform:uppercase;margin:2px 0 0">Service Center</p>
             <div style="margin-top:10px;font-size:10px;color:#bbb;line-height:1.7">
               <p style="margin:0">123 อาคารวิทยวิภาส ถนนมิตรภาพ ตำบลในเมือง อำเภอเมืองขอนแก่น จังหวัดขอนแก่น 40002</p>
@@ -205,7 +208,7 @@ function PaymentHistoryPage() {
             <p style="font-size:10px;color:#aaa;margin:2px 0 0">วันที่ ......../......../........</p>
           </div>
         </div>
-        <p style="text-align:center;font-size:9px;color:#ddd;margin-top:24px">เอกสารนี้สร้างโดยระบบ RevUp</p>
+        <p style="text-align:center;font-size:9px;color:#ddd;margin-top:24px">เอกสารนี้สร้างโดยระบบ Smart Moto Service Center</p>
       </div>`
   }
 

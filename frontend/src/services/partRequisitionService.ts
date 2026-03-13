@@ -1,29 +1,77 @@
 import { apiClient, USE_MOCK_DATA } from './api'
-import { mockRequests, type PartRequest } from '../data/requestsMockData'
+import { mockRequests, type PartRequest, type RequestItem } from '../data/requestsMockData'
+import type { HistoryItem, HistoryStatus } from '../contexts/RequestHistoryContext'
 
 export type { PartRequest }
 
-/**
- * Service for handling Part Requisitions API calls.
- *
- * To switch to real API:
- *   Set VITE_USE_MOCK_DATA=false in .env
- *   Backend endpoints expected:
- *     GET    /api/part-requisitions
- *     GET    /api/part-requisitions/:id
- *     PATCH  /api/part-requisitions/:id/issue
- *     PATCH  /api/part-requisitions/:id/reject
- *     GET    /api/part-requisitions/history
- *     GET    /api/part-requisitions/history/:id
- */
+const ROLE_LABEL: Record<string, string> = {
+    ADMIN: 'ผู้ดูแลระบบ',
+    MANAGER: 'เจ้าของร้าน',
+    SERVICE_ADVISOR: 'พนักงานต้อนรับ',
+    FOREMAN: 'หัวหน้าช่าง',
+    TECHNICIAN: 'ช่าง',
+    STOCK_KEEPER: 'คลังสินค้า',
+    CASHIER: 'แคชเชียร์',
+}
+
+function mapBackendRequisition(r: any): PartRequest {
+    const motorcycle = r.job?.motorcycle
+    const plate = motorcycle
+        ? `${motorcycle.licensePlate || ''}`
+        : '-'
+    const brandParts = motorcycle
+        ? [motorcycle.brand, motorcycle.model].filter((v: string) => v && v !== 'ไม่ระบุ')
+        : []
+    const model = brandParts.join(' ') || '-'
+
+    const items: RequestItem[] = (r.items || []).map((item: any) => ({
+        id: item.id,
+        partId: item.partId ?? item.part?.id,
+        partCode: item.part?.partNo || item.package?.packageNo || '-',
+        partName: item.part?.name || item.package?.name || '-',
+        quantity: item.requestedQuantity ?? item.quantity,
+        unit: item.part?.unit || 'ชิ้น',
+        pricePerUnit: Number(item.part?.unitPrice || 0),
+    }))
+
+    return {
+        id: r.id,
+        requester: r.requestedBy?.name || '-',
+        requesterRole: ROLE_LABEL[r.requestedBy?.role] || r.requestedBy?.role || '-',
+        motorcycleModel: model,
+        licensePlate: plate,
+        requestedAt: r.createdAt
+            ? new Date(r.createdAt).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
+            : '-',
+        items,
+        status: r.status || undefined,
+    }
+}
+
+function mapBackendHistoryItem(r: any): HistoryItem {
+    const base = mapBackendRequisition(r)
+    const backendStatus: string = r.status || ''
+    const status: HistoryStatus = backendStatus === 'REJECTED' ? 'ไม่อนุมัติการเบิก' : 'อนุมัติการเบิก'
+
+    const approvedDate = r.issuedAt || r.approvedAt || r.updatedAt
+    const approvedAt = approvedDate
+        ? new Date(approvedDate).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
+        : '-'
+
+    return {
+        ...base,
+        approvedAt,
+        status,
+    }
+}
+
 export const partRequisitionService = {
 
-    /**
-     * Fetch all pending part requests
-     */
     getPendingRequests: async (): Promise<PartRequest[]> => {
         if (!USE_MOCK_DATA) {
-            return apiClient.get<PartRequest[]>('/part-requisitions?status=PENDING')
+            // ดึงรายการคำขอเบิกอะไหล่ทั้งหมดจาก backend แล้วแปลงให้พร้อมแสดง
+            const raw = await apiClient.get<any[]>('/part-requisitions')
+            return (Array.isArray(raw) ? raw : []).map(mapBackendRequisition)
         }
 
         // MOCK
@@ -32,12 +80,14 @@ export const partRequisitionService = {
         })
     },
 
-    /**
-     * Fetch a single part request by ID
-     */
     getRequestById: async (id: number): Promise<PartRequest | null> => {
         if (!USE_MOCK_DATA) {
-            return apiClient.get<PartRequest>(`/part-requisitions/${id}`)
+            try {
+                const raw = await apiClient.get<any>(`/part-requisitions/${id}`)
+                return mapBackendRequisition(raw)
+            } catch {
+                return null
+            }
         }
 
         // MOCK
@@ -48,16 +98,16 @@ export const partRequisitionService = {
         })
     },
 
-    /**
-     * Approve / Issue a part request
-     */
     approveRequest: async (id: number, items: { id: number; issuedQuantity: number }[]): Promise<void> => {
         if (!USE_MOCK_DATA) {
-            await apiClient.patch(`/part-requisitions/${id}/issue`, { issuedItems: items })
+            await apiClient.patch(`/part-requisitions/${id}/approve`, {})
+
+            await apiClient.patch(`/part-requisitions/${id}/issue`, {
+                items: items.map(i => ({ itemId: i.id, issuedQuantity: i.issuedQuantity })),
+            })
             return
         }
 
-        // MOCK
         return new Promise((resolve) => {
             setTimeout(() => {
                 console.info(`[Mock] Approved part-requisition #${id}`, items)
@@ -66,16 +116,12 @@ export const partRequisitionService = {
         })
     },
 
-    /**
-     * Reject a part request
-     */
     rejectRequest: async (id: number, reason?: string): Promise<void> => {
         if (!USE_MOCK_DATA) {
-            await apiClient.patch(`/part-requisitions/${id}/reject`, { notes: reason })
+            await apiClient.patch(`/part-requisitions/${id}/reject`, { reason: reason || 'ปฏิเสธ' })
             return
         }
 
-        // MOCK
         return new Promise((resolve) => {
             setTimeout(() => {
                 console.info(`[Mock] Rejected part-requisition #${id}, reason:`, reason)
@@ -84,29 +130,34 @@ export const partRequisitionService = {
         })
     },
 
-    /**
-     * Fetch history of part requests
-     */
-    getHistory: async (): Promise<PartRequest[]> => {
+    getHistory: async (): Promise<HistoryItem[]> => {
         if (!USE_MOCK_DATA) {
-            return apiClient.get<PartRequest[]>('/part-requisitions/history')
+            const statuses = ['APPROVED', 'REJECTED', 'ISSUED']
+            const results: HistoryItem[] = []
+            for (const s of statuses) {
+                try {
+                    const raw = await apiClient.get<any[]>(`/part-requisitions?status=${s}`)
+                    if (Array.isArray(raw)) results.push(...raw.map(mapBackendHistoryItem))
+                } catch { /* skip */ }
+            }
+            return results
         }
 
-        // MOCK — returns empty; UI falls back to RequestHistoryContext (localStorage)
         return new Promise((resolve) => {
             setTimeout(() => resolve([]), 600)
         })
     },
 
-    /**
-     * Fetch a single history record by ID
-     */
-    getHistoryById: async (id: number): Promise<PartRequest | null> => {
+    getHistoryById: async (id: number): Promise<HistoryItem | null> => {
         if (!USE_MOCK_DATA) {
-            return apiClient.get<PartRequest>(`/part-requisitions/history/${id}`)
+            try {
+                const raw = await apiClient.get<any>(`/part-requisitions/${id}`)
+                return mapBackendHistoryItem(raw)
+            } catch {
+                return null
+            }
         }
 
-        // MOCK — returns null so component falls back to RequestHistoryContext
         return new Promise((resolve) => {
             setTimeout(() => resolve(null), 500)
         })

@@ -1,416 +1,400 @@
-# 🏍️ Smart Moto Service Center
+# Smart Moto Service Center
 
-ระบบบริหารจัดการศูนย์บริการรถจักรยานยนต์ครบวงจร
+ระบบบริหารจัดการศูนย์บริการรถจักรยานยนต์ครบวงจร รองรับตั้งแต่การรับรถ งานซ่อม การจัดการอะไหล่ การชำระเงิน ไปจนถึงรายงานและการบริหารบุคลากร
 
-**Workflow:** Reception (SA) → Workshop (ช่าง) → Inventory (คลัง) → Billing/CRM (การเงิน) → Admin/Dashboard
+Workflow หลักของระบบ:
 
----
-
-## 🎯 ภาพรวมโปรเจค
-
-ระบบนี้เป็นระบบจัดการศูนย์บริการรถจักรยานยนต์ที่ครอบคลุมทุกขั้นตอน ตั้งแต่การรับรถไปจนถึงการคิดเงินและรายงาน
-
-### Features หลัก
-
-- ✅ **Reception Module** - รับรถ, ลงทะเบียนลูกค้า, นัดหมาย, Fast Track, Warranty Check
-- ✅ **Workshop Module** - Job Queue, Labor Time Tracking, Checklist, Outsource
-- ✅ **Inventory Module** - Part Master, Stock Management, Requisition, Package/Kit
-- ✅ **Billing/CRM Module** - Quotation, Payment, Invoice, Membership & Points
-- ✅ **Admin/Dashboard** - Reports, Analytics, User Management
+Reception (Service Advisor) → Foreman / Mechanic (Workshop) → Inventory (Stock) → Accounting / Billing → Owner / Admin (Dashboard & Reports)
 
 ---
 
-## 🛠️ Tech Stack
+## ภาพรวมระบบ
+
+Smart Moto Service Center ถูกออกแบบมาเพื่อใช้งานจริงในศูนย์บริการ มีการกำหนดบทบาทผู้ใช้ (Role) และสิทธิ์การเข้าถึง (RBAC) อย่างชัดเจน พร้อม Flow การทำงานที่เชื่อมโยงกันทุกฝ่าย
+
+### โมดูลหลัก
+
+1. Reception Module
+   - ลงทะเบียนลูกค้าและรถจักรยานยนต์
+   - แจ้งซ่อมครั้งแรก / ลูกค้าเดิม / รถคันใหม่
+   - นัดหมายเข้ารับบริการ
+   - ส่งใบแจ้งซ่อมเข้าสู่ระบบใบงาน (Job) สำหรับ Foreman
+   - ประวัติการเข้ารับบริการของลูกค้า
+
+2. Foreman & Workshop Module
+   - รายการใบงานที่รอวินิจฉัย / รอลูกค้าอนุมัติ / พร้อมซ่อม / ระหว่างซ่อม / QC / พร้อมส่งมอบ
+   - บันทึกอาการและการวินิจฉัยจาก Foreman
+   - บันทึกรายงานจากช่าง (Mechanic Notes)
+   - ติดตาม Job Status ตามขั้นตอนการซ่อม
+   - แจ้งซ่อมซ้ำ / ประเมินรอบสอง
+   - บริหารคิวงานและมอบหมายช่าง
+
+3. Inventory Module
+   - รายการอะไหล่ (Part Master) พร้อมสต็อกคงเหลือ
+   - เบิกอะไหล่ (Part Requisition) จากใบงาน:
+     - สร้างคำขอเบิก
+     - อนุมัติ/ไม่อนุมัติ
+     - ตัดสต็อกเมื่อจ่ายของ
+     - บันทึกการคืนอะไหล่ที่เหลือ
+   - ใบสั่งซื้ออะไหล่ (Purchase Order):
+     - สร้างแบบร่าง (Draft)
+     - ส่งคำขออนุมัติ (Pending Approval)
+     - อนุมัติ / ยกเลิก โดย Owner/Admin
+     - เมื่ออนุมัติแล้วระบบเพิ่มสต็อกอัตโนมัติ
+   - รายงานการเคลื่อนไหวสต็อก (Stock Movement)
+   - รายการประวัติการเบิกและสต็อกย้อนหลัง
+
+4. Billing / Accounting Module
+   - สร้าง Payment จากใบงานที่สถานะพร้อมส่งมอบ
+   - คิดค่าบริการจาก:
+     - ค่าแรง (Labor Time Tracking)
+     - ค่าอะไหล่ที่เบิกจริง (ISSUED)
+     - ค่า Outsource
+     - Quotation (ใช้เป็นฐานคำนวณกรณีไม่มีข้อมูลละเอียด)
+   - คำนวณยอดรวม ยอดภาษีมูลค่าเพิ่ม (VAT) ยอดสุทธิ
+   - กระบวนการชำระเงิน (Pending → Paid)
+   - ประวัติการชำระเงิน และรายละเอียดใบเสร็จ
+
+5. Owner / Admin Module
+   - Dashboard ภาพรวมรายได้ กำไร งานค้าง และยอดรอชำระ
+   - รายงานการเงินแบบรายวัน รายสัปดาห์ รายเดือน พร้อมกราฟ
+   - รายงานงานค้าง แยกตามสถานะของใบงาน
+   - รายงานสต็อกและอะไหล่ใกล้หมด
+   - รายงานคำสั่งซื้อและการรับสินค้าเข้าสต็อก
+   - จัดการพนักงาน (User Management):
+     - สร้าง/แก้ไขผู้ใช้
+     - กำหนด Role และเงินเดือน
+   - หน้าผู้ดูแลระบบ (Admin) ที่สามารถเข้าถึงทุกโมดูลผ่าน Dashboard เดียว
+
+---
+
+## เทคโนโลยีที่ใช้
 
 ### Frontend
-- **React** + **Vite** + **TypeScript**
-- **Tailwind CSS** (UI styling)
+
+- React (Vite + TypeScript)
+- React Router
+- Tailwind CSS
+- Context API (AuthContext, RequestHistoryContext)
+- Custom hooks และ services สำหรับเรียกใช้งาน API
+- Recharts ใช้สำหรับกราฟ Dashboard และ Reports
 
 ### Backend
-- **Node.js** + **NestJS** (Framework)
-- **PostgreSQL** (Database via Docker)
-- **Prisma** (ORM)
-- **JWT** + **RBAC** (Authentication & Authorization)
 
-### DevOps
-- **Docker** (Database)
-- **GitHub Actions** (CI/CD)
-- **Swagger/OpenAPI** (API Documentation)
+- Node.js
+- NestJS (Modular Architecture)
+- PostgreSQL (ผ่าน Docker)
+- Prisma ORM
+- JWT Authentication + Role-based Access Control (RBAC)
+- Swagger / OpenAPI สำหรับเอกสาร API
+
+### DevOps / Tools
+
+- Docker (สำหรับ PostgreSQL)
+- Prisma Migrate / db push
+- Git และ GitHub
+- GitHub Actions (CI/CD – ตามที่กำหนดใน `.github/`)
 
 ---
 
-## 📁 โครงสร้างโปรเจค
-
-```
+## โครงสร้างโปรเจกต์
+bash
 smart-moto-service-center/
-├── frontend/          # React + Vite + TypeScript
-├── backend/           # NestJS + Prisma
-│   ├── src/          # Source code
-│   ├── prisma/       # Database schema & migrations
-│   └── test/         # Tests
-├── docs/             # Documentation
-│   ├── QUICK_START_GUIDE.md
-│   └── TEAM_ASSIGNMENT_DETAILED.md
-├── .github/          # GitHub Actions workflows
-└── README.md         # This file
-```
+├── backend/ # NestJS + Prisma
+│ ├── src/
+│ │ ├── auth/ # Login / JWT
+│ │ ├── users/ # ผู้ใช้งานระบบ + บทบาท
+│ │ ├── customers/ # ลูกค้า + คะแนนสะสม
+│ │ ├── motorcycles/ # รถจักรยานยนต์
+│ │ ├── jobs/ # ใบงานซ่อม
+│ │ ├── parts/ # อะไหล่ + เบิกอะไหล่
+│ │ ├── purchase-orders/ # ใบสั่งซื้ออะไหล่
+│ │ ├── payments/ # การชำระเงิน
+│ │ ├── reports/ # รายงาน / Dashboard owner
+│ │ └── common/ # Guards, decorators, shared utils
+│ ├── prisma/
+│ │ ├── schema.prisma # โมเดลฐานข้อมูล
+│ │ └── migrations/ # ไฟล์ migration
+│ └── test/
+│
+├── frontend/ # React + Vite + TS
+│ ├── src/
+│ │ ├── pages/
+│ │ │ ├── login/ # หน้า Login
+│ │ │ ├── reception/ # Reception flow
+│ │ │ ├── foreman/ # Foreman dashboard & jobs
+│ │ │ ├── mechanic/ # Mechanic job views
+│ │ │ ├── inventory/ # Parts, Requests, POs
+│ │ │ ├── accountant/ # Pending payments, history
+│ │ │ ├── owner/ # Owner dashboards & reports
+│ │ │ ├── admin/ # Admin dashboard
+│ │ │ └── workshop/ # Workshop queue view
+│ │ ├── components/ # UI components เช่น Sidebar, AppHeader
+│ │ ├── services/ # เรียก backend API (payments, parts ฯลฯ)
+│ │ ├── contexts/ # AuthContext, RequestHistoryContext
+│ │ ├── hooks/ # custom hooks
+│ │ └── lib/ # api client, helpers
+│ └── public/ # assets (logo, background)
+│
+├── docs/ # เอกสารเสริม
+│ ├── QUICK_START_GUIDE.md
+│ └── TEAM_ASSIGNMENT_DETAILED.md
+│
+├── .github/ # GitHub Actions workflows
+└── README.md # ไฟล์นี
 
 ---
 
-## 🚀 เริ่มต้นใช้งาน
+## การเริ่มต้นใช้งาน
 
-### ⚡ Quick Start
+รายละเอียดแบบ step-by-step ดูได้ใน `docs/QUICK_START_GUIDE.md` ส่วนนี้จะเป็นสรุปภาพรวม
 
-**👉 สำหรับเพื่อนใหม่: อ่านคู่มือเริ่มต้นแบบละเอียดที่ [`docs/QUICK_START_GUIDE.md`](docs/QUICK_START_GUIDE.md)**
+### 1. สิ่งที่ต้องมี
 
-### สรุปขั้นตอน:
+- Git
+- Node.js เวอร์ชัน LTS (เช่น 18.x หรือ 20.x)
+- npm
+- Docker Desktop
+- เครื่องมือแก้ไขโค้ด (เช่น VS Code)
 
-#### 1. Prerequisites
-
-ตรวจสอบว่ามี tools เหล่านี้:
-- ✅ **Git** - `git --version`
-- ✅ **Node.js** (LTS) - `node -v` และ `npm -v`
-- ✅ **Docker Desktop** - ต้องเปิดอยู่
-- ✅ **VS Code** (แนะนำ)
-
-#### 2. Clone & Setup
-
-```bash
-# Clone repository
+### 2. Clone และติดตั้ง dependencies
+bash
 git clone https://github.com/nicky-wrc/smart-moto-service-center.git
 cd smart-moto-service-center
-
-# Switch to develop branch
+แนะนำให้ใช้ branch develop
 git checkout develop
 git pull
-
-# Install dependencies
-cd backend && npm install && cd ..
-cd frontend && npm install && cd ..
-```
-
-#### 3. Environment Setup
-
-```bash
-# สร้างไฟล์ .env ใน backend/
+ติดตั้ง backend
 cd backend
+npm install
+cd ..
+ติดตั้ง frontend
+cd frontend
+npm install
+cd ..
 
-# Windows
+### 3. ตั้งค่า Environment
+
+ในโฟลเดอร์ `backend` สร้างไฟล์ `.env` จากตัวอย่าง
+bash
+cd backend
+Windows
 copy .env.example .env
-
-# macOS/Linux
+macOS / Linux
 cp .env.example .env
-```
 
-แก้ไข `backend/.env`:
-```env
+ปรับค่า `backend/.env` ให้ตรงกับเครื่องคุณ เช่น
+env
 DATABASE_URL="postgresql://smartmoto:smartmoto_pw@127.0.0.1:5433/smartmoto?schema=public"
 JWT_SECRET="your_secret_key_here_change_me"
 JWT_EXPIRES_IN="1d"
 PORT=4000
 NODE_ENV=development
-```
 
-#### 4. Database Setup
+### 4. ตั้งค่า Database
 
-```bash
-# กลับไปที่ root ของ repo
-cd ..
-
-# เปิด Docker container (PostgreSQL)
+จาก root ของโปรเจกต์:
+bash
+เปิด PostgreSQL ผ่าน Docker
 docker compose up -d
-
-# ตรวจสอบว่าเปิดสำเร็จ
+ตรวจ container
 docker ps
 
-# สร้าง database schema
+จากนั้น
+
+bash
 cd backend
+Generate Prisma Client
 npx prisma generate
+Push schema เข้าฐานข้อมูล
 npx prisma db push
-
-# (Optional) Seed ข้อมูลทดสอบ
+(ถ้ามีสคริปต์ seed) เติมข้อมูลตัวอย่าง
 npm run prisma:seed
-```
 
-#### 5. รันระบบ
 
-**Terminal 1: Backend**
-```bash
+### 5. รันระบบ
+
+Backend:
+
+bash
 cd backend
 npm run start:dev
-```
-→ เปิดที่ `http://localhost:4000/api`
-→ Swagger UI: `http://localhost:4000/docs`
 
-**Terminal 2: Frontend**
-```bash
+
+Frontend:
+
+bash
 cd frontend
 npm run dev
-```
-→ เปิดที่ `http://localhost:5173`
+
+
+การเข้าถึง:
+
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:4000/api`
+- Swagger UI: `http://localhost:4000/docs`
 
 ---
 
-## 📚 เอกสารสำคัญ
+## บัญชีทดสอบ
 
-### สำหรับทุกคน
-- 📖 **[Quick Start Guide](docs/QUICK_START_GUIDE.md)** - คู่มือเริ่มต้นแบบละเอียด
-- 📋 **[Team Assignment](docs/TEAM_ASSIGNMENT_DETAILED.md)** - แบ่งหน้าที่ละเอียดของแต่ละคน
-- 🤝 **[Contributing Guide](CONTRIBUTING.md)** - วิธีทำงานร่วมกัน
+หลังจาก seed ข้อมูลแล้ว (หรือใช้ข้อมูลตัวอย่างที่เตรียมไว้) สามารถใช้บัญชีต่อไปนี้:
 
-### สำหรับ Backend Developers
-- 🔧 **[API Testing Guide](backend/COMPLETE_API_TESTING_GUIDE.md)** - คู่มือทดสอบ API แบบละเอียด
-- 📝 **[Swagger Usage](backend/SWAGGER_USAGE.md)** - วิธีใช้ Swagger UI
-- 🔄 **[CI/CD Guide](backend/CI_CD_GUIDE.md)** - CI/CD workflow
-- 📊 **[Project Status](backend/PROJECT_STATUS_REPORT.md)** - สถานะโปรเจค
-- 🔐 **[Git Conventions](backend/GIT_CONVENTIONS.md)** - Git conventions
+| Username | Password    | Role             |
+|----------|-------------|------------------|
+| admin    | password123 | ADMIN            |
+| owner1   | password123 | MANAGER / OWNER  |
+| sa1      | password123 | SERVICE_ADVISOR  |
+| foreman1 | password123 | FOREMAN          |
+| tech1    | password123 | TECHNICIAN       |
+| cashier1 | password123 | CASHIER          |
+| stock1   | password123 | STOCK_KEEPER     |
 
-### สำหรับ Frontend Developers
-- 🎨 **[Frontend README](frontend/README.md)** - Frontend setup
-
----
-
-## 🔑 Test Accounts
-
-หลังจาก seed ข้อมูลแล้ว สามารถใช้ account ต่อไปนี้:
-
-| Username | Password | Role |
-|----------|----------|------|
-| admin | password123 | ADMIN |
-| sa1 | password123 | SERVICE_ADVISOR |
-| tech1 | password123 | TECHNICIAN |
-| cashier1 | password123 | CASHIER |
-| stock1 | password123 | STOCK_KEEPER |
+แต่ละ Role จะถูก redirect ไปยังหน้าเริ่มต้นที่เหมาะสม (เช่น Admin → `/admin/dashboard`, Owner → `/owner/dashboard`, Cashier → `/accountant/dashboard` เป็นต้น)
 
 ---
 
-## 🌿 Git Workflow
+## Git Workflow ที่ใช้
 
 ### Branch Strategy
 
-- `main` - Production-ready code (อย่า push ตรง)
-- `develop` - Integration branch สำหรับรวมงานของทีม
-- `feature/<name>` - Feature branches (ทำงานบนนี้)
-- `bugfix/<issue-id>-<description>` - Bug fixes
+- `main`  
+  โค้ดสำหรับ production ห้าม push ตรง ให้ใช้ Pull Request เท่านั้น
 
-### สร้าง Feature Branch
+- `develop`  
+  Branch สำหรับรวมงานจากทีม ใช้เป็น base ในการสร้าง feature branch
 
-```bash
-# อัปเดต develop ก่อน
+- `feature/<name>`  
+  งานฟีเจอร์ใหม่ เช่น `feature/inventory-package`
+
+- `bugfix/<issue-id>-<description>`  
+  ใช้แก้บั๊กเฉพาะจุด
+
+### ตัวอย่างการทำงาน
+
+bash
+อัปเดต develop
 git checkout develop
 git pull origin develop
-
-# สร้าง branch ใหม่
-git checkout -b feature/your-feature-name
-
-# ตัวอย่าง:
-git checkout -b feature/inventory-package
-git checkout -b feature/billing-invoice
-```
-
-### Commit & Push
-
-```bash
-# ทำงานเสร็จแล้ว
+สร้าง feature branch
+git checkout -b feature/owner-dashboard-chart
+พัฒนา และ commit
 git add .
-git commit -m "feat(inventory): add package management API"
-git push -u origin feature/your-feature-name
-```
+git commit -m "feat(owner): add daily revenue chart"
+Push ขึ้น remote
+git push -u origin feature/owner-dashboard-chart
 
-### สร้าง Pull Request
 
-1. ไปที่ GitHub repository
-2. คลิก "New Pull Request"
-3. เลือก base: `develop`, compare: `feature/your-feature-name`
-4. กรอก PR description ตาม template
-5. รอ review และ approval
-6. Merge หลังจากได้รับการ approve
+จากนั้นสร้าง Pull Request ไปที่ `develop` บน GitHub ตาม template ที่กำหนด
 
-**อ่านเพิ่มเติม:** [`backend/GIT_CONVENTIONS.md`](backend/GIT_CONVENTIONS.md)
+รายละเอียดเพิ่มเติมดูได้ที่ `backend/GIT_CONVENTIONS.md`
 
 ---
 
-## 🧠 คำสั่งที่ใช้บ่อย
+## คำสั่งที่ใช้บ่อย
 
-### Database
-```bash
-# เปิด DB
+### Database / Docker
+
+bash
+เปิดฐานข้อมูล
 docker compose up -d
-
-# ปิด DB
+ปิดฐานข้อมูล
 docker compose down
-
-# ล้าง DB (ลบข้อมูลหมด)
+ล้างฐานข้อมูลทั้งหมด (รวม volume)
 docker compose down -v
-```
+
 
 ### Prisma
-```bash
-# Sync schema → DB
+
+bash
+Sync schema ไปที่ DB
 npx prisma db push
-
-# Generate Prisma Client
+Generate Prisma Client
 npx prisma generate
-
-# เปิด Prisma Studio (ดูข้อมูลแบบ UI)
+เปิด Prisma Studio (UI ดูข้อมูล)
 npx prisma studio
-```
+
 
 ### Development
-```bash
-# Backend
+
+bash
+Backend
 cd backend
 npm run start:dev
-
-# Frontend
+Frontend
 cd frontend
 npm run dev
-
-# Tests
-npm run test
-
-# Linter
-npm run lint
-```
-
----
-
-## 🧯 Troubleshooting
-
-### 1. Database ไม่สามารถเชื่อมต่อได้
-
-**สาเหตุ:** Docker ไม่ได้เปิด หรือ port ไม่ตรง
-
-**แก้ไข:**
-```bash
-# ตรวจสอบ Docker
-docker ps
-
-# ถ้าไม่เห็น container
-docker compose up -d
-
-# ตรวจสอบ .env ว่าใช้ port 5433
-cat backend/.env | grep DATABASE_URL
-```
-
-### 2. Port ชน
-
-**Backend (4000):**
-- เปลี่ยน `PORT` ใน `backend/.env`
-
-**Frontend (5173):**
-- Vite จะ auto-increment port
-
-**Database (5433):**
-- ถ้าจำเป็น เปลี่ยน port ใน `docker-compose.yml` และ `backend/.env`
-
-### 3. Prisma Errors
-
-```bash
-# ลบ node_modules และ reinstall
+Backend tests
 cd backend
-rm -rf node_modules
-npm install
+npm run test
+Lint
+npm run lint
 
-# Generate Prisma Client ใหม่
-npx prisma generate
-
-# Push schema ใหม่
-npx prisma db push
-```
-
-### 4. Dependencies Conflicts
-
-```bash
-# ลบ node_modules ทั้งหมด
-rm -rf backend/node_modules frontend/node_modules
-
-# ลบ package-lock.json
-rm -f backend/package-lock.json frontend/package-lock.json
-
-# ติดตั้งใหม่
-cd backend && npm install && cd ..
-cd frontend && npm install && cd ..
-```
-
-**อ่านเพิ่มเติม:** [`docs/QUICK_START_GUIDE.md`](docs/QUICK_START_GUIDE.md) - Troubleshooting section
 
 ---
 
-## 📊 API Endpoints
+## แนวทางการแก้ปัญหาเบื้องต้น
 
-### Base URL
-- **API:** `http://localhost:4000/api`
-- **Swagger UI:** `http://localhost:4000/docs`
-- **Health Check:** `http://localhost:4000/api`
+1. Database เชื่อมต่อไม่ได้
+   - ตรวจสอบว่า Docker container ของ PostgreSQL ทำงานอยู่ (`docker ps`)
+   - ตรวจสอบค่า `DATABASE_URL` ใน `.env` ว่าถูกต้อง และ port ตรงกับ `docker-compose.yml`
 
-### เอกสาร API
-- 📖 **[API Testing Guide](backend/COMPLETE_API_TESTING_GUIDE.md)** - คู่มือทดสอบ API แบบละเอียด
-- 📝 **[Swagger UI](http://localhost:4000/docs)** - Interactive API documentation
+2. Error จาก Prisma (เช่น generate ไม่ผ่าน)
+   - ลบ `node_modules` ของ backend แล้วติดตั้งใหม่
+   - รัน `npx prisma generate` และ `npx prisma db push` อีกครั้ง
+   - ตรวจสอบว่าไม่มี process อื่นล็อกไฟล์ของ Prisma อยู่ (โดยเฉพาะบน Windows)
 
----
-
-## 👥 ทีมพัฒนา
-
-| คน | หน้าที่ | เอกสาร |
-|-----|--------|--------|
-| 1 | Backend Lead / System Integrator | [`backend/PROJECT_STATUS_REPORT.md`](backend/PROJECT_STATUS_REPORT.md) |
-| 2 | Backend – Inventory & Stock | [`docs/TEAM_ASSIGNMENT_DETAILED.md`](docs/TEAM_ASSIGNMENT_DETAILED.md) |
-| 3 | Backend – Billing/CRM & Reports | [`docs/TEAM_ASSIGNMENT_DETAILED.md`](docs/TEAM_ASSIGNMENT_DETAILED.md) |
-| 4 | Frontend Lead – Reception + Technician | [`docs/TEAM_ASSIGNMENT_DETAILED.md`](docs/TEAM_ASSIGNMENT_DETAILED.md) |
-| 5 | Frontend – Inventory + Billing/Admin | [`docs/TEAM_ASSIGNMENT_DETAILED.md`](docs/TEAM_ASSIGNMENT_DETAILED.md) |
-
-**👉 ดูหน้าที่ละเอียด:** [`docs/TEAM_ASSIGNMENT_DETAILED.md`](docs/TEAM_ASSIGNMENT_DETAILED.md)
+3. Port ชน
+   - Backend: แก้ไข `PORT` ใน `backend/.env`
+   - Frontend (Vite): จะเพิ่ม port ให้เองโดยอัตโนมัติ แต่สามารถกำหนดเองได้ใน `vite.config.ts` ถ้าต้องการ
 
 ---
 
-## ✅ Status
+## ข้อควรระวัง
 
-### Backend
-- ✅ **99% Complete** - Core workflows พร้อมใช้งาน
-- ✅ CI/CD ทำงานแล้ว
-- ✅ API Documentation ครบถ้วน
-
-### Frontend
-- 🚧 **In Progress** - กำลังพัฒนา
-
-**ดูสถานะละเอียด:** [`backend/PROJECT_STATUS_REPORT.md`](backend/PROJECT_STATUS_REPORT.md)
+- ห้าม commit ไฟล์ที่มีข้อมูลสำคัญ เช่น `.env`, key, secret, หรือ credential ใด ๆ ลง Git
+- ไม่ควร commit `node_modules` หรือไฟล์ที่ build แล้ว
+- หลีกเลี่ยงการใช้ `git push --force` กับ branch ที่ใช้ร่วมกัน (โดยเฉพาะ `develop` และ `main`)
+- การเปลี่ยนแปลง schema ของฐานข้อมูลควรตรวจสอบผลกระทบกับ Flow ทั้งระบบเสมอ
 
 ---
 
-## 🔒 ข้อห้ามสำคัญ
+## สถานะโดยรวมของระบบ (ภาพรวมปัจจุบัน)
 
-- ❌ **ห้าม commit `.env`** หรือ key/secret ขึ้น GitHub
-- ❌ **ห้ามเอา `node_modules`** ขึ้น repo
-- ❌ **อย่าแก้ `develop`** แบบ force push (ถ้าไม่รู้ว่าทำอะไรอยู่)
-- ❌ **อย่า push ตรงไป `main`** (ต้องผ่าน PR)
+- Backend
+  - Core workflow ครบแล้ว (Reception → Jobs → Parts → Payments → Reports)
+  - การตัดสต็อกและเพิ่มสต็อกจาก PO ทำงานตาม business logic
+  - Payment flow รองรับการสร้าง Payment จากงานที่พร้อมส่งมอบ และการ Process Payment ที่อัปเดตทั้งสถานะ Payment และ Job
+  - Reports API รองรับรายงานรายวัน รายเดือน กำไร และสถานะงานค้าง
 
----
+- Frontend
+  - ทุก Role หลัก (Admin, Owner, Service Advisor, Foreman, Mechanic, Stock Keeper, Cashier) มีหน้าใช้งานครบตาม Flow
+  - การเชื่อมต่อ API ตรงตาม DTO และ business rule ล่าสุด
+  - Dashboard / Reports แสดงผลจากข้อมูลจริงในระบบ พร้อมกราฟและสามารถดาวน์โหลดรายการเป็น PDF
 
-## 📞 ติดต่อ & Support
-
-- 📝 สร้าง Issue บน GitHub สำหรับ bugs หรือ questions
-- 📖 อ่านเอกสารใน `docs/` folder
-- 🔍 ดู Swagger UI ที่ `http://localhost:4000/docs`
-
----
-
-## 📄 License
-
-This project is for educational purposes.
+รายละเอียดเชิงลึกของสถานะงาน ดูเพิ่มเติมได้ที่ `backend/PROJECT_STATUS_REPORT.md`
 
 ---
 
-## 🎯 Next Steps
+## เอกสารประกอบเพิ่มเติม
 
-1. ✅ อ่าน [`docs/QUICK_START_GUIDE.md`](docs/QUICK_START_GUIDE.md)
-2. ✅ ดูหน้าที่ของตัวเองใน [`docs/TEAM_ASSIGNMENT_DETAILED.md`](docs/TEAM_ASSIGNMENT_DETAILED.md)
-3. ✅ Setup environment ตาม Quick Start Guide
-4. ✅ สร้าง branch ของตัวเอง
-5. ✅ เริ่มทำงาน!
+- `docs/QUICK_START_GUIDE.md`  
+  คู่มือเริ่มต้นแบบละเอียดสำหรับการตั้งค่าสภาพแวดล้อมและรันระบบ
+
+- `docs/TEAM_ASSIGNMENT_DETAILED.md`  
+  รายละเอียดหน้าที่ของสมาชิกทีมแต่ละคน
+
+- `backend/COMPLETE_API_TESTING_GUIDE.md`  
+  แนวทางการทดสอบ API แต่ละชุด พร้อมตัวอย่าง request/response
+
+- `frontend/README.md`  
+  รายละเอียดเพิ่มเติมฝั่ง Frontend
+
+- `backend/GIT_CONVENTIONS.md`  
+  มาตรฐานการตั้งชื่อ branch, commit message, และ Pull Request
 
 ---
 
-**🎉 Happy Coding!**
+This project is intended for educational and demonstration purposes.  
+หากมีการเปลี่ยนแปลง business logic หรือ Flow ใหม่ ควรอัปเดต README และเอกสารใน `docs/` ให้สอดคล้องกับระบบทุกครั้ง
 
-**หมายเหตุ:** ถ้ามีปัญหาอะไร ให้อ่าน [`docs/QUICK_START_GUIDE.md`](docs/QUICK_START_GUIDE.md) และ [`CONTRIBUTING.md`](CONTRIBUTING.md) ก่อน

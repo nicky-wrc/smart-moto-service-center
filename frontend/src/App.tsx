@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute'
 import LoginPage from './pages/login/LoginPage'
 import { RequestHistoryProvider } from './contexts/RequestHistoryContext'
+import { AlertProvider } from './contexts/AlertContext'
+import { AlertInterceptor } from './components/AlertInterceptor'
 
 // Inventory (พนักงานคงคลัง)
 import InventoryLayout from './pages/inventory/InventoryLayout'
@@ -43,6 +45,11 @@ import PaymentHistoryDetailPage from './pages/accountant/PaymentHistoryDetailPag
 import Pendingpayment from './pages/accountant/Pendingpayment'
 import PendingpaymentDetail from './pages/accountant/PendingpaymentDetail'
 
+// Admin (ผู้ดูแลระบบ)
+import AdminLayout from './pages/admin/AdminLayout'
+import AdminIndex from './pages/admin'
+import AdminDashboardPage from './pages/admin/AdminDashboardPage'
+
 // Owner (เจ้าของร้าน)
 import OwnerLayout from './pages/owner/OwnerLayout'
 import OwnerIndex from './pages/owner'
@@ -67,10 +74,29 @@ import ReceptionHistoryPage from './pages/reception/ReceptionHistoryPage'
 import ReceptionHistoryDetailPage from './pages/reception/ReceptionHistoryDetailPage'
 import ForemanResponsePage from './pages/reception/ForemanResponsePage'
 import ForemanResponseDetailPage from './pages/reception/ForemanResponseDetailPage'
+import { AppointmentsPage } from './pages/reception/AppointmentsPage'
+import { CreateAppointmentPage } from './pages/reception/CreateAppointmentPage'
+import { AppointmentDetailPage } from './pages/reception/AppointmentDetailPage'
+import { AppointmentCalendarPage } from './pages/reception/AppointmentCalendarPage'
+
+// Workshop (ช่างซ่อม)
+import WorkshopLayout from './pages/workshop/WorkshopLayout'
+import WorkshopIndex from './pages/workshop'
+import { JobQueuePage } from './pages/workshop/JobQueuePage'
+import { JobDetailPage as WorkshopJobDetailPage } from './pages/workshop/JobDetailPage'
+import { PartRequisitionPage } from './pages/workshop/PartRequisitionPage'
+
+// Billing (การเงิน)
+import BillingLayout from './pages/billing/BillingLayout'
+import BillingIndex from './pages/billing'
+import { QuotationsPage } from './pages/billing/QuotationsPage'
+import { PaymentsPage } from './pages/billing/PaymentsPage'
 
 export default function App() {
   return (
-    <RequestHistoryProvider>
+    <AlertProvider>
+      <AlertInterceptor />
+      <RequestHistoryProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
@@ -141,6 +167,22 @@ export default function App() {
             <Route path="pendingpayment/:id" element={<PendingpaymentDetail />} />
           </Route>
 
+          {/* ผู้ดูแลระบบ (Admin) */}
+          <Route path="/admin" element={
+            <ProtectedRoute roles={['ADMIN']}>
+              <AdminLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<AdminIndex />} />
+            <Route path="dashboard" element={<AdminDashboardPage />} />
+            <Route path="reports" element={<OwnerReportsPage />} />
+            <Route path="employees" element={<OwnerEmployeesPage />} />
+            <Route path="stock" element={<OwnerStockPage />} />
+            <Route path="pending-jobs" element={<OwnerPendingJobsPage />} />
+            <Route path="purchase-requests" element={<OwnerPurchaseRequestsPage />} />
+            <Route path="purchase-requests/:id" element={<OwnerPurchaseRequestDetailPage />} />
+          </Route>
+
           {/* เจ้าของร้าน */}
           <Route path="/owner" element={
             <ProtectedRoute roles={['MANAGER', 'ADMIN']}>
@@ -174,9 +216,36 @@ export default function App() {
             <Route path="foreman-response/:id" element={<ForemanResponseDetailPage />} />
             <Route path="history" element={<ReceptionHistoryPage />} />
             <Route path="history/:id" element={<ReceptionHistoryDetailPage />} />
+            <Route path="appointments" element={<AppointmentsPage />} />
+            <Route path="appointments/new" element={<CreateAppointmentPage />} />
+            <Route path="appointments/calendar" element={<AppointmentCalendarPage />} />
+            <Route path="appointments/:id" element={<AppointmentDetailPage />} />
+          </Route>
+          {/* ช่างซ่อม (Workshop) */}
+          <Route path="/workshop" element={
+            <ProtectedRoute roles={['TECHNICIAN', 'FOREMAN', 'ADMIN', 'MANAGER']}>
+              <WorkshopLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<WorkshopIndex />} />
+            <Route path="queue" element={<JobQueuePage />} />
+            <Route path="jobs/:id" element={<WorkshopJobDetailPage />} />
+            <Route path="requisitions" element={<PartRequisitionPage />} />
+          </Route>
+
+          {/* การเงิน (Billing) */}
+          <Route path="/billing" element={
+            <ProtectedRoute roles={['CASHIER', 'ADMIN', 'MANAGER']}>
+              <BillingLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<BillingIndex />} />
+            <Route path="quotations" element={<QuotationsPage />} />
+            <Route path="payments" element={<PaymentsPage />} />
           </Route>
         </Routes>
       </BrowserRouter>
     </RequestHistoryProvider>
+    </AlertProvider>
   )
 }

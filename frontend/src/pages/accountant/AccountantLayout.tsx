@@ -38,5 +38,12 @@ const pageTitles: Record<string, string> = {
 }
 
 export default function AccountantLayout() {
-  return <AppLayout navItems={navItems} pageTitles={pageTitles} defaultTitle="พนักงานบัญชี" />
+  return (
+    <AppLayout
+      navItems={navItems}
+      pageTitles={pageTitles}
+      defaultTitle="พนักงานบัญชี"
+    />
+  )
 }
+

@@ -52,6 +52,9 @@ export interface ForemanResponse {
     // Timestamps
     createdAt: string
     updatedAt: string
+
+    // Computed from job list (items count when full items not loaded)
+    _itemsCount?: number
 }
 
 export interface RequiredPart {
@@ -75,10 +78,10 @@ export type ForemanResponseStatus =
     | 'COMPLETED' // ซ่อมเสร็จ
 
 export interface CustomerDecisionRequest {
-    decision: 'approved' | 'rejected'
-    notes?: string // Optional notes from reception
-    decisionBy: string // Reception staff ID or name
-    decisionByUserId?: number // Reception staff user ID
+    decision: 'approved' | 'rejected' | 'approved_waiting_parts'
+    notes?: string
+    decisionBy: string
+    decisionByUserId?: number
 }
 
 export interface CustomerDecisionResponse {

@@ -20,7 +20,7 @@ export default function HistoryDetailPage() {
                 const data = await partRequisitionService.getHistoryById(Number(id))
                 if (isMounted) {
                     if (data) {
-                        setRequest(data as unknown as HistoryItem)
+                        setRequest(data)
                     } else {
                         // Fallback to local session history if mock API returns null
                         const localData = history.find(r => r.id === Number(id))
@@ -28,7 +28,7 @@ export default function HistoryDetailPage() {
                         else setErrorMsg(`ไม่พบประวัติคำร้องขอเบิกหมายเลข #${id}`)
                     }
                 }
-            } catch {
+            } catch (err) {
                 if (isMounted) setErrorMsg('เกิดข้อผิดพลาดในการโหลดข้อมูลประวัติ')
             } finally {
                 if (isMounted) setIsLoading(false)

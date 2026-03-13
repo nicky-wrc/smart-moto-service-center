@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { addReceptionHistory } from '../../utils/receptionHistory'
+import { receptionApiService } from '../../services/receptionApiService'
 
 interface RegistrationData {
     firstName: string
@@ -28,48 +30,61 @@ export default function ReceptionConfirmPage() {
     const data: RegistrationData = location.state?.formData ?? {}
     const returnTo = location.state?.returnTo // Pass through returnTo flag
 
+    const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+
     const fullName = `${data.firstName || ''} ${data.lastName || ''}`.trim() || '-'
     const licensePlate = [data.plateLine1, data.plateLine2, data.province].filter(Boolean).join(' ')
 
-    const handleConfirm = () => {
-        // Save to localStorage
-        const newCustomer = {
-            id: `CUST-NEW-${Date.now()}`,
-            firstName: data.firstName,
-            lastName: data.lastName,
-            phone: data.phone,
-            address: data.address,
-            motorcycles: [
-                {
-                    id: `M-NEW-${Date.now()}`,
-                    model: data.model,
-                    color: data.color,
-                    plateLine1: data.plateLine1,
-                    plateLine2: data.plateLine2,
-                    province: data.province,
-                }
-            ]
+    const handleConfirm = async () => {
+        setIsLoading(true)
+        setError(null)
+
+        try {
+            // Create customer + motorcycle in the backend database
+            const licensePlateStr = `${data.plateLine1} ${data.province} ${data.plateLine2}`.trim()
+            
+            const customerResult = await receptionApiService.createOrGetCustomer({
+                firstName: data.firstName,
+                lastName: data.lastName,
+                phone: data.phone,
+                address: data.address || '',
+            });
+            
+            // Create motorcycle for this customer
+            const motoResult = await receptionApiService.createOrGetMotorcycle({
+                customerId: customerResult.id,
+                model: data.model,
+                color: data.color,
+                plateLine1: data.plateLine1,
+                plateLine2: data.plateLine2,
+                province: data.province,
+            });
+
+            // Make sure to pass IDs to next step
+            data.customerId = customerResult.id;
+            data.motorcycleId = motoResult.id;
+
+            // Also save to local reception history as a log
+            addReceptionHistory({
+                activityType: 'ลงทะเบียนใหม่',
+                firstName: data.firstName,
+                lastName: data.lastName,
+                phone: data.phone,
+                model: data.model,
+                color: data.color,
+                plateLine1: data.plateLine1,
+                plateLine2: data.plateLine2,
+                province: data.province,
+            })
+
+            navigate('/reception/success', { state: { formData: data, returnTo } })
+        } catch (err: any) {
+            console.error('Error creating customer:', err)
+            setError(err?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง')
+        } finally {
+            setIsLoading(false)
         }
-
-        const existingCustomersStr = localStorage.getItem('smart_moto_customers')
-        const existingCustomers = existingCustomersStr ? JSON.parse(existingCustomersStr) : []
-        localStorage.setItem('smart_moto_customers', JSON.stringify([...existingCustomers, newCustomer]))
-
-        // Save to reception history
-        addReceptionHistory({
-            activityType: 'ลงทะเบียนใหม่',
-            firstName: data.firstName,
-            lastName: data.lastName,
-            phone: data.phone,
-            model: data.model,
-            color: data.color,
-            plateLine1: data.plateLine1,
-            plateLine2: data.plateLine2,
-            province: data.province,
-            // No symptoms/tags for registration only
-        })
-
-        navigate('/reception/success', { state: { formData: data, returnTo } })
     }
 
     return (
@@ -137,18 +152,25 @@ export default function ReceptionConfirmPage() {
                 </div>
 
                 {/* Action Buttons */}
+                {error && (
+                    <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 font-medium">
+                        ⚠️ {error}
+                    </div>
+                )}
                 <div className="flex justify-end gap-4 mt-4 pb-8">
                     <button
                         onClick={() => navigate(-1)}
-                        className="min-w-[180px] px-10 py-3.5 rounded-xl border-2 border-amber-400 text-amber-600 text-base font-semibold bg-white hover:bg-amber-50 active:bg-amber-100 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                        disabled={isLoading}
+                        className="min-w-[180px] px-10 py-3.5 rounded-xl border-2 border-amber-400 text-amber-600 text-base font-semibold bg-white hover:bg-amber-50 active:bg-amber-100 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/30 disabled:opacity-50"
                     >
                         กลับไปแก้ไข
                     </button>
                     <button
                         onClick={handleConfirm}
-                        className="min-w-[180px] px-10 py-3.5 rounded-xl border-2 border-transparent text-white text-base font-semibold bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-lg"
+                        disabled={isLoading}
+                        className="min-w-[180px] px-10 py-3.5 rounded-xl border-2 border-transparent text-white text-base font-semibold bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-lg disabled:opacity-50"
                     >
-                        ยืนยันบันทึก
+                        {isLoading ? 'กำลังบันทึก...' : 'ยืนยันบันทึก'}
                     </button>
                 </div>
             </div>

@@ -20,7 +20,7 @@ import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 @ApiTags('Users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService) {}
 
   // สร้าง User (ยังเปิด Public ไว้ เพื่อให้สมัคร Admin คนแรกได้สะดวก)
   @Post()
@@ -35,7 +35,7 @@ export class UsersController {
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth('JWT-auth')
-  @Roles('ADMIN', 'MANAGER')
+  @Roles('ADMIN', 'MANAGER', 'FOREMAN', 'SERVICE_ADVISOR')
   @ApiOperation({ summary: 'ดูรายชื่อ Users ทั้งหมด' })
   findAll() {
     return this.usersService.findAll();
@@ -63,7 +63,7 @@ export class UsersController {
   @Patch(':id/salary')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth('JWT-auth')
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'MANAGER')
   @ApiOperation({ summary: 'กำหนดเงินเดือนและค่าคอม (Owner/Admin)' })
   updateSalary(@Param('id') id: string, @Body() dto: UpdateSalaryDto) {
     return this.usersService.updateSalary(+id, dto);

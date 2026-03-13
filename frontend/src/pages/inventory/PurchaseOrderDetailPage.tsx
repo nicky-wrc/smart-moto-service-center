@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { mockPurchaseOrders, type POStatus } from '../../data/purchaseOrdersMockData'
+import { purchaseOrderService, type POStatus } from '../../services/purchaseOrderService'
+import type { PurchaseOrder } from '../../data/purchaseOrdersMockData'
 
 const StatusBadge = ({ status }: { status: POStatus }) => {
     switch (status) {
@@ -20,7 +22,33 @@ export default function PurchaseOrderDetailPage() {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
 
-    const request = mockPurchaseOrders.find(o => o.id === id)
+    const [request, setRequest] = useState<PurchaseOrder | null>(null)
+    const [isLoading, setIsLoading] = useState(true)
+
+    useEffect(() => {
+        let mounted = true
+        const fetchOrder = async () => {
+            setIsLoading(true)
+            try {
+                const data = await purchaseOrderService.getById(id!)
+                if (mounted) setRequest(data)
+            } catch (err) {
+                console.error('Failed to load PO details', err)
+            } finally {
+                if (mounted) setIsLoading(false)
+            }
+        }
+        fetchOrder()
+        return () => { mounted = false }
+    }, [id])
+
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center min-h-[60vh]">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-500"></div>
+            </div>
+        )
+    }
 
     if (!request) {
         return (
@@ -38,7 +66,6 @@ export default function PurchaseOrderDetailPage() {
 
     return (
         <div className="p-6 min-h-full flex flex-col">
-            {/* Top Navigation */}
             <div className="flex items-center gap-2 text-gray-500 mb-6 cursor-pointer hover:text-amber-600 w-fit transition-colors" onClick={() => navigate('/inventory/purchase-orders')}>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -46,11 +73,10 @@ export default function PurchaseOrderDetailPage() {
                 <span className="text-sm font-medium">ย้อนกลับ</span>
             </div>
 
-            {/* Title & Request Meta Details */}
             <div className="flex flex-col gap-3 mb-6">
                 <div className="flex justify-between items-center">
                     <div className="flex items-center gap-3">
-                        <h1 className="text-xl font-medium text-gray-800">รายละเอียดใบสั่งซื้อที่ {request.id}</h1>
+                        <h1 className="text-xl font-medium text-gray-800">รายละเอียดใบสั่งซื้อที่ {request.poNo || request.id}</h1>
                         <StatusBadge status={request.status} />
                     </div>
                 </div>
@@ -92,7 +118,6 @@ export default function PurchaseOrderDetailPage() {
                 )}
             </div>
 
-            {/* Main Table Content */}
             <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white flex-1 mb-6">
                 <table className="w-full text-sm text-center">
                     <thead>

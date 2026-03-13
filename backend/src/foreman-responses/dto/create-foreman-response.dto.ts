@@ -5,7 +5,6 @@ import {
   IsNumber,
   IsArray,
   IsOptional,
-  IsEnum,
   IsInt,
   Min,
   ValidateNested,
@@ -78,7 +77,10 @@ export class CreateForemanResponseDto {
   @IsInt()
   foremanId: number;
 
-  @ApiProperty({ description: 'Required parts for repair', type: [RequiredPartDto] })
+  @ApiProperty({
+    description: 'Required parts for repair',
+    type: [RequiredPartDto],
+  })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => RequiredPartDto)

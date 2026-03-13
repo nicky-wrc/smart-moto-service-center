@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { api } from '../../lib/api'
 import Pagination from '../../components/Pagination'
 
-type Role = 'พนักงานรับรถ' | 'พนักงานคงคลัง' | 'พนักงานบัญชี' | 'หัวหน้าช่าง' | 'ช่าง'
+type Role = 'ผู้ดูแลระบบ' | 'ผู้จัดการ' | 'พนักงานรับรถ' | 'พนักงานคงคลัง' | 'พนักงานบัญชี' | 'หัวหน้าช่าง' | 'ช่าง'
 type SalaryType = 'fixed' | 'commission'
 
 type Employee = {
@@ -18,31 +19,40 @@ type Employee = {
 }
 
 const roleConfig: Record<Role, { color: string; salaryType: SalaryType }> = {
-  'พนักงานรับรถ':  { color: 'bg-stone-100 text-stone-600',        salaryType: 'fixed' },
+  'ผู้ดูแลระบบ':   { color: 'bg-red-100 text-red-600',            salaryType: 'fixed' },
+  'ผู้จัดการ':      { color: 'bg-purple-100 text-purple-600',      salaryType: 'fixed' },
+  'พนักงานรับรถ':  { color: 'bg-blue-100 text-blue-600',          salaryType: 'fixed' },
   'พนักงานคงคลัง': { color: 'bg-[#44403C]/10 text-[#44403C]',     salaryType: 'fixed' },
-  'พนักงานบัญชี':  { color: 'bg-stone-200 text-stone-700',        salaryType: 'fixed' },
+  'พนักงานบัญชี':  { color: 'bg-emerald-100 text-emerald-600',    salaryType: 'fixed' },
   'หัวหน้าช่าง':   { color: 'bg-[#F8981D]/15 text-[#F8981D]',    salaryType: 'commission' },
   'ช่าง':          { color: 'bg-[#F8981D]/8 text-[#F8981D]/80',  salaryType: 'commission' },
 }
 
-const initialEmployees: Employee[] = [
-  { id: 1,  name: 'พีพี สุขใจ',       role: 'พนักงานรับรถ',  salaryType: 'fixed',      baseSalary: 15000, phone: '081-111-1111', startDate: '01/01/2025', active: true },
-  { id: 2,  name: 'นิค ยิ้มแย้ม',     role: 'พนักงานรับรถ',  salaryType: 'fixed',      baseSalary: 15000, phone: '081-222-2222', startDate: '01/03/2025', active: true },
-  { id: 3,  name: 'บอย สต๊อกเก่ง',    role: 'พนักงานคงคลัง', salaryType: 'fixed',      baseSalary: 16000, phone: '082-333-3333', startDate: '01/06/2024', active: true },
-  { id: 4,  name: 'มิ้น บัญชีดี',     role: 'พนักงานบัญชี',  salaryType: 'fixed',      baseSalary: 18000, phone: '083-444-4444', startDate: '01/09/2024', active: true },
-  { id: 5,  name: 'สมชาย มือโปร',      role: 'หัวหน้าช่าง',   salaryType: 'commission', baseSalary: 25000, commissionPerJob: 500, jobsDone: 2, phone: '084-555-5555', startDate: '01/01/2023', active: true },
-  { id: 6,  name: 'วิชัย ไวรถ',        role: 'ช่าง',           salaryType: 'commission', baseSalary: 18000, commissionPerJob: 300, jobsDone: 1, phone: '085-666-6666', startDate: '01/04/2024', active: true },
-  { id: 7,  name: 'ประยุทธ์ ช่างซ่อม', role: 'ช่าง',           salaryType: 'commission', baseSalary: 18000, commissionPerJob: 300, jobsDone: 1, phone: '086-777-7777', startDate: '01/07/2024', active: true },
-  { id: 8,  name: 'กิตติพงษ์ รวดเร็ว', role: 'ช่าง',           salaryType: 'commission', baseSalary: 18000, commissionPerJob: 300, jobsDone: 2, phone: '087-888-8888', startDate: '01/02/2025', active: true },
-  { id: 9,  name: 'ณัฐพล แม่นยำ',      role: 'ช่าง',           salaryType: 'commission', baseSalary: 18000, commissionPerJob: 300, jobsDone: 2, phone: '088-999-9999', startDate: '01/03/2025', active: true },
-  { id: 10, name: 'อภิสิทธิ์ ดีงาม',   role: 'ช่าง',           salaryType: 'commission', baseSalary: 18000, commissionPerJob: 300, jobsDone: 1, phone: '089-000-0000', startDate: '01/01/2025', active: true },
-]
+const ROLE_MAP: Record<string, Role> = {
+  ADMIN: 'ผู้ดูแลระบบ',
+  MANAGER: 'ผู้จัดการ',
+  SERVICE_ADVISOR: 'พนักงานรับรถ',
+  STOCK_KEEPER: 'พนักงานคงคลัง',
+  CASHIER: 'พนักงานบัญชี',
+  FOREMAN: 'หัวหน้าช่าง',
+  TECHNICIAN: 'ช่าง',
+}
 
-const roles: Role[] = ['พนักงานรับรถ', 'พนักงานคงคลัง', 'พนักงานบัญชี', 'หัวหน้าช่าง', 'ช่าง']
-const emptyForm = { name: '', role: 'ช่าง' as Role, baseSalary: 18000, commissionPerJob: 300, phone: '', startDate: '' }
+const roles: Role[] = ['ผู้ดูแลระบบ', 'ผู้จัดการ', 'พนักงานรับรถ', 'พนักงานคงคลัง', 'พนักงานบัญชี', 'หัวหน้าช่าง', 'ช่าง']
+const ROLE_REVERSE_MAP: Record<Role, string> = {
+  'ผู้ดูแลระบบ': 'ADMIN',
+  'ผู้จัดการ': 'MANAGER',
+  'พนักงานรับรถ': 'SERVICE_ADVISOR',
+  'พนักงานคงคลัง': 'STOCK_KEEPER',
+  'พนักงานบัญชี': 'CASHIER',
+  'หัวหน้าช่าง': 'FOREMAN',
+  'ช่าง': 'TECHNICIAN',
+}
+
+const emptyForm = { name: '', role: 'ช่าง' as Role, baseSalary: 18000, commissionPerJob: 300, phone: '', username: '', password: '' }
 
 export default function EmployeesPage() {
-  const [employees, setEmployees] = useState<Employee[]>(initialEmployees)
+  const [employees, setEmployees] = useState<Employee[]>([])
   const [search, setSearch]       = useState('')
   const [filterRole, setFilterRole] = useState<Role | 'ทั้งหมด'>('ทั้งหมด')
   const [showCreate, setShowCreate] = useState(false)
@@ -50,6 +60,45 @@ export default function EmployeesPage() {
   const [editSalary, setEditSalary] = useState<{ id: number; base: number; com: number } | null>(null)
   const [page, setPage]     = useState(1)
   const [perPage, setPerPage] = useState(10)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const [users, jobs] = await Promise.all([
+          api.get<any[]>('/users'),
+          api.get<any[]>('/jobs'),
+        ])
+        const mapped: Employee[] = users.map((u: any) => {
+          const role: Role = ROLE_MAP[u.role] ?? 'ช่าง'
+          const cfg = roleConfig[role]
+          const jobsDone = jobs.filter((j: any) =>
+            j.technicianId === u.id && ['COMPLETED', 'PAID'].includes(j.status)
+          ).length
+          const baseSalary = u.baseSalary ? Number(u.baseSalary) : (cfg.salaryType === 'commission' ? 18000 : 15000)
+          const commissionRate = u.commissionRate ? Number(u.commissionRate) : 300
+          return {
+            id: u.id,
+            name: u.name,
+            role,
+            salaryType: cfg.salaryType,
+            baseSalary,
+            commissionPerJob: cfg.salaryType === 'commission' ? commissionRate : undefined,
+            jobsDone: cfg.salaryType === 'commission' ? jobsDone : undefined,
+            phone: u.phone ?? '-',
+            startDate: u.createdAt ? new Date(u.createdAt).toLocaleDateString('th-TH') : '-',
+            active: true,
+          }
+        })
+        setEmployees(mapped)
+      } catch (err) {
+        console.error('Failed to load employees:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchEmployees()
+  }, [])
 
   const filtered = employees.filter(e => {
     const matchSearch = e.name.includes(search) || e.role.includes(search)
@@ -64,30 +113,62 @@ export default function EmployeesPage() {
     .filter(e => e.active)
     .reduce((s, e) => s + e.baseSalary + (e.commissionPerJob ?? 0) * (e.jobsDone ?? 0), 0)
 
-  const handleCreate = () => {
-    const newEmp: Employee = {
-      id: employees.length + 1,
-      name: form.name,
-      role: form.role,
-      salaryType: roleConfig[form.role].salaryType,
-      baseSalary: form.baseSalary,
-      commissionPerJob: roleConfig[form.role].salaryType === 'commission' ? form.commissionPerJob : undefined,
-      jobsDone: roleConfig[form.role].salaryType === 'commission' ? 0 : undefined,
-      phone: form.phone,
-      startDate: form.startDate || new Date().toLocaleDateString('th-TH'),
-      active: true,
+  const handleCreate = async () => {
+    if (!form.name || !form.username || !form.password) {
+      alert('กรุณากรอกชื่อ, username, password')
+      return
     }
-    setEmployees(prev => [...prev, newEmp])
-    setShowCreate(false)
-    setForm(emptyForm)
+    try {
+      const backendRole = ROLE_REVERSE_MAP[form.role] || 'TECHNICIAN'
+      const newUser = await api.post<any>('/users', {
+        username: form.username,
+        password: form.password,
+        name: form.name,
+        role: backendRole,
+      })
+      if (form.baseSalary || form.commissionPerJob) {
+        await api.patch(`/users/${newUser.id}/salary`, {
+          baseSalary: form.baseSalary,
+          commissionRate: form.commissionPerJob,
+        })
+      }
+      const cfg = roleConfig[form.role]
+      const newEmp: Employee = {
+        id: newUser.id,
+        name: form.name,
+        role: form.role,
+        salaryType: cfg.salaryType,
+        baseSalary: form.baseSalary,
+        commissionPerJob: cfg.salaryType === 'commission' ? form.commissionPerJob : undefined,
+        jobsDone: 0,
+        phone: form.phone || '-',
+        startDate: new Date().toLocaleDateString('th-TH'),
+        active: true,
+      }
+      setEmployees(prev => [...prev, newEmp])
+      setShowCreate(false)
+      setForm(emptyForm)
+    } catch (err: any) {
+      console.error('Failed to create employee:', err)
+      alert(err.message || 'ไม่สามารถสร้างพนักงานได้')
+    }
   }
 
-  const handleSaveSalary = () => {
+  const handleSaveSalary = async () => {
     if (!editSalary) return
-    setEmployees(prev => prev.map(e =>
-      e.id === editSalary.id ? { ...e, baseSalary: editSalary.base, commissionPerJob: editSalary.com } : e
-    ))
-    setEditSalary(null)
+    try {
+      await api.patch(`/users/${editSalary.id}/salary`, {
+        baseSalary: editSalary.base,
+        commissionRate: editSalary.com,
+      })
+      setEmployees(prev => prev.map(e =>
+        e.id === editSalary.id ? { ...e, baseSalary: editSalary.base, commissionPerJob: editSalary.com } : e
+      ))
+      setEditSalary(null)
+    } catch (err: any) {
+      console.error('Failed to update salary:', err)
+      alert(err.message || 'ไม่สามารถบันทึกเงินเดือนได้')
+    }
   }
 
   return (
@@ -119,10 +200,10 @@ export default function EmployeesPage() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
-        <div className="flex gap-2 shrink-0">
+        <div className="flex gap-2 shrink-0 overflow-x-auto">
           {(['ทั้งหมด', ...roles] as const).map(r => (
             <button key={r} onClick={() => setFilterRole(r)}
-              className={`px-4 py-2 rounded-full text-sm font-medium cursor-pointer border-none transition-colors ${filterRole === r ? 'bg-[#44403C] text-white' : 'bg-white text-stone-500 hover:bg-stone-100 border border-stone-200'}`}>
+              className={`px-3 py-2 rounded-full text-xs font-medium cursor-pointer border-none transition-colors whitespace-nowrap ${filterRole === r ? 'bg-[#44403C] text-white' : 'bg-white text-stone-500 hover:bg-stone-100 border border-stone-200'}`}>
               {r}
             </button>
           ))}
@@ -211,6 +292,16 @@ export default function EmployeesPage() {
                 <label className="text-xs text-stone-500 mb-1 block">ชื่อ-นามสกุล</label>
                 <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                   className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#F8981D] transition-colors" placeholder="ชื่อ นามสกุล" />
+              </div>
+              <div>
+                <label className="text-xs text-stone-500 mb-1 block">Username (สำหรับล็อกอิน)</label>
+                <input value={form.username} onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
+                  className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#F8981D] transition-colors" placeholder="username" />
+              </div>
+              <div>
+                <label className="text-xs text-stone-500 mb-1 block">Password</label>
+                <input type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+                  className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#F8981D] transition-colors" placeholder="รหัสผ่าน" />
               </div>
               <div>
                 <label className="text-xs text-stone-500 mb-1 block">ตำแหน่ง</label>

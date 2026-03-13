@@ -17,6 +17,7 @@ import { QcJobDto } from './dto/qc-job.dto';
 import { ReadyDeliveryJobDto } from './dto/ready-delivery-job.dto';
 import { RequestInspectionDto } from './dto/request-inspection.dto';
 import { CreateOldPartDto } from './dto/create-old-part.dto';
+import { ReturnPartsDto } from './dto/return-parts.dto';
 import {
   ApiBearerAuth,
   ApiTags,
@@ -35,7 +36,7 @@ import { JobStatus, JobType } from '@prisma/client';
 @ApiBearerAuth('JWT-auth')
 @Controller('jobs')
 export class JobsController {
-  constructor(private readonly jobsService: JobsService) { }
+  constructor(private readonly jobsService: JobsService) {}
 
   @Post()
   @Roles('SERVICE_ADVISOR', 'ADMIN', 'MANAGER')
@@ -108,12 +109,24 @@ export class JobsController {
 
   @Patch(':id/complete')
   @Roles('TECHNICIAN', 'FOREMAN', 'ADMIN', 'MANAGER')
-  @ApiOperation({ summary: 'ซ่อมเสร็จสิ้น (เปลี่ยน status เป็น QC_PENDING รอตรวจ)' })
+  @ApiOperation({
+    summary: 'ซ่อมเสร็จสิ้น (เปลี่ยน status เป็น QC_PENDING รอตรวจ)',
+  })
   completeJob(
     @Param('id') id: string,
-    @Body() body?: { diagnosisNotes?: string },
+    @Body()
+    body?: {
+      diagnosisNotes?: string;
+      mechanicNotes?: string;
+      photos?: string[];
+    },
   ) {
-    return this.jobsService.completeJob(+id, body?.diagnosisNotes);
+    return this.jobsService.completeJob(
+      +id,
+      body?.diagnosisNotes,
+      body?.mechanicNotes,
+      body?.photos,
+    );
   }
 
   @Patch(':id/cancel')
@@ -135,7 +148,7 @@ export class JobsController {
   }
 
   @Patch(':id/ready-delivery')
-  @Roles('SERVICE_ADVISOR', 'MANAGER', 'ADMIN', 'FOREMAN')
+  @Roles('TECHNICIAN', 'SERVICE_ADVISOR', 'MANAGER', 'ADMIN', 'FOREMAN')
   @ApiOperation({ summary: 'เตรียมรถพร้อมส่งมอบ (ล้างรถเสร็จ)' })
   readyForDelivery(
     @Param('id') id: string,
@@ -145,9 +158,22 @@ export class JobsController {
     return this.jobsService.readyForDelivery(+id, dto, user.userId);
   }
 
+  @Patch(':id/return-parts')
+  @Roles('TECHNICIAN', 'FOREMAN', 'MANAGER', 'ADMIN')
+  @ApiOperation({ summary: 'คืนอะไหล่ส่วนที่ไม่ได้ใช้กลับเข้าคลัง' })
+  returnParts(
+    @Param('id') id: string,
+    @Body() dto: ReturnPartsDto,
+    @CurrentUser() user: UserPayload,
+  ) {
+    return this.jobsService.returnParts(+id, dto, user.userId);
+  }
+
   @Patch(':id/request-inspection')
   @Roles('FOREMAN', 'MANAGER', 'ADMIN')
-  @ApiOperation({ summary: 'ระบุว่าต้องตรวจสอบเชิงลึก (ผ่าเครื่อง) + ประเมินค่าตรวจ' })
+  @ApiOperation({
+    summary: 'ระบุว่าต้องตรวจสอบเชิงลึก (ผ่าเครื่อง) + ประเมินค่าตรวจ',
+  })
   requestInspection(
     @Param('id') id: string,
     @Body() dto: RequestInspectionDto,
@@ -158,10 +184,7 @@ export class JobsController {
   @Post(':id/old-parts')
   @Roles('TECHNICIAN', 'FOREMAN', 'ADMIN', 'MANAGER')
   @ApiOperation({ summary: 'บันทึกอะไหล่เก่าที่ถอดออกจากรถลูกค้า' })
-  createOldPart(
-    @Param('id') id: string,
-    @Body() dto: CreateOldPartDto,
-  ) {
+  createOldPart(@Param('id') id: string, @Body() dto: CreateOldPartDto) {
     return this.jobsService.createOldPart(+id, dto);
   }
 
@@ -178,4 +201,3 @@ export class JobsController {
     return this.jobsService.remove(+id);
   }
 }
-

@@ -11,7 +11,7 @@ import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class CustomersService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async create(createCustomerDto: CreateCustomerDto) {
     try {
@@ -59,7 +59,9 @@ export class CustomersService {
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
-          throw new ConflictException('เบอร์โทรศัพท์นี้หรือข้อมูลรถบางอย่างมีอยู่แล้วในระบบ');
+          throw new ConflictException(
+            'เบอร์โทรศัพท์นี้หรือข้อมูลรถบางอย่างมีอยู่แล้วในระบบ',
+          );
         }
       }
       throw error;

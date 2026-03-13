@@ -13,6 +13,8 @@ interface RegistrationData {
     plateLine1: string
     plateLine2: string
     province: string
+    customerId?: number
+    motorcycleId?: number
 }
 
 interface LocationState {
@@ -59,6 +61,11 @@ export default function ReceptionRepairPage() {
     const [images, setImages] = useState<{ url: string; name: string }[]>([])
     const [isDragging, setIsDragging] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
+
+    // New fields
+    const [jobType, setJobType] = useState('NORMAL')
+    const [fuelLevel, setFuelLevel] = useState(50)
+    const [valuables, setValuables] = useState('')
 
     const handleFiles = useCallback((files: FileList | null) => {
         if (!files) return
@@ -126,6 +133,8 @@ export default function ReceptionRepairPage() {
 
             // Prepare data for API
             const repairRequestData: RepairRequestDTO = {
+                customerId: data.customerId,
+                motorcycleId: data.motorcycleId,
                 customerData: {
                     firstName: data.firstName,
                     lastName: data.lastName,
@@ -143,7 +152,10 @@ export default function ReceptionRepairPage() {
                 },
                 symptoms: symptoms.trim(),
                 tags: selectedTags,
-                images: images.map(img => img.url), // TODO: Convert to base64 or upload first
+                images: images.map(img => img.url),
+                jobType,
+                fuelLevel,
+                valuables: valuables || undefined,
                 activityType,
                 isExistingCustomer,
                 isNewMotorcycle,
@@ -151,26 +163,25 @@ export default function ReceptionRepairPage() {
                 status: 'pending_foreman_review'
             }
 
-            // TODO: Uncomment when backend is ready
             // Step 1: Upload images first (if any)
-            // if (images.length > 0) {
-            //     const imageFiles = await Promise.all(
-            //         images.map(async (img) => {
-            //             const response = await fetch(img.url)
-            //             const blob = await response.blob()
-            //             return new File([blob], img.name, { type: blob.type })
-            //         })
-            //     )
-            //     const uploadedUrls = await receptionApiService.uploadImages(imageFiles)
-            //     repairRequestData.images = uploadedUrls
-            // }
-            // 
+            if (images.length > 0) {
+                const imageFiles = await Promise.all(
+                    images.map(async (img) => {
+                        const response = await fetch(img.url)
+                        const blob = await response.blob()
+                        return new File([blob], img.name, { type: blob.type })
+                    })
+                )
+                const uploadedUrls = await receptionApiService.uploadImages(imageFiles)
+                repairRequestData.images = uploadedUrls
+            }
+            
             // Step 2: Create repair request
-            // const result = await receptionApiService.createRepairRequest(repairRequestData)
-            // 
-            // console.log('Repair request created:', result)
+            const result = await receptionApiService.createRepairRequest(repairRequestData)
+            
+            console.log('Repair request created:', result)
 
-            // Save to local reception history (for now, until backend is ready)
+            // Optional: Save to local reception history as fallback/local log
             addReceptionHistory({
                 activityType,
                 firstName: data.firstName,
@@ -301,6 +312,65 @@ export default function ReceptionRepairPage() {
                                     <span className="text-xl font-bold text-gray-900 tracking-widest leading-tight">{data.plateLine2 || '-'}</span>
                                 </div>
                                 <span className="text-sm text-gray-700 font-medium">{licensePlate || '-'}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ===== Job Details ===== */}
+                <div className="bg-gray-50/50 rounded-2xl border border-gray-200 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-200 bg-white flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <h3 className="text-base font-semibold text-gray-800">รายละเอียดงานซ่อม</h3>
+                    </div>
+                    <div className="p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+                            {/* ประเภทงาน */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-600 mb-1.5">ประเภทงาน</label>
+                                <select
+                                    value={jobType}
+                                    onChange={(e) => setJobType(e.target.value)}
+                                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 focus:bg-white transition-all appearance-none"
+                                >
+                                    <option value="NORMAL">ปกติ</option>
+                                    <option value="DEEP_INSPECTION">ตรวจสอบเชิงลึก</option>
+                                </select>
+                            </div>
+
+                            {/* ระดับน้ำมัน */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-600 mb-1.5">
+                                    ระดับน้ำมัน: <span className="text-amber-600 font-semibold">{fuelLevel}%</span>
+                                </label>
+                                <div className="flex items-center gap-3">
+                                    <span className="text-xs text-gray-400">0%</span>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="100"
+                                        step="5"
+                                        value={fuelLevel}
+                                        onChange={(e) => setFuelLevel(Number(e.target.value))}
+                                        className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                                    />
+                                    <span className="text-xs text-gray-400">100%</span>
+                                </div>
+                            </div>
+
+                            {/* ของมีค่าในรถ */}
+                            <div className="md:col-span-2">
+                                <label className="block text-sm font-medium text-gray-600 mb-1.5">ของมีค่าในรถ</label>
+                                <input
+                                    type="text"
+                                    value={valuables}
+                                    onChange={(e) => setValuables(e.target.value)}
+                                    placeholder="เช่น หมวกกันน็อค 1 ใบ, ถุงมือ 1 คู่ หรือ ไม่มี"
+                                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 focus:bg-white transition-all"
+                                />
                             </div>
                         </div>
                     </div>
